@@ -1,0 +1,27 @@
+{
+  "name": "zpup",
+  "version": "0.0.0",
+  "description": "A modern, AI-friendly pseudo-3D engine for the web, inspired by Zdog.",
+  "license": "MIT",
+  "author": "rxolve",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rxolve/zpup.git"
+  },
+  "homepage": "https://github.com/rxolve/zpup#readme",
+  "bugs": {
+    "url": "https://github.com/rxolve/zpup/issues"
+  },
+  "keywords": [
+    "3d",
+    "pseudo-3d",
+    "svg",
+    "canvas",
+    "illustration",
+    "zdog"
+  ],
+  "files": [
+    "README.md",
+    "LICENSE"
+  ]
+}
