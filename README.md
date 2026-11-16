@@ -8,7 +8,7 @@ Pronounced "zee-pup".
 
 ## Status
 
-Early work in progress. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested, but the API may still change. The `0.0.0` package on npm only reserves the name; nothing usable is published yet.
+Early work in progress. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested, but the API may still change. The npm package is `@zpup/core`. Its `0.0.0` release only reserves the name; nothing usable is published yet.
 
 Not built yet: a canvas renderer, animation, and framework bindings.
 
@@ -23,14 +23,14 @@ pnpm install
 pnpm build
 ```
 
-Once published it will be `npm install zpup`. zpup is ESM-only and has no runtime dependencies.
+Once published it will be `npm install @zpup/core`. zpup is ESM-only and has no runtime dependencies.
 
 ## Usage
 
 A scene is a plain object tree. `renderSvg` turns it into an SVG string, with no DOM, so it works on a server and the first paint needs no JavaScript.
 
 ```ts
-import { dot, ellipse, renderSvg } from 'zpup';
+import { dot, ellipse, renderSvg } from '@zpup/core';
 
 const svg = renderSvg({
   width: 120,

@@ -4,9 +4,11 @@
 
 ## Entry points
 
+The npm package is `@zpup/core`.
+
 ```ts
-import { renderSvg, checkScene, compileScene, ZpupValidationError } from 'zpup';
-import { group, path, dot, ellipse, rect, polygon } from 'zpup'; // optional typed helpers
+import { renderSvg, checkScene, compileScene, ZpupValidationError } from '@zpup/core';
+import { group, path, dot, ellipse, rect, polygon } from '@zpup/core'; // optional typed helpers
 
 renderSvg(scene, { precision: 2 }) // -> "<svg ...>...</svg>\n" (pure, deterministic)
 checkScene(scene)                  // -> ValidationIssue[] (empty when valid), never throws
@@ -93,7 +95,7 @@ Sphere with a ring:
 Face with grouped features:
 
 ```ts
-import { dot, group, path, renderSvg } from 'zpup';
+import { dot, group, path, renderSvg } from '@zpup/core';
 
 const svg = renderSvg({
   width: 160,

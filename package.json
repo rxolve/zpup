@@ -1,5 +1,5 @@
 {
-  "name": "zpup",
+  "name": "@zpup/core",
   "version": "0.0.0",
   "description": "A modern, AI-friendly pseudo-3D engine for the web, inspired by Zdog.",
   "license": "MIT",
@@ -44,6 +44,9 @@
     "test": "vitest run",
     "example": "node examples/render.ts",
     "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "packageManager": "pnpm@10.14.0",
   "devDependencies": {
