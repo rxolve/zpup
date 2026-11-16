@@ -221,6 +221,20 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
         const t = Math.min(hi, Math.max(lo, (distance + a.radius - b.radius) / 2)) / distance;
         samples.push([px + (qx - px) * t, py + (qy - py) * t]);
       }
+      // A round stroke that reaches across the edge of a filled area covers
+      // part of its inside too. The points above lie on that edge, where the
+      // inside test can go either way, so also sample halfway between the
+      // edge and the far side of the stroke.
+      if (distance > 0) {
+        if (b.plane && distance <= a.radius) {
+          const t = (distance + a.radius) / 2 / distance;
+          samples.push([px + (qx - px) * t, py + (qy - py) * t]);
+        }
+        if (a.plane && distance <= b.radius) {
+          const t = (distance + b.radius) / 2 / distance;
+          samples.push([qx + (px - qx) * t, qy + (py - qy) * t]);
+        }
+      }
     }
   }
   // Two filled areas that cross without containing each other's corners.
@@ -307,6 +321,14 @@ export function depthOrder(shapes: readonly DepthShape[]): number[] {
     for (const next of after[chosen.index] as number[]) blockers[next] = (blockers[next] ?? 0) - 1;
   }
   return order;
+}
+
+/**
+ * Compares two shapes where they overlap on screen: 1 when `a` is in front of
+ * `b`, -1 when behind, 0 when they do not overlap or it is unclear.
+ */
+export function compareShapes(a: DepthShape, b: DepthShape): number {
+  return compare(analyze(a, 0), analyze(b, 1));
 }
 
 /** The ordering a classic painter's algorithm would use: mean depth only. */

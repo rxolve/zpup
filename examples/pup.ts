@@ -64,6 +64,7 @@ const body = group({
     dot({ id: 'belly', translate: { y: 8, z: 20 }, stroke: 36, color: cream }),
     ...[-1, 1].flatMap((side) => [
       path({
+        id: side < 0 ? 'left-leg' : 'right-leg',
         path: [
           { x: side * 13, y: 12, z: 26 },
           { x: side * 14, y: 34, z: 30 },
@@ -71,7 +72,12 @@ const body = group({
         stroke: 18,
         color: tan,
       }),
-      dot({ translate: { x: side * 14, y: 37, z: 33 }, stroke: 20, color: cream }),
+      dot({
+        id: side < 0 ? 'left-paw' : 'right-paw',
+        translate: { x: side * 14, y: 37, z: 33 },
+        stroke: 20,
+        color: cream,
+      }),
     ]),
     path({
       id: 'tail',
