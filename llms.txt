@@ -7,15 +7,16 @@
 The npm package is `@zpup/core`.
 
 ```ts
-import { renderSvg, checkScene, compileScene, ZpupValidationError } from '@zpup/core';
+import { renderSvg, renderSpinSvg, checkScene, compileScene, ZpupValidationError } from '@zpup/core';
 import { group, path, dot, ellipse, rect, polygon } from '@zpup/core'; // optional typed helpers
 
 renderSvg(scene, { precision: 2 }) // -> "<svg ...>...</svg>\n" (pure, deterministic)
 checkScene(scene)                  // -> ValidationIssue[] (empty when valid), never throws
 compileScene(scene)                // -> Frame: projected, depth-sorted 2D draw items
+renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene forever (SMIL, no JavaScript)
 ```
 
-`renderSvg` and `compileScene` throw `ZpupValidationError` on invalid input. Its `message` lists every problem; `issues` has `{ path, expected, received, hint, message }` for each.
+`renderSvg`, `renderSpinSvg` and `compileScene` throw `ZpupValidationError` on invalid input. Its `message` lists every problem; `issues` has `{ path, expected, received, hint, message }` for each.
 
 ## Conventions
 
@@ -76,6 +77,22 @@ Shapes are painted back to front. Overlapping shapes are compared where they ove
 
 Place details slightly in front of the surface they sit on: an eye on a sphere of stroke 40 goes at `z` around 18 to 20.
 
+## Turning animation
+
+`renderSpinSvg(scene, options)` returns one SVG document that turns the view a full circle, forever, with SMIL animation and no JavaScript. It plays inside `<img>` and GitHub READMEs. Without SMIL support the first frame shows, identical to `renderSvg(scene)`.
+
+```ts
+{
+  axis?: 'x' | 'y' | 'z',              // default 'y': adds the turning angle to scene.rotate.y (a turntable)
+  duration?: number,                   // seconds per turn, >= 0.1, default 8
+  keyframes?: number,                  // integer 4..720, default 36; more = smoother and larger
+  direction?: 'positive' | 'negative', // default 'positive': the angle grows
+  precision?: number,                  // integer 0..10, default 1
+}
+```
+
+Unknown or invalid options throw `ZpupValidationError` with paths such as `options.duration`. Only a constant turn about one axis is possible; nothing else in the scene moves. Keep scenes small (tens of shapes): file size grows with the number of pieces and of overlapping pairs. Use opaque colors; translucent outlines show seams.
+
 ## Examples
 
 Sphere with a ring:
@@ -134,4 +151,4 @@ A longer example lives in `examples/pup.ts`.
 
 ## Not available yet
 
-Canvas rendering, animation, perspective, React or other framework bindings.
+Canvas rendering, animation other than `renderSpinSvg`'s constant turn, perspective, React or other framework bindings.

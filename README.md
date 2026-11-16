@@ -4,13 +4,15 @@ A modern, AI-friendly pseudo-3D engine for the web, inspired by [Zdog](https://z
 
 Pronounced "zee-pup".
 
-![A small sitting pup drawn with zpup](examples/pup.svg)
+![A small sitting pup drawn with zpup, turning around](examples/pup-spin.svg)
+
+The pup above is a single SVG file with no JavaScript. It was rendered by `renderSpinSvg` from [a short scene description](examples/pup.ts) and turns in current browsers, including inside a GitHub README.
 
 ## Status
 
 Early work in progress. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested, but the API may still change. The npm package is `@zpup/core`. Its `0.0.0` release only reserves the name; nothing usable is published yet.
 
-Not built yet: a canvas renderer, animation, and framework bindings.
+Not built yet: a canvas renderer, general animation, and framework bindings. The one animation available is a constant turn about one axis (see [Turning in place](#turning-in-place)).
 
 ## Install
 
@@ -27,7 +29,11 @@ Once published it will be `npm install @zpup/core`. zpup is ESM-only and has no 
 
 ## Usage
 
-A scene is a plain object tree. `renderSvg` turns it into an SVG string, with no DOM, so it works on a server and the first paint needs no JavaScript.
+A scene is a plain object tree. `renderSvg` turns it into an SVG string, with no DOM, so it works on a server and the first paint needs no JavaScript. Here is the pup from the top as a still picture, `renderSvg(pup)`:
+
+![A small sitting pup drawn with zpup](examples/pup.svg)
+
+A smaller scene:
 
 ```ts
 import { dot, ellipse, renderSvg } from '@zpup/core';
@@ -65,6 +71,33 @@ The helpers only add a `type` field, so the same scene can be written, stored an
 - **Shapes:** `color`, `stroke` (round-capped width; thick strokes give volume) and `fill`.
 - **Errors:** an invalid scene throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. `checkScene(scene)` returns the same list without throwing.
 
+### Turning in place
+
+`renderSpinSvg` returns an SVG that turns the scene one full rotation, forever, using SMIL animation. It needs no JavaScript, so it also plays inside an `<img>` tag and in a GitHub README.
+
+```ts
+import { renderSpinSvg } from '@zpup/core';
+
+const svg = renderSpinSvg(scene, {
+  axis: 'y', // which angle of scene.rotate turns: 'x', 'y' (default, a turntable) or 'z'
+  duration: 8, // seconds per turn
+  keyframes: 36, // exact angles per turn; the browser interpolates in between
+  direction: 'positive', // or 'negative'
+  precision: 1, // decimals kept in coordinates
+});
+```
+
+Every option is optional, and bad values throw a `ZpupValidationError` like an invalid scene does. Renderers without SMIL show the first frame, which is the same picture `renderSvg` draws.
+
+Limits:
+
+- Only a constant-speed turn about one axis. Nothing else moves, and there is no interaction or pausing.
+- It does not respect `prefers-reduced-motion`; SMIL cannot query it. A page that cares can show the still picture instead with a `<picture>` element and a `(prefers-reduced-motion: reduce)` media query.
+- Outlines are drawn one segment at a time, so a translucent color shows darker spots where the segments meet.
+- File size grows quickly with the number of pieces: every piece is listed once per change of paint order, and those changes grow with the number of overlapping pairs. The pup (19 pieces) is 54 KB, 11 KB gzipped. Lower `keyframes` and `precision` make it smaller.
+
+See [docs/decisions.md](docs/decisions.md#turning-animation) for how it works.
+
 There is no lighting and no perspective, by design. See [docs/decisions.md](docs/decisions.md) for the reasoning behind these and other choices, and [llms.txt](llms.txt) for a compact reference written for AI coding tools.
 
 ## Goals
@@ -85,7 +118,7 @@ pnpm test        # unit and snapshot tests
 pnpm typecheck
 pnpm lint
 pnpm build       # writes dist/
-pnpm example     # writes examples/pup.svg
+pnpm example     # writes examples/pup.svg and examples/pup-spin.svg
 ```
 
 ## Credits
