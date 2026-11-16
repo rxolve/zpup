@@ -56,9 +56,37 @@ interface Analyzed {
   readonly maxY: number;
   /** Mean depth of the outline, used when overlap gives no answer. */
   readonly meanDepth: number;
+  /** Built on the first call to {@link depthAt}. */
+  bands?: Bands;
 }
 
+/**
+ * The shape's stroke segments and outline edges sorted into horizontal bands,
+ * so that a depth query only looks at those that can reach its row. Which
+ * segments and edges are skipped changes nothing: a skipped segment is too far
+ * away to count, and a skipped edge does not cross the row.
+ */
+interface Bands {
+  readonly minY: number;
+  readonly height: number;
+  /** Indices into `segments`, per band. Empty when the stroke has no width. */
+  readonly segments: readonly (readonly number[])[];
+  /** Indices `i` of outline edges from `points[i - 1]` (or the last point) to `points[i]`, per band. */
+  readonly edges: readonly (readonly number[])[];
+}
+
+/** Extra reach for band membership, well above the {@link EPSILON} slack in the stroke test. */
+const BAND_MARGIN = 0.01;
+
 const EPSILON = 1e-6;
+
+/**
+ * How much work the sorter has done since the counters were last reset:
+ * calls to {@link depthOrder}, pairs compared, and of those the pairs that
+ * needed the area grid of a round surface. Not part of the public API; tests
+ * use it to catch performance regressions without timing anything.
+ */
+export const depthWork = { sorts: 0, comparisons: 0, roundComparisons: 0 };
 
 function analyze(shape: DepthShape, index: number): Analyzed {
   const { points, radius } = shape;
@@ -128,11 +156,48 @@ function fitPlane(points: readonly Vec3[]): Plane | undefined {
   return { center: { x: cx / n, y: cy / n, z: cz / n }, normal: { x: nx, y: ny, z: nz } };
 }
 
-function insidePolygon(points: readonly Vec3[], x: number, y: number): boolean {
+function buildBands(s: Analyzed): Bands {
+  const count = Math.max(
+    1,
+    Math.min(64, Math.ceil(Math.max(s.segments.length, s.points.length) / 2)),
+  );
+  const minY = s.minY;
+  const height = Math.max((s.maxY - s.minY) / count, EPSILON);
+  const band = (y: number) => Math.min(count - 1, Math.max(0, Math.floor((y - minY) / height)));
+  const fill = (lists: number[][], lo: number, hi: number, value: number) => {
+    for (let k = band(lo); k <= band(hi); k++) (lists[k] as number[]).push(value);
+  };
+  const segments: number[][] = Array.from({ length: count }, () => []);
+  if (s.radius > 0) {
+    const reach = s.radius + BAND_MARGIN;
+    s.segments.forEach(([a, b], i) => {
+      fill(segments, Math.min(a.y, b.y) - reach, Math.max(a.y, b.y) + reach, i);
+    });
+  }
+  const edges: number[][] = Array.from({ length: count }, () => []);
+  if (s.area) {
+    const { points } = s;
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+      const a = points[i] as Vec3;
+      const b = points[j] as Vec3;
+      fill(edges, Math.min(a.y, b.y), Math.max(a.y, b.y), i);
+    }
+  }
+  return { minY, height, segments, edges };
+}
+
+function bandOf(bands: Bands, y: number): number {
+  const k = Math.floor((y - bands.minY) / bands.height);
+  return Math.min(bands.segments.length - 1, Math.max(0, k));
+}
+
+/** Even-odd test over the outline edges that can cross row `y`. */
+function insideBand(s: Analyzed, edges: readonly number[], x: number, y: number): boolean {
+  const { points } = s;
   let inside = false;
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+  for (const i of edges) {
     const a = points[i] as Vec3;
-    const b = points[j] as Vec3;
+    const b = points[i === 0 ? points.length - 1 : i - 1] as Vec3;
     if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
   }
   return inside;
@@ -146,10 +211,15 @@ function insidePolygon(points: readonly Vec3[], x: number, y: number): boolean {
  * solids, whose exact depth is known.
  */
 function depthAt(s: Analyzed, x: number, y: number): number | undefined {
+  s.bands ??= buildBands(s);
+  const k = bandOf(s.bands, y);
   let best: number | undefined;
   const r2 = s.radius * s.radius;
   if (s.radius > 0) {
-    for (const [a, b] of s.segments) {
+    for (const i of s.bands.segments[k] as number[]) {
+      const segment = s.segments[i] as readonly [Vec3, Vec3];
+      const a = segment[0];
+      const b = segment[1];
       const t = closestT(a, b, x, y);
       const px = a.x + (b.x - a.x) * t;
       const py = a.y + (b.y - a.y) * t;
@@ -160,7 +230,7 @@ function depthAt(s: Analyzed, x: number, y: number): number | undefined {
       }
     }
   }
-  if (s.area && insidePolygon(s.points, x, y)) {
+  if (s.area && insideBand(s, s.bands.edges[k] as number[], x, y)) {
     const z = s.plane
       ? s.plane.center.z -
         (s.plane.normal.x * (x - s.plane.center.x) + s.plane.normal.y * (y - s.plane.center.y)) /
@@ -169,6 +239,76 @@ function depthAt(s: Analyzed, x: number, y: number): number | undefined {
     if (z !== undefined && (best === undefined || z > best)) best = z;
   }
   return best;
+}
+
+/**
+ * {@link depthAt} for the points `(xs[i], y)` of one row, written to `out`
+ * with the same arithmetic, and NaN where depthAt gives undefined (depths are
+ * never NaN). Only points where `need[i]` is not NaN (or all, when `need` is
+ * not given) are computed; the others are left NaN. The band and the outline
+ * crossings of the row are found once for the whole row.
+ */
+function rowDepths(
+  s: Analyzed,
+  y: number,
+  xs: Float64Array,
+  out: Float64Array,
+  need?: Float64Array,
+): void {
+  s.bands ??= buildBands(s);
+  const k = bandOf(s.bands, y);
+  const count = xs.length;
+  out.fill(Number.NaN);
+  const r2 = s.radius * s.radius;
+  if (s.radius > 0) {
+    for (const index of s.bands.segments[k] as number[]) {
+      const segment = s.segments[index] as readonly [Vec3, Vec3];
+      const a = segment[0];
+      const b = segment[1];
+      // Points farther than the stroke from the segment's columns cannot pass.
+      const left = Math.min(a.x, b.x) - s.radius - BAND_MARGIN;
+      const right = Math.max(a.x, b.x) + s.radius + BAND_MARGIN;
+      for (let i = 0; i < count; i++) {
+        if (need && Number.isNaN(need[i] as number)) continue;
+        const x = xs[i] as number;
+        if (x < left || x > right) continue;
+        const t = closestT(a, b, x, y);
+        const px = a.x + (b.x - a.x) * t;
+        const py = a.y + (b.y - a.y) * t;
+        const d2 = (x - px) ** 2 + (y - py) ** 2;
+        if (d2 <= r2 + EPSILON) {
+          const z = a.z + (b.z - a.z) * t + Math.sqrt(Math.max(0, r2 - d2));
+          const best = out[i] as number;
+          if (Number.isNaN(best) || z > best) out[i] = z;
+        }
+      }
+    }
+  }
+  if (!s.area) return;
+  // Where the row crosses the outline: a point is inside when an odd number
+  // of crossings lie to its right, as in the even-odd test of depthAt.
+  const crossings: number[] = [];
+  const { points } = s;
+  for (const index of s.bands.edges[k] as number[]) {
+    const a = points[index] as Vec3;
+    const b = points[index === 0 ? points.length - 1 : index - 1] as Vec3;
+    if (a.y > y !== b.y > y) crossings.push(((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x);
+  }
+  if (crossings.length === 0) return;
+  for (let i = 0; i < count; i++) {
+    if (need && Number.isNaN(need[i] as number)) continue;
+    const x = xs[i] as number;
+    let inside = false;
+    for (const c of crossings) if (x < c) inside = !inside;
+    if (!inside) continue;
+    const z = s.plane
+      ? s.plane.center.z -
+        (s.plane.normal.x * (x - s.plane.center.x) + s.plane.normal.y * (y - s.plane.center.y)) /
+          s.plane.normal.z
+      : s.surface && surfaceDepth(s.surface, x, y);
+    const best = out[i] as number;
+    if (z !== undefined && (Number.isNaN(best) || z > best)) out[i] = z;
+  }
 }
 
 /** Parameter of the point on segment ab closest to (x, y), in screen space. */
@@ -193,17 +333,33 @@ function intersection(a: Vec3, b: Vec3, c: Vec3, d: Vec3): [number, number] | un
   return [a.x + rx * t, a.y + ry * t];
 }
 
-/** Closest pair of points between two screen-space segments. */
-function closestPair(a: Vec3, b: Vec3, c: Vec3, d: Vec3): [number, number, number, number] {
+/**
+ * Closest pair of points between two screen-space segments, written to `out`
+ * as `[px, py, qx, qy]` (a point on `ab`, then one on `cd`). Writing into one
+ * reused array avoids an allocation per pair of segments.
+ */
+function closestPair(a: Vec3, b: Vec3, c: Vec3, d: Vec3, out: Float64Array): void {
   const hit = intersection(a, b, c, d);
-  if (hit) return [hit[0], hit[1], hit[0], hit[1]];
-  let best: [number, number, number, number] = [a.x, a.y, c.x, c.y];
+  if (hit) {
+    out[0] = hit[0];
+    out[1] = hit[1];
+    out[2] = hit[0];
+    out[3] = hit[1];
+    return;
+  }
+  out[0] = a.x;
+  out[1] = a.y;
+  out[2] = c.x;
+  out[3] = c.y;
   let bestDistance = Number.POSITIVE_INFINITY;
   const consider = (px: number, py: number, qx: number, qy: number) => {
     const dist = (px - qx) ** 2 + (py - qy) ** 2;
     if (dist < bestDistance) {
       bestDistance = dist;
-      best = [px, py, qx, qy];
+      out[0] = px;
+      out[1] = py;
+      out[2] = qx;
+      out[3] = qy;
     }
   };
   const onSegment = (p: Vec3, r: Vec3, s: Vec3, flip: boolean) => {
@@ -217,8 +373,9 @@ function closestPair(a: Vec3, b: Vec3, c: Vec3, d: Vec3): [number, number, numbe
   onSegment(b, c, d, false);
   onSegment(c, a, b, true);
   onSegment(d, a, b, true);
-  return best;
 }
+
+const pair = new Float64Array(4);
 
 /** Screen points where two shapes are likely to overlap. */
 function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
@@ -233,7 +390,11 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
     for (const [r, s] of b.segments) {
       // The middle of the region where the two round strokes overlap,
       // measured along the line between their closest points.
-      const [px, py, qx, qy] = closestPair(p, q, r, s);
+      closestPair(p, q, r, s, pair);
+      const px = pair[0] as number;
+      const py = pair[1] as number;
+      const qx = pair[2] as number;
+      const qy = pair[3] as number;
       const distance = Math.hypot(qx - px, qy - py);
       if (distance === 0) {
         samples.push([px, py]);
@@ -271,7 +432,10 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
 function compare(a: Analyzed, b: Analyzed): number {
   if (a.maxX < b.minX || b.maxX < a.minX || a.maxY < b.minY || b.maxY < a.minY) return 0;
   if (a.solid !== undefined && a.solid === b.solid) return Math.sign(a.layer - b.layer);
-  if (a.surface || b.surface) return compareRound(a, b);
+  if (a.surface || b.surface) {
+    depthWork.roundComparisons++;
+    return compareRound(a, b);
+  }
   let front = 0;
   let behind = 0;
   let total = 0;
@@ -293,6 +457,9 @@ function compare(a: Analyzed, b: Analyzed): number {
 
 /** Grid points per side used to estimate overlapping area against a round surface. */
 const AREA_GRID = 12;
+const gridXs = new Float64Array(AREA_GRID);
+const gridA = new Float64Array(AREA_GRID);
+const gridB = new Float64Array(AREA_GRID);
 
 /**
  * {@link compare} for pairs where one shape is the round surface of a solid.
@@ -312,16 +479,20 @@ function compareRound(a: Analyzed, b: Analyzed): number {
   const maxY = Math.min(a.maxY, b.maxY);
   let front = 0;
   let behind = 0;
-  for (let i = 0; i < AREA_GRID; i++) {
-    for (let j = 0; j < AREA_GRID; j++) {
-      const x = minX + ((maxX - minX) * (i + 0.5)) / AREA_GRID;
-      const y = minY + ((maxY - minY) * (j + 0.5)) / AREA_GRID;
-      const za = depthAt(a, x, y);
-      if (za === undefined) continue;
-      const zb = depthAt(b, x, y);
-      if (zb === undefined) continue;
-      if (za - zb > EPSILON) front++;
-      else if (zb - za > EPSILON) behind++;
+  const xs = gridXs;
+  for (let i = 0; i < AREA_GRID; i++) xs[i] = minX + ((maxX - minX) * (i + 0.5)) / AREA_GRID;
+  const za = gridA;
+  const zb = gridB;
+  for (let j = 0; j < AREA_GRID; j++) {
+    const y = minY + ((maxY - minY) * (j + 0.5)) / AREA_GRID;
+    rowDepths(a, y, xs, za);
+    rowDepths(b, y, xs, zb, za);
+    for (let i = 0; i < AREA_GRID; i++) {
+      const da = za[i] as number;
+      const db = zb[i] as number;
+      if (Number.isNaN(da) || Number.isNaN(db)) continue;
+      if (da - db > EPSILON) front++;
+      else if (db - da > EPSILON) behind++;
     }
   }
   if (front !== behind) return front > behind ? 1 : -1;
@@ -350,8 +521,18 @@ function compareRound(a: Analyzed, b: Analyzed): number {
  * lowest mean depth. When several shapes are free to go next, the one that
  * continues the previous shape (see {@link DepthShape.follows}) wins. The
  * result is fully deterministic.
+ *
+ * `mayOverlap(i, j)`, when given, says whether shapes `i < j` can cover a
+ * common point at all. It must never answer false for shapes that do; a pair
+ * it rules out is not compared, which gives the same result as comparing it
+ * (no common point, so no answer) without the cost. Faces of one solid are
+ * ordered by rule and always compared.
  */
-export function depthOrder(shapes: readonly DepthShape[]): number[] {
+export function depthOrder(
+  shapes: readonly DepthShape[],
+  mayOverlap?: (i: number, j: number) => boolean,
+): number[] {
+  depthWork.sorts++;
   const items = shapes.map(analyze);
   const n = items.length;
   // after[i] lists shapes that must be painted after shape i.
@@ -359,7 +540,12 @@ export function depthOrder(shapes: readonly DepthShape[]): number[] {
   const blockers = new Array<number>(n).fill(0);
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      const result = compare(items[i] as Analyzed, items[j] as Analyzed);
+      const a = items[i] as Analyzed;
+      const b = items[j] as Analyzed;
+      const sameSolid = a.solid !== undefined && a.solid === b.solid;
+      if (mayOverlap && !sameSolid && !mayOverlap(i, j)) continue;
+      depthWork.comparisons++;
+      const result = compare(a, b);
       if (result > 0) {
         (after[j] as number[]).push(i);
         blockers[i] = (blockers[i] ?? 0) + 1;

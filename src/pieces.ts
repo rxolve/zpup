@@ -181,13 +181,33 @@ export function paintConstraints(pieces: readonly Piece[]): {
   pieces.forEach((p, i) => {
     (p.backfacing ? back : front).push(i);
   });
-  const frontOrder = depthOrder(depthShapes(front.map((i) => pieces[i] as Piece))).map(
-    (k) => front[k] as number,
-  );
+  const bounds = pieces.map(pieceBounds);
+  const outlines = pieces.map(outline);
+  // Whether two pieces overlap is asked twice for the same pairs: by the
+  // sorter, which then skips pairs that cannot meet, and for the constraints.
+  const n = pieces.length;
+  const known = new Int8Array(n * n);
+  const overlap = (a: number, b: number): boolean => {
+    const key = a < b ? a * n + b : b * n + a;
+    if (known[key] === 0) {
+      const yes = piecesOverlap(
+        pieces[a] as Piece,
+        pieces[b] as Piece,
+        bounds[a],
+        bounds[b],
+        outlines[a],
+        outlines[b],
+      );
+      known[key] = yes ? 1 : -1;
+    }
+    return known[key] === 1;
+  };
+  const frontOrder = depthOrder(depthShapes(front.map((i) => pieces[i] as Piece)), (i, j) =>
+    overlap(front[i] as number, front[j] as number),
+  ).map((k) => front[k] as number);
   const order = [...back, ...frontOrder];
   const position = positions(order);
   const constraints: [number, number][] = [];
-  const bounds = pieces.map(pieceBounds);
   for (let a = 0; a < pieces.length; a++) {
     for (let b = a + 1; b < pieces.length; b++) {
       const pa = pieces[a] as Piece;
@@ -199,7 +219,7 @@ export function paintConstraints(pieces: readonly Piece[]): {
         // Faces of one solid that both face the viewer only share edges.
         continue;
       }
-      if (!piecesOverlap(pa, pb, bounds[a], bounds[b])) continue;
+      if (!overlap(a, b)) continue;
       constraints.push((position[a] as number) < (position[b] as number) ? [a, b] : [b, a]);
     }
   }
@@ -240,26 +260,60 @@ export function piecesOverlap(
   b: Piece,
   ba: Bounds = pieceBounds(a),
   bb: Bounds = pieceBounds(b),
+  oa: readonly Segment2[] = outline(a),
+  ob: readonly Segment2[] = outline(b),
 ): boolean {
   if (ba.maxX < bb.minX || bb.maxX < ba.minX || ba.maxY < bb.minY || bb.maxY < ba.minY) {
     return false;
   }
   const reach = a.stroke / 2 + b.stroke / 2 + OVERLAP_SLACK;
-  const sa = outline(a);
-  const sb = outline(b);
-  for (const p of a.points)
+  // Only points and segments inside the other piece's bounds can meet it.
+  // The bounds already reach out by that piece's own stroke and the slack,
+  // so they are widened by the rest of `reach`, and a little more for
+  // rounding.
+  const wa = widen(ba, b.stroke / 2 + BOUNDS_MARGIN);
+  const wb = widen(bb, a.stroke / 2 + BOUNDS_MARGIN);
+  const sa = oa.filter((s) => segmentMeets(s, wb));
+  const sb = ob.filter((s) => segmentMeets(s, wa));
+  for (const p of a.points) {
+    if (!contains(wb, p)) continue;
     for (const [q, r] of sb) if (distanceToSegment(p, q, r) <= reach) return true;
-  for (const p of b.points)
+  }
+  for (const p of b.points) {
+    if (!contains(wa, p)) continue;
     for (const [q, r] of sa) if (distanceToSegment(p, q, r) <= reach) return true;
+  }
   for (const [p, q] of sa) for (const [r, t] of sb) if (segmentsCross(p, q, r, t)) return true;
-  if (a.fill && b.points.some((p) => insidePolygon(a.points, p))) return true;
-  if (b.fill && a.points.some((p) => insidePolygon(b.points, p))) return true;
+  if (a.fill && b.points.some((p) => contains(ba, p) && insidePolygon(a.points, p))) return true;
+  if (b.fill && a.points.some((p) => contains(bb, p) && insidePolygon(b.points, p))) return true;
   return false;
 }
 
-function outline(p: Piece): [Vec3, Vec3][] {
+/** Rounding allowance for the bounds tests in {@link piecesOverlap}. */
+const BOUNDS_MARGIN = 1e-6;
+
+function widen(b: Bounds, by: number): Bounds {
+  return { minX: b.minX - by, maxX: b.maxX + by, minY: b.minY - by, maxY: b.maxY + by };
+}
+
+function contains(b: Bounds, p: Vec3): boolean {
+  return p.x >= b.minX && p.x <= b.maxX && p.y >= b.minY && p.y <= b.maxY;
+}
+
+function segmentMeets([p, q]: Segment2, b: Bounds): boolean {
+  return (
+    Math.max(p.x, q.x) >= b.minX &&
+    Math.min(p.x, q.x) <= b.maxX &&
+    Math.max(p.y, q.y) >= b.minY &&
+    Math.min(p.y, q.y) <= b.maxY
+  );
+}
+
+type Segment2 = readonly [Vec3, Vec3];
+
+function outline(p: Piece): Segment2[] {
   const { points } = p;
-  const segments: [Vec3, Vec3][] = [];
+  const segments: Segment2[] = [];
   for (let i = 0; i + 1 < points.length; i++)
     segments.push([points[i] as Vec3, points[i + 1] as Vec3]);
   if ((p.fill || p.geometry.closed) && points.length > 2) {

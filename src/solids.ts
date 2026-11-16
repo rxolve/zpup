@@ -407,69 +407,104 @@ export function surfaceDepth(s: Surface, x: number, y: number): number | undefin
   const dy = m[5];
   const dz = m[8];
   const r = s.radius;
-  let pieces: [number, number][];
-  let slab: [number, number] | undefined;
+  let count: number;
+  let slabbed: boolean;
   if (s.kind === 'cylinder') {
-    pieces = quadratic(dx * dx + dy * dy, 2 * (px * dx + py * dy), px * px + py * py - r * r);
-    slab = linear(pz, dz, -s.length / 2, s.length / 2);
+    count = quadratic(dx * dx + dy * dy, 2 * (px * dx + py * dy), px * px + py * py - r * r);
+    slabbed = linear(pz, dz, -s.length / 2, s.length / 2);
   } else if (s.kind === 'cone') {
     if (s.length <= 0) return undefined;
     const k = r / s.length;
     const q = r - k * pz;
-    pieces = quadratic(
+    count = quadratic(
       dx * dx + dy * dy - k * k * dz * dz,
       2 * (px * dx + py * dy) + 2 * q * k * dz,
       px * px + py * py - q * q,
     );
-    slab = linear(pz, dz, 0, s.length);
+    slabbed = linear(pz, dz, 0, s.length);
   } else {
-    pieces = quadratic(
+    count = quadratic(
       dx * dx + dy * dy + dz * dz,
       2 * (px * dx + py * dy + pz * dz),
       px * px + py * py + pz * pz - r * r,
     );
-    slab = linear(pz, dz, 0, Number.POSITIVE_INFINITY);
+    slabbed = linear(pz, dz, 0, Number.POSITIVE_INFINITY);
   }
-  if (!slab) return undefined;
+  if (!slabbed) return undefined;
   let front: number | undefined;
-  for (const [lo, hi] of pieces) {
-    const a = Math.max(lo, slab[0]);
-    const b = Math.min(hi, slab[1]);
+  for (let i = 0; i < count; i++) {
+    const a = Math.max(intervals[2 * i] as number, slab[0] as number);
+    const b = Math.min(intervals[2 * i + 1] as number, slab[1] as number);
     if (a <= b && Number.isFinite(b) && (front === undefined || b > front)) front = b;
   }
   return front;
 }
 
-/** The values of s where `z0 + s * dz` lies in [lo, hi]. */
-function linear(z0: number, dz: number, lo: number, hi: number): [number, number] | undefined {
+// Scratch space for surfaceDepth, which runs for every sample point of the
+// depth sorter: the intervals found by `quadratic` and by `linear`.
+const intervals = new Float64Array(4);
+const slab = new Float64Array(2);
+
+/**
+ * The values of s where `z0 + s * dz` lies in [lo, hi], written to `slab`.
+ * Returns false when there are none.
+ */
+function linear(z0: number, dz: number, lo: number, hi: number): boolean {
   if (Math.abs(dz) < 1e-12) {
-    return z0 >= lo && z0 <= hi ? [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY] : undefined;
+    if (!(z0 >= lo && z0 <= hi)) return false;
+    slab[0] = Number.NEGATIVE_INFINITY;
+    slab[1] = Number.POSITIVE_INFINITY;
+    return true;
   }
   const a = (lo - z0) / dz;
   const b = (hi - z0) / dz;
-  return a < b ? [a, b] : [b, a];
+  if (a < b) {
+    slab[0] = a;
+    slab[1] = b;
+  } else {
+    slab[0] = b;
+    slab[1] = a;
+  }
+  return true;
 }
 
-/** The intervals of s where `a s^2 + b s + c <= 0`. */
-function quadratic(a: number, b: number, c: number): [number, number][] {
-  const all: [number, number] = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY];
+/**
+ * The intervals of s where `a s^2 + b s + c <= 0`, written to `intervals` as
+ * pairs of ends. Returns how many there are (0, 1 or 2).
+ */
+function quadratic(a: number, b: number, c: number): number {
+  const set = (i: number, lo: number, hi: number) => {
+    intervals[2 * i] = lo;
+    intervals[2 * i + 1] = hi;
+  };
   const scale = Math.max(1, Math.abs(b), Math.abs(c));
   if (Math.abs(a) < 1e-10 * scale) {
-    if (Math.abs(b) < 1e-12) return c <= 0 ? [all] : [];
+    if (Math.abs(b) < 1e-12) {
+      if (!(c <= 0)) return 0;
+      set(0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY);
+      return 1;
+    }
     const root = -c / b;
-    return b > 0 ? [[Number.NEGATIVE_INFINITY, root]] : [[root, Number.POSITIVE_INFINITY]];
+    if (b > 0) set(0, Number.NEGATIVE_INFINITY, root);
+    else set(0, root, Number.POSITIVE_INFINITY);
+    return 1;
   }
   const disc = b * b - 4 * a * c;
-  if (disc < 0) return a > 0 ? [] : [all];
+  if (disc < 0) {
+    if (a > 0) return 0;
+    set(0, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY);
+    return 1;
+  }
   const sq = Math.sqrt(disc);
   const r1 = (-b - sq) / (2 * a);
   const r2 = (-b + sq) / (2 * a);
   const lo = Math.min(r1, r2);
   const hi = Math.max(r1, r2);
-  return a > 0
-    ? [[lo, hi]]
-    : [
-        [Number.NEGATIVE_INFINITY, lo],
-        [hi, Number.POSITIVE_INFINITY],
-      ];
+  if (a > 0) {
+    set(0, lo, hi);
+    return 1;
+  }
+  set(0, Number.NEGATIVE_INFINITY, lo);
+  set(1, hi, Number.POSITIVE_INFINITY);
+  return 2;
 }
