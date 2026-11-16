@@ -69,7 +69,7 @@ Solids (`box`, `cylinder`, `cone`, `hemisphere`) are always filled and take `col
 
 Path entries are points `{ x?, y?, z? }` or cubic curves `{ "bezier": [control1, control2, end] }`. The first entry must be a point.
 
-Helpers: `group(o)`, `path(o)`, `ellipse(o)`, `rect(o)`, `polygon(o)` return `{ ...o, type }`. `dot(o)` returns a `path` with `path: [{}]`.
+Helpers: `group(o)`, `ellipse(o)`, `box(o)` and the rest return `{ type, ...o }`; `dot(o)` returns a `path` with `path: [{}]`.
 
 ## How to get volume
 

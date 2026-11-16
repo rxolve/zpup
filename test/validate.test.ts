@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { checkScene, renderSvg, type Scene, ZpupValidationError } from '../src/index.ts';
+import {
+  box,
+  checkScene,
+  dot,
+  ellipse,
+  group,
+  renderSvg,
+  type Scene,
+  ZpupValidationError,
+} from '../src/index.ts';
 
 const messages = (input: unknown) => checkScene(input).map((i) => i.message);
 
@@ -215,6 +224,14 @@ describe('validation', () => {
       `scene.children[0].children[0].path[0].x (in node "eye"): ${issue?.detail}`,
     );
     expect(issue?.detail).toMatch(/^expected a finite number, received "a"\./);
+  });
+
+  it('puts "type" first in the objects the helpers return', () => {
+    expect(Object.keys(group({ id: 'g', children: [] }))).toEqual(['type', 'id', 'children']);
+    expect(Object.keys(dot({ id: 'd', stroke: 4 }))).toEqual(['type', 'id', 'stroke', 'path']);
+    expect(Object.keys(box({ width: 1, height: 1, depth: 1 }))[0]).toBe('type');
+    // The helper's type wins over one smuggled in through the options.
+    expect(ellipse({ type: 'rect', diameter: 2 } as never).type).toBe('ellipse');
   });
 
   it('throws a ZpupValidationError with structured issues', () => {

@@ -53,25 +53,10 @@ for (const file of readdirSync(root('dist'))) {
 copyFileSync(root('playground/style.css'), `${out}/style.css`);
 copyFileSync(root('llms.txt'), `${out}/llms.txt`);
 
-/**
- * Puts `type` and `id` first in every node: the helpers in examples/ add
- * `type` last, but it reads better first when the scene is JSON.
- */
-function typeFirst(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(typeFirst);
-  if (value === null || typeof value !== 'object') return value;
-  const { type, id, ...rest } = value as Record<string, unknown>;
-  const ordered: Record<string, unknown> = {};
-  if (type !== undefined) ordered.type = type;
-  if (id !== undefined) ordered.id = id;
-  for (const [k, v] of Object.entries(rest)) ordered[k] = typeFirst(v);
-  return ordered;
-}
-
 const scenes: Record<string, Scene> = { hello, pup, lighthouse };
 const examples: Record<string, string> = {};
 for (const [name, scene] of Object.entries(scenes)) {
-  examples[name] = formatJson(typeFirst(scene));
+  examples[name] = formatJson(scene);
 }
 const first = 'hello';
 
