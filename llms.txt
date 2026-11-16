@@ -8,10 +8,11 @@ The npm package is `@zpup/core`.
 
 ```ts
 import { renderSvg, renderSpinSvg, checkScene, compileScene, ZpupValidationError } from '@zpup/core';
-import { group, path, dot, ellipse, rect, polygon } from '@zpup/core'; // optional typed helpers
+import { group, path, dot, ellipse, rect, polygon, box, cylinder, cone, hemisphere } from '@zpup/core'; // optional typed helpers
 
 renderSvg(scene, { precision: 2 }) // -> "<svg ...>...</svg>\n" (pure, deterministic)
 checkScene(scene)                  // -> ValidationIssue[] (empty when valid), never throws
+checkSceneWarnings(scene)          // -> ValidationIssue[]: valid but suspicious (radians, off-screen, draws nothing)
 compileScene(scene)                // -> Frame: projected, depth-sorted 2D draw items
 renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene forever (SMIL, no JavaScript)
 ```
@@ -28,7 +29,7 @@ renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene foreve
   - `rotate.x > 0`: the bottom (+y) side moves toward the viewer. `scene.rotate = { x: -15 }` looks down from above.
 - Vectors are objects with optional keys: `{ x: 10 }`, `{ y: -5, z: 2 }`, `{}`. Arrays such as `[1, 2, 3]` are rejected.
 - Node transform order: scale, then rotate, then translate. Children inherit the parent's transform.
-- Projection is orthographic. There is no perspective, lighting, shading or backface option.
+- Projection is orthographic. There is no perspective and no lighting.
 - Unknown options are errors (this catches typos such as `colour`).
 
 ## Scene
@@ -58,6 +59,12 @@ Every shape (all types except `group`): `color?` (CSS color, default `"#333"`), 
 | `ellipse` | `diameter`, or `width` and `height` | Circle or ellipse in the local x/y plane. |
 | `rect` | `width`, `height` (required) | Centered on the origin, in the local x/y plane. |
 | `polygon` | `sides` (integer >= 3), `radius` (required) | Regular polygon, one corner pointing up. |
+| `box` | `width`, `height`, `depth` (required); `frontFace`, `rearFace`, `leftFace`, `rightFace`, `topFace`, `bottomFace` | Centered. Faces: front +z, top -y. |
+| `cylinder` | `diameter`, `length` (required); `frontFace` (+z end), `backface` (-z end) | Along local z, centered. |
+| `cone` | `diameter`, `length` (required); `backface` (base) | Base at z = 0, tip at z = length. |
+| `hemisphere` | `diameter` (required); `backface` (flat side) | Flat side at z = 0, dome toward +z. |
+
+Solids (`box`, `cylinder`, `cone`, `hemisphere`) are always filled and take `color`, `stroke` (default 1, rounds the edges) and `shade?` (default true). Each face gets a fixed lighter or darker version of `color` by the direction it points in the scene (up lighter, down darker, left and right different), so one color reads as 3D. Face options set one face's exact color. `shade: false` paints every face in `color`. Like Zdog, round solids point along z: `rotate: { x: 90 }` stands them up (the +z end, `frontFace`, goes on top).
 
 Path entries are points `{ x?, y?, z? }` or cubic curves `{ "bezier": [control1, control2, end] }`. The first entry must be a point.
 
@@ -70,10 +77,14 @@ Helpers: `group(o)`, `path(o)`, `ellipse(o)`, `rect(o)`, `polygon(o)` return `{ 
 - Disc or plate: `ellipse({ diameter, fill: true })`, optionally with a stroke for a rounded rim.
 - Ring: `ellipse({ diameter, stroke })` without fill. Rotate it with `rotate: { x: 90 }` to lay it flat.
 - Lay a flat shape on the ground with `rotate: { x: 90 }`.
+- Mug: `{ "type": "cylinder", "diameter": 80, "length": 90, "rotate": { "x": 90 }, "color": "#4a7bd0", "frontFace": "#5b3a29" }` (coffee on top), plus a thick `path` for the handle.
+- Roof or rocket nose: a `cone` with `rotate: { x: 90 }`, placed on the top of a cylinder.
+- Dome or rock: `hemisphere` with `rotate: { x: 90 }`; `scale: { z: 0.5 }` flattens it.
+- Crate, building, robot parts: `box`. Stack solids so they touch on flat faces.
 
 ## Depth sorting
 
-Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Coplanar shapes keep tree order (later children paint on top).
+Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Do not sink one solid into another: rest it on a flat face (a tower on a base's top, not inside a dome). Coplanar shapes keep tree order (later children paint on top).
 
 Place details slightly in front of the surface they sit on: an eye on a sphere of stroke 40 goes at `z` around 18 to 20.
 
@@ -142,12 +153,13 @@ A longer example lives in `examples/pup.ts`.
 
 ## Common mistakes
 
-- `type: "circle"` -> use `"ellipse"` with `diameter`. `type: "line"` -> use `"path"` with two points.
-- `radius` on an ellipse -> use `diameter`.
-- Radians (`Math.PI / 4`) -> use degrees (`45`).
-- `stroke: "12px"` -> use a number (`12`).
+- Radians (`1.57`, `Math.PI / 4`) -> angles are degrees (`90`, `45`).
+- Origin at the top-left as in SVG -> (0, 0) is the center; x and y run from -width/2 to width/2. Negative `y` is up.
+- `fill: "#fff"` -> `fill` is true or false; the color goes in `color`: `"color": "#fff", "fill": true`.
+- `stroke: "#000"` or `"12px"` -> `stroke` is a width in scene units (`2`); its color is `color`.
+- `type: "circle"` -> `"ellipse"` with `diameter`. `"line"` -> `"path"` with two points. `"sphere"` -> a dot (`path` `[{}]` with a thick stroke). `"cube"` -> `"box"`.
+- `radius` on an ellipse or round solid -> `diameter`. `height` on a cylinder or cone -> `length`.
 - `color` on a `group` -> set it on the shapes inside.
-- Expecting `y` to point up -> negative `y` is up.
 
 ## Not available yet
 

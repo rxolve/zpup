@@ -22,6 +22,12 @@ Zdog closes paths by default. Open reads more naturally for "a line from A to B"
 **Colors are validated CSS color strings.** (settled)
 Hex, functional notation, and named colors pass; anything else is rejected, and all text is escaped on output, so a scene from an untrusted source cannot inject markup.
 
+**A node with the wrong type is still checked.** (open)
+When the intended type is clear (`circle`, a typo such as `cilinder`, `cube`), the other options are checked as that type, but options it requires are not demanded, since they may have been meant under other names. When the node has to be written differently (`sphere`, `line`, `triangle`), only the options every node shares are checked, and the hint shows what to write. Either way one round of fixes should be enough, which matters for a language model repairing its own output.
+
+**Warnings are a separate function.** (open)
+`checkSceneWarnings` reports what is valid but probably unintended: angles that look like radians, shapes entirely outside the image (the usual sign of top-left coordinates), a scene that draws nothing, and solids whose color cannot be shaded. A severity field on `checkScene`'s issues would have broken every caller that reads "no issues" as "valid", including the benchmark's checker. The warnings use the same issue fields and message form. They are conservative: whole numbers never count as radians (`90`, `5`, `0`), one small angle on its own only counts when it is close to a common radian value such as π/4, and a shape only counts as off-screen when no part of it, stroke included, is inside the image.
+
 ## Coordinates and rotation
 
 **x right, y down, z toward the viewer.** (settled)
@@ -39,10 +45,58 @@ The conventional order; children inherit the composed transform.
 **Stroke width scales with the node.** (open)
 The factor is the cube root of the transform's determinant: exactly `s` for a uniform scale `s`, and a sensible average for non-uniform scale. Scene `zoom` scales strokes too.
 
+## Solids
+
+**`box`, `cylinder`, `cone` and `hemisphere`, with Zdog's conventions.** (open)
+Option names follow the flat shapes (`diameter`, `width`, `height`, `color`, `stroke`) and Zdog (`length`, `frontFace`, `backface`, `rearFace`, `topFace` and so on), since language models write Zdog habits. Round solids point along local z, as in Zdog: a cylinder is centered with its `frontFace` at +z, a cone and a hemisphere have their flat side at z = 0 and point toward +z. `rotate: { x: 90 }` stands any of them up. Solids are always filled; `fill: false` and face options set to `false` (Zdog's way of leaving a face out) are rejected, because an open solid would show its inside, which zpup does not draw.
+
+**One color, fixed shades per face.** (open)
+With no lighting, a box in one color is a flat hexagon. So each face gets a lighter or darker version of `color` chosen by the direction the face points in the scene (after the node's own transforms, before the view): up is 25% toward white, down 30% toward black, and left and right are lighter and darker in proportion to how far they face sideways (up to 12%), so the two sides a box shows at any turn always differ. A round surface uses the direction perpendicular to its axis that faces most toward the front and slightly up, so an upright cylinder's side keeps `color` exactly and a cylinder pointing at the viewer gets a lighter side than its front end. This does not conflict with "no lighting": nothing depends on the view, a face keeps its color as the scene turns, and the result is the same as painting each face by hand. Near-white colors cannot get lighter and near-black ones cannot get darker, so for them the scale is moved and narrowed (the top of a white box stays white, the other faces get darker in half steps). Face options give a face an exact color, unshaded; `shade: false` paints every face in `color`. Colors that zpup cannot parse (`currentColor`, `oklch()`) are drawn unshaded, with a warning.
+
+**Faces turned away are left out of the still picture but kept in the animation.** (settled)
+A solid is convex and closed, so its faces turned away from the viewer are always covered by its other faces. The still renderer drops them. The turning animation needs them, since they come into view, so it keeps them and requires only that they be painted before their own solid's other faces; wherever they are in the order otherwise, they are covered. This keeps them from adding paint-order changes.
+
+**Round surfaces get their outline from the view.** (settled in approach)
+A cylinder's side, a cone's side and a hemisphere's dome are not fixed outlines: their edge on screen is the contour where the surface turns away from the viewer. Each is built as one closed path from 3D points on the surface: the contour lines and the needed halves of the rims for a cylinder (commands `M L C C L C C Z`), the two lines from the rim to the tip and the far part of the rim for a cone (`M L L C C C C Z`), half of the rim and half of the sphere's contour circle for a hemisphere (`M C C C C Z`). The curves are arcs of circles in the solid's local space, so they stay exact under any transform, including non-uniform scale. The commands are the same at every view angle, which the turning animation needs. Where the choice of rim half switches (when an end is seen edge-on), both choices project to the same line, so the outline changes smoothly. The flat ends are ordinary fixed outlines drawn on top of the round surface.
+
+When a cone's tip is inside its base on screen, there are no contour lines; the path runs to the tip and back along one line, which is covered by the same color. When the axis points straight at the viewer, the contour direction is undefined and a fixed fallback is used.
+
+**Round outlines get extra keyframes where they need them.** (open)
+The animation interpolates every coordinate in a straight line between keyframes. That is close for fixed 3D points (at most 0.38 pixels in the lighthouse with 36 keyframes) but not for an outline that is rebuilt from the view. So a round outline is checked at a quarter, half and three quarters of each interval, and the interval is split until the interpolated outline is within 0.5 pixels of the exact one (measured as the larger distance from any point of one outline to the other). Such a piece then gets its own `keyTimes`. Measured, with 36 keyframes and a full turn about y:
+
+| Scene                                       | Before splitting | After | Extra keyframes |
+| ------------------------------------------- | ---------------- | ----- | --------------- |
+| Lighthouse (upright solids, 10 round faces) | 0.25 px          | same  | 0               |
+| Cylinder along z, view tilted 20 degrees    | 1.3 px           | 0.48  | 8               |
+| Cone along z, tilted 20 degrees             | 4.0 px           | 0.49  | 28              |
+| Hemisphere along z, tilted 5 degrees        | 7.8 px           | 0.39  | 24              |
+
+Upright solids on a turntable keep their outline, so they cost nothing. The worst case is an axis that passes exactly through the line of sight (no tilt): there the contour direction turns half a circle at once and the outline is rebuilt from the opposite side. Splitting confines that jump to 0.005 degrees, twice per turn, about 0.1 milliseconds each in an 8-second turn. In Chromium, frames paused around such a pass look right.
+
+## Depth sorting of solids
+
+**Faces of one solid are ordered by rule, not by depth.** (settled)
+Comparing faces that share edges is a tie that flips back and forth as the view turns. Within a solid, the round surface is painted before the flat faces, which is always right for a convex solid (a visible flat end lies on top of the round surface next to it), and flat faces that both face the viewer only share edges, so their order does not matter and creates no constraint.
+
+**Round surfaces have an exact depth.** (settled)
+A plane fitted to a round surface's outline is wrong by up to its radius. Instead the line of sight through a screen point is followed into the solid's local space, where the solid has its plain shape, and its front surface is found exactly (a quadratic for the cylinder, cone or sphere, cut by the flat ends).
+
+**Against a round surface, the larger share of the overlap wins.** (open)
+A flat detail on a round wall (a door on a tower) can be partly in front of the wall and partly behind it as it passes the wall's edge, where the wall's depth changes steeply; both parts are inside the overlap, so no single order is right. The order that is right for more of the area both cover (strokes included) wins, estimated on a 12 by 12 grid over the common bounds. Counting sample points instead flipped the door four times in the lighthouse, because most samples sat on the thin stroke at the edge.
+
+**Measured.** Over a full turn in half-degree steps, no overlapping pair flips back within 2 degrees in the lighthouse (34 pieces, 111 overlapping pairs), a mug with a handle touching its side and a saucer, a robot of seven boxes touching face to face, or (checked once, not kept as a test) a rocket with fins. The first three are regression tests.
+
+**Known limits.**
+
+- Solids that cut into each other (a tower sunk into a dome) cannot be drawn correctly; rest them on flat faces.
+- Faces cannot be removed, so open boxes and cups cannot be built from a solid; draw the opening as a darker ellipse.
+- A cone or hemisphere seen exactly along its axis is a plain disc: without lighting there is nothing else to show.
+- Not new, but seen while testing: a curved `path` lying exactly in the plane of view (a mug handle with no tilt) has its two halves trade places hundreds of times per turn. Both halves are one color, so nothing changes on screen, but it adds paint-order changes to the animation.
+
 ## Projection
 
 **Orthographic only; no perspective and no lighting.** (settled)
-These are what would turn zpup into a weaker three.js. Orthographic projection is also affine, which keeps Bezier curves and ellipses exact after projection.
+These are what would turn zpup into a weaker three.js. Orthographic projection is also affine, which keeps Bezier curves and ellipses exact after projection. The fixed face shades of solids (see above) are not lighting: they do not change with the view.
 
 ## Depth sorting
 
@@ -82,7 +136,7 @@ Ids would collide when several images share a page. A `data-` attribute or class
 **`renderSpinSvg` animates geometry with SMIL and switches paint order in epochs.** (open in details)
 The goal is a 3D illustration that moves inside a GitHub README, where scripts and CSS in SVG files are stripped or ignored but SMIL plays. How it works:
 
-1. Every piece (a filled shape, a dot, or one segment of an outline) is defined once in `<defs>`. Its `d` (or `cx` and `cy` for a dot) is animated through keyframes at evenly spaced angles, 36 by default. Orthographic projection is affine, so a piece has the same path commands at every angle and only the numbers change; the browser interpolates linearly between keyframes.
+1. Every piece (a filled shape, a face of a solid, a dot, or one segment of an outline) is defined once in `<defs>`. Its `d` (or `cx` and `cy` for a dot) is animated through keyframes at evenly spaced angles, 36 by default. Orthographic projection is affine, so a piece has the same path commands at every angle and only the numbers change; the browser interpolates linearly between keyframes. Round surfaces of solids keep their commands too but not their points, so they may get extra keyframes (see Solids).
 2. SVG cannot animate paint order. The turn is checked every half degree: at each step the still renderer's depth sort gives an order, and every pair of pieces that overlap on screen yields a "paint before" constraint. The turn is then cut into epochs, each with one order that satisfies every constraint for its whole length. Each epoch is a group of `<use>` elements whose `visibility` is switched with a discrete animation.
 3. An order is kept for as long as it stays valid. When it breaks, the next order is the one that satisfies as many upcoming steps as possible at once (the longest stretch whose combined constraints have no cycle), and among those the closest to the previous order. Taking the longest stretch each time gives the fewest epochs for the given steps.
 4. The first epoch uses the still renderer's order, and every element's attributes hold the first keyframe, so a renderer without SMIL shows the same picture as `renderSvg`.
