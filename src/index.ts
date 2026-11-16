@@ -62,3 +62,4 @@ export type {
   VectorInput,
 } from './types.ts';
 export { checkScene } from './validate.ts';
+export { checkSceneWarnings } from './warnings.ts';
