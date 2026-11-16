@@ -1,0 +1,5 @@
+Your reply is not a valid {{format}}. The checker reported:
+
+{{problems}}
+
+Reply with the complete corrected {{format}} only: no explanation and no Markdown code fence.

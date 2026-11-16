@@ -1,0 +1,17 @@
+{
+  "$comment": "Drawing requests used by the benchmark. Each prompt is sent unchanged to both conditions.",
+  "tasks": [
+    { "id": "pelican-bicycle", "prompt": "a pelican riding a bicycle" },
+    { "id": "mug", "prompt": "a coffee mug with a handle" },
+    { "id": "rocket", "prompt": "a rocket standing on its fins" },
+    { "id": "cat", "prompt": "a cat sitting down" },
+    { "id": "lighthouse", "prompt": "a lighthouse on a small rock" },
+    { "id": "robot", "prompt": "a friendly robot standing upright" },
+    { "id": "tree", "prompt": "a tree with a round crown" },
+    { "id": "house", "prompt": "a small house with a pitched roof and a chimney" },
+    { "id": "sailboat", "prompt": "a sailboat with one mast" },
+    { "id": "snowman", "prompt": "a snowman with a hat and a scarf" },
+    { "id": "octopus", "prompt": "an octopus with curling tentacles" },
+    { "id": "teapot", "prompt": "a teapot with a spout, a handle and a lid" }
+  ]
+}

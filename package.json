@@ -43,6 +43,9 @@
     "format": "biome check --write .",
     "test": "vitest run",
     "example": "node examples/render.ts",
+    "bench": "node bench/run.ts",
+    "bench:report": "node bench/report.ts",
+    "bench:models": "node bench/models.ts",
     "prepublishOnly": "pnpm run build"
   },
   "publishConfig": {
@@ -52,6 +55,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.6.8",
     "@types/node": "^24.19.2",
+    "saxes": "^6.0.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }

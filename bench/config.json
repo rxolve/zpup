@@ -1,0 +1,44 @@
+{
+  "$comment": "Benchmark settings. Model IDs and prices were checked against https://openrouter.ai/api/v1/models on 2026-11-16; run `pnpm bench:models` to check them again. Prices are USD per million tokens.",
+  "models": [
+    {
+      "id": "anthropic/claude-opus-5.5",
+      "label": "Claude Opus 5.5",
+      "promptPricePerM": 4,
+      "completionPricePerM": 20,
+      "why": "OpenRouter describes it as Anthropic's flagship model; Claude Fable 5.2 is listed as more capable but costs twice as much."
+    },
+    {
+      "id": "openai/gpt-6-astra",
+      "label": "GPT-6 Astra",
+      "promptPricePerM": 10,
+      "completionPricePerM": 50,
+      "why": "OpenRouter describes it as OpenAI's flagship; GPT-6.1 Sol is newer but is positioned below it."
+    },
+    {
+      "id": "google/gemini-4-argon",
+      "label": "Gemini 4 Argon",
+      "promptPricePerM": 2,
+      "completionPricePerM": 10,
+      "why": "OpenRouter describes it as Google's flagship reasoning model."
+    },
+    {
+      "id": "moonshotai/kimi-k3.1-pro",
+      "label": "Kimi K3.1 Pro",
+      "promptPricePerM": 0.2403,
+      "completionPricePerM": 8.4023,
+      "why": "OpenRouter describes it as Moonshot AI's flagship open-weight model, and its weights are on Hugging Face (moonshotai/Kimi-K3.1-Pro)."
+    }
+  ],
+  "repetitions": 3,
+  "maxCostUsd": 10,
+  "maxTokens": 16000,
+  "concurrency": 4,
+  "canvas": { "width": 400, "height": 400 },
+  "rotationOffsetsDeg": [0, 60, -60],
+  "estimate": {
+    "$comment": "Assumptions used only for the cost estimate printed before a run. Output tokens include hidden reasoning tokens, which most of these models bill as output.",
+    "outputTokensPerCall": 4000,
+    "repairRate": 0.25
+  }
+}
