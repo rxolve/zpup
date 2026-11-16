@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { lighthouse } from '../examples/lighthouse.ts';
 import { parseColor, shadeColor } from '../src/color.ts';
 import {
@@ -216,7 +216,19 @@ describe('solids', () => {
   });
 });
 
+/**
+ * Time limit for tests that depth-sort a whole turn (720 steps). Locally they
+ * take about a second; CI machines have been 3 to 4 times slower.
+ */
+const FULL_TURN_TIMEOUT = 20_000;
+
 describe('solids in the turning animation', () => {
+  // Rendered once and shared: each render depth-sorts the whole turn.
+  let lighthouseSpin = '';
+  beforeAll(() => {
+    lighthouseSpin = renderSpinSvg(lighthouse);
+  }, FULL_TURN_TIMEOUT);
+
   it('interpolates round outlines to within the tolerance, with extra keyframes where needed', () => {
     for (const [name, node] of solids) {
       for (const tilt of [-5, -20]) {
@@ -245,30 +257,34 @@ describe('solids in the turning animation', () => {
     }
   });
 
-  it('adds key times only to round outlines that need them', () => {
-    const svg = renderSpinSvg(
-      one(cylinder({ diameter: 60, length: 80, color: '#3a7' }), { x: -5, y: 0 }),
-    );
-    const keyTimes = [...svg.matchAll(/attributeName="d"[^>]*keyTimes="([^"]+)"/g)].map((m) =>
-      (m[1] as string).split(';').map(Number),
-    );
-    // The side gets extra key times; the flat ends are fixed outlines.
-    expect(keyTimes).toHaveLength(1);
-    for (const times of keyTimes) {
-      expect(times.length).toBeGreaterThan(37);
-      expect(times[0]).toBe(0);
-      expect(times.at(-1)).toBe(1);
-      times.slice(1).forEach((t, i) => {
-        expect(t).toBeGreaterThan(times[i] as number);
-      });
-    }
-    // Upright solids on a turntable keep their outline, so nothing is added.
-    expect(renderSpinSvg(lighthouse)).not.toMatch(/attributeName="d"[^>]*keyTimes/);
-  });
+  it(
+    'adds key times only to round outlines that need them',
+    () => {
+      const svg = renderSpinSvg(
+        one(cylinder({ diameter: 60, length: 80, color: '#3a7' }), { x: -5, y: 0 }),
+      );
+      const keyTimes = [...svg.matchAll(/attributeName="d"[^>]*keyTimes="([^"]+)"/g)].map((m) =>
+        (m[1] as string).split(';').map(Number),
+      );
+      // The side gets extra key times; the flat ends are fixed outlines.
+      expect(keyTimes).toHaveLength(1);
+      for (const times of keyTimes) {
+        expect(times.length).toBeGreaterThan(37);
+        expect(times[0]).toBe(0);
+        expect(times.at(-1)).toBe(1);
+        times.slice(1).forEach((t, i) => {
+          expect(t).toBeGreaterThan(times[i] as number);
+        });
+      }
+      // Upright solids on a turntable keep their outline, so nothing is added.
+      expect(lighthouseSpin).not.toMatch(/attributeName="d"[^>]*keyTimes/);
+    },
+    FULL_TURN_TIMEOUT,
+  );
 
   it('keeps the size of the lighthouse in check', () => {
     // Measured at 132,287 bytes; fail on a clear regression.
-    expect(renderSpinSvg(lighthouse).length).toBeLessThan(150_000);
+    expect(lighthouseSpin.length).toBeLessThan(150_000);
   });
 });
 

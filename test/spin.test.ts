@@ -1,8 +1,9 @@
 import { gzipSync } from 'node:zlib';
 import { SaxesParser } from 'saxes';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { lighthouse } from '../examples/lighthouse.ts';
 import { pup } from '../examples/pup.ts';
+import { depthWork } from '../src/depth.ts';
 import {
   dot,
   ellipse,
@@ -332,31 +333,62 @@ describe('renderSpinSvg options', () => {
   });
 });
 
+/**
+ * Time limit for tests that depth-sort a whole turn (720 steps). Locally they
+ * take under a second; CI machines have been 3 to 4 times slower.
+ */
+const FULL_TURN_TIMEOUT = 20_000;
+
 describe('renderSpinSvg with solids', () => {
-  const svg = renderSpinSvg(lighthouse);
-  const tree = parse(svg);
   const s = normalizeScene(lighthouse);
+  let tree: Element = { name: '#root', attributes: {}, children: [] };
+  let work = { ...depthWork };
+  beforeAll(() => {
+    Object.assign(depthWork, { sorts: 0, comparisons: 0, roundComparisons: 0 });
+    tree = parse(renderSpinSvg(lighthouse));
+    work = { ...depthWork };
+  }, FULL_TURN_TIMEOUT);
+
+  it('depth-sorts no more than it needs to', () => {
+    // Counted, not timed, so that a slow machine cannot fail it. Measured at
+    // 720 sorts, 39,377 compared pairs and 27,152 against a round surface;
+    // pairs that cannot overlap on screen are not compared (comparing every
+    // pair whose bounds meet gave 151,180).
+    expect(work.sorts).toBe(SPIN_STEPS);
+    expect(work.comparisons).toBeLessThan(47_000);
+    expect(work.roundComparisons).toBeLessThan(33_000);
+  });
 
   it('keeps every face, including those turned away, so they can come into view', () => {
     const defs = tree.children.find((e) => e.name === 'defs');
     expect(defs?.children).toHaveLength(compilePieces(s).length);
   });
 
-  it('shows one group at every step and paints every overlapping pair in order', () => {
-    const groups = groupsOf(tree);
-    for (let step = 0; step < SPIN_STEPS; step++) {
-      const shown = groups.filter((g) => g.visible[step]);
-      expect(shown.length, `step ${step}`).toBe(1);
-      const position: number[] = [];
-      (shown[0] as Group).order.forEach((piece, n) => {
-        position[piece] = n;
-      });
-      const pieces = compilePieces(s, { ...s.rotate, y: s.rotate.y + (step * 360) / SPIN_STEPS });
-      for (const [before, after] of paintConstraints(pieces).constraints) {
-        expect(position[before] as number, `step ${step}`).toBeLessThan(position[after] as number);
+  it(
+    'shows one group at every step and paints every overlapping pair in order',
+    () => {
+      const groups = groupsOf(tree);
+      // Collected and checked once: tens of thousands of separate expect()
+      // calls cost more than the depth sorting they check.
+      const wrong: string[] = [];
+      for (let step = 0; step < SPIN_STEPS; step++) {
+        const shown = groups.filter((g) => g.visible[step]);
+        expect(shown.length, `step ${step}`).toBe(1);
+        const position: number[] = [];
+        (shown[0] as Group).order.forEach((piece, n) => {
+          position[piece] = n;
+        });
+        const pieces = compilePieces(s, { ...s.rotate, y: s.rotate.y + (step * 360) / SPIN_STEPS });
+        for (const [before, after] of paintConstraints(pieces).constraints) {
+          if (!((position[before] as number) < (position[after] as number))) {
+            wrong.push(`step ${step}: ${before} before ${after}`);
+          }
+        }
       }
-    }
-  });
+      expect(wrong).toEqual([]);
+    },
+    FULL_TURN_TIMEOUT,
+  );
 
   it('gives every piece the same path commands in every keyframe', () => {
     for (const path of tree.children.find((e) => e.name === 'defs')?.children ?? []) {

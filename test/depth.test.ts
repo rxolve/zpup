@@ -238,6 +238,12 @@ describe('depth sorting while the view turns', () => {
   });
 });
 
+/**
+ * Time limit for tests that depth-sort a whole turn (720 steps). Locally they
+ * take under a second; CI machines have been 3 to 4 times slower.
+ */
+const FULL_TURN_TIMEOUT = 20_000;
+
 describe('depth sorting of solids while the view turns', () => {
   /** For every pair of overlapping pieces, which one is painted first at each half degree. */
   const sides = (scene: Scene) => {
@@ -356,13 +362,33 @@ describe('depth sorting of solids while the view turns', () => {
     ],
   };
 
-  it('never flips a pair back within 2 degrees: lighthouse, mug, robot', () => {
-    // The lighthouse includes a door and a window on round walls, which
-    // overlap the wall only by a pixel or two as they pass its edge.
-    expect(flickers(lighthouse)).toEqual([]);
-    expect(flickers(mug)).toEqual([]);
-    expect(flickers(robot)).toEqual([]);
-  });
+  // Each scene is depth-sorted at every half degree of a whole turn, so each
+  // gets its own test and a generous time limit (see FULL_TURN_TIMEOUT).
+  it(
+    'never flips a pair back within 2 degrees: lighthouse',
+    () => {
+      // The lighthouse includes a door and a window on round walls, which
+      // overlap the wall only by a pixel or two as they pass its edge.
+      expect(flickers(lighthouse)).toEqual([]);
+    },
+    FULL_TURN_TIMEOUT,
+  );
+
+  it(
+    'never flips a pair back within 2 degrees: mug',
+    () => {
+      expect(flickers(mug)).toEqual([]);
+    },
+    FULL_TURN_TIMEOUT,
+  );
+
+  it(
+    'never flips a pair back within 2 degrees: robot',
+    () => {
+      expect(flickers(robot)).toEqual([]);
+    },
+    FULL_TURN_TIMEOUT,
+  );
 
   it('keeps the handle in front of the mug on its side of the mug and behind it on the far side', () => {
     const s = normalizeScene(mug);
