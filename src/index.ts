@@ -19,27 +19,9 @@ export {
   type PathCommand,
   type PathItem,
 } from './compile.ts';
-export { type PathSegment, type ValidationIssue, ZpupValidationError } from './errors.ts';
-export {
-  add,
-  compose,
-  cross,
-  dot as dotProduct,
-  IDENTITY,
-  length,
-  lerp,
-  localMatrix,
-  type Matrix,
-  multiplyScalar,
-  rotate,
-  rotationMatrix,
-  subtract,
-  transformPoint,
-  type Vec3,
-  vec3,
-} from './math.ts';
+export { type IssuePathSegment, type ValidationIssue, ZpupValidationError } from './errors.ts';
 export { renderSpinSvg, type SpinOptions } from './spin.ts';
-export { formatNumber, frameToSvg, renderSvg, type SvgOptions } from './svg.ts';
+export { frameToSvg, renderSvg, type SvgOptions } from './svg.ts';
 export type {
   BezierInput,
   BoxNode,

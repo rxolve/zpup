@@ -2,8 +2,8 @@ import { colorNames, isColorName } from './color.ts';
 import {
   closest,
   describe,
+  type IssuePathSegment,
   makeIssue,
-  type PathSegment,
   type ValidationIssue,
   ZpupValidationError,
 } from './errors.ts';
@@ -19,7 +19,7 @@ import { FACE_KEYS, type NormalizedSolid, type SolidKind } from './solids.ts';
 import type { NodeType, Scene } from './types.ts';
 
 /** A location in the input: object keys and array indices from the root. */
-export type Path = readonly PathSegment[];
+export type Path = readonly IssuePathSegment[];
 
 /** A node after validation, with every default filled in. */
 export interface NormalizedNode {

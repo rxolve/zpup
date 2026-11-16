@@ -1,5 +1,5 @@
 /** One step of an issue's location: an object key or an array index. */
-export type PathSegment = string | number;
+export type IssuePathSegment = string | number;
 
 /** One problem found in a scene description. */
 export interface ValidationIssue {
@@ -10,7 +10,7 @@ export interface ValidationIssue {
    * `["scene", "children", 0, "stroke"]`. Unlike the string, it stays exact
    * for keys that contain dots or brackets.
    */
-  pathSegments: PathSegment[];
+  pathSegments: IssuePathSegment[];
   /** The `id` of the nearest node, when it has one. */
   nodeId?: string;
   /** What is allowed at this path. */
@@ -32,7 +32,7 @@ export interface ValidationIssue {
 }
 
 /** Writes path segments as a JSON-style path such as `scene.children[0].stroke`. */
-export function formatPath(segments: readonly PathSegment[]): string {
+export function formatPath(segments: readonly IssuePathSegment[]): string {
   let out = '';
   for (const s of segments) {
     out += typeof s === 'number' ? `[${s}]` : out === '' ? s : `.${s}`;
@@ -42,7 +42,7 @@ export function formatPath(segments: readonly PathSegment[]): string {
 
 /** Builds an issue, writing `path` and `message` from the parts. */
 export function makeIssue(parts: {
-  pathSegments: readonly PathSegment[];
+  pathSegments: readonly IssuePathSegment[];
   nodeId?: string | undefined;
   expected: string;
   received: string;

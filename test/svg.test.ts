@@ -5,7 +5,6 @@ import {
   compileScene,
   dot,
   ellipse,
-  formatNumber,
   frameToSvg,
   path,
   rect,
@@ -14,6 +13,7 @@ import {
   type SvgOptions,
   ZpupValidationError,
 } from '../src/index.ts';
+import { formatNumber } from '../src/svg.ts';
 
 const small: Scene = {
   width: 120,
