@@ -1,0 +1,63 @@
+{
+  "runId": "pilot-1",
+  "provider": "openrouter",
+  "startedAt": "2026-11-16T09:14:30.288Z",
+  "referenceSha256": "a636d4f4b9710a02c89441249f6f9e5f520cd80bdf654088783992a1e9a132d7",
+  "config": {
+    "models": [
+      {
+        "id": "google/gemini-4-argon",
+        "label": "Gemini 4 Argon",
+        "promptPricePerM": 2,
+        "completionPricePerM": 10,
+        "why": "OpenRouter describes it as Google's flagship reasoning model."
+      },
+      {
+        "id": "moonshotai/kimi-k3.1-pro",
+        "label": "Kimi K3.1 Pro",
+        "promptPricePerM": 0.2403,
+        "completionPricePerM": 8.4023,
+        "why": "OpenRouter describes it as Moonshot AI's flagship open-weight model, and its weights are on Hugging Face (moonshotai/Kimi-K3.1-Pro)."
+      }
+    ],
+    "repetitions": 1,
+    "maxCostUsd": 1,
+    "maxTokens": 16000,
+    "concurrency": 4,
+    "canvas": {
+      "width": 400,
+      "height": 400
+    },
+    "rotationOffsetsDeg": [
+      0,
+      60,
+      -60
+    ],
+    "estimate": {
+      "outputTokensPerCall": 4000,
+      "repairRate": 0.25
+    }
+  },
+  "tasks": [
+    {
+      "id": "pelican-bicycle",
+      "prompt": "a pelican riding a bicycle"
+    },
+    {
+      "id": "mug",
+      "prompt": "a coffee mug with a handle"
+    },
+    {
+      "id": "cat",
+      "prompt": "a cat sitting down"
+    },
+    {
+      "id": "lighthouse",
+      "prompt": "a lighthouse on a small rock"
+    }
+  ],
+  "gitCommit": "cdefbec",
+  "finishedAt": "2026-11-16T09:22:19.165Z",
+  "spentUsd": 1.2661242819999998,
+  "stoppedReason": "cost cap of $1 reached after 12 of 16 samples"
+}
