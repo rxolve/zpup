@@ -67,9 +67,26 @@ The helpers only add a `type` field, so the same scene can be written, stored an
 
 - **Axes:** x right, y down, z toward the viewer. The origin is the center of the image.
 - **Angles:** degrees. Positive `rotate.z` turns clockwise on screen.
-- **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
+- **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
 - **Shapes:** `color`, `stroke` (round-capped width; thick strokes give volume) and `fill`.
-- **Errors:** an invalid scene throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. `checkScene(scene)` returns the same list without throwing.
+- **Solids:** always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up.
+- **Errors:** an invalid scene throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians or shapes placed outside the image.
+
+### Solids
+
+![A lighthouse on a rock built from cylinders, cones, hemispheres and a box, turning](examples/lighthouse-spin.svg)
+
+[The lighthouse](examples/lighthouse.ts) is made of eleven solids, each with a single color, plus a door and a window drawn as rectangles on the tower:
+
+```ts
+import { cone, cylinder } from '@zpup/core';
+
+const up = { x: 90 }; // round solids point along z; this stands them up
+cylinder({ diameter: 60, length: 36, rotate: up, color: '#f4f1ea' }); // a band of the tower
+cone({ diameter: 44, length: 18, rotate: up, color: '#d8463c' }); // the hut's roof
+```
+
+Solids are depth-sorted like everything else, against each other and against flat shapes. Rest one solid on a flat face of another; solids that cut into each other cannot be drawn correctly.
 
 ### Turning in place
 
@@ -94,7 +111,7 @@ Limits:
 - Only a constant-speed turn about one axis. Nothing else moves, and there is no interaction or pausing.
 - It does not respect `prefers-reduced-motion`; SMIL cannot query it. A page that cares can show the still picture instead with a `<picture>` element and a `(prefers-reduced-motion: reduce)` media query.
 - Outlines are drawn one segment at a time, so a translucent color shows darker spots where the segments meet.
-- File size grows quickly with the number of pieces: every piece is listed once per change of paint order, and those changes grow with the number of overlapping pairs. The pup (19 pieces) is 54 KB, 11 KB gzipped. Lower `keyframes` and `precision` make it smaller.
+- File size grows quickly with the number of pieces: every piece is listed once per change of paint order, and those changes grow with the number of overlapping pairs. The pup (19 pieces) is 54 KB, 11 KB gzipped; the lighthouse (34 pieces) is 132 KB, 24 KB gzipped. Lower `keyframes` and `precision` make it smaller.
 
 See [docs/decisions.md](docs/decisions.md#turning-animation) for how it works.
 
@@ -118,7 +135,7 @@ pnpm test        # unit and snapshot tests
 pnpm typecheck
 pnpm lint
 pnpm build       # writes dist/
-pnpm example     # writes examples/pup.svg and examples/pup-spin.svg
+pnpm example     # writes the pup and lighthouse pictures in examples/
 ```
 
 ## Credits
