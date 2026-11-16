@@ -53,6 +53,8 @@ Every node: `type` (required), `id?` (string, shown in errors), `translate?`, `r
 
 Every shape (all types except `group`): `color?` (hex, `rgb()`, or a CSS color name; default `"#333"`), `stroke?` (width >= 0, default 1, round caps and joins), `fill?` (boolean, default false; fills with `color`).
 
+Flat shapes (`path`, `ellipse`, `rect`, `polygon`, `dot()`) also take `backface?`, as in Zdog: `true` (default) shows both sides; `false` hides the shape while its front (local +z) faces away, edge-on included; a color paints the back in that color. On `cylinder`, `cone` and `hemisphere`, `backface` is a face color instead.
+
 | type | own options | notes |
 | --- | --- | --- |
 | `group` | none | Draws nothing; moves its children together. No `color`. |
@@ -88,6 +90,14 @@ Helpers: `group(o)`, `ellipse(o)`, `box(o)` and the rest return `{ type, ...o }`
 Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Do not sink one solid into another: rest it on a flat face (a tower on a base's top, not inside a dome). Coplanar shapes keep tree order (later children paint on top).
 
 Place details slightly in front of the surface they sit on: an eye on a sphere of stroke 40 goes at `z` around 18 to 20.
+
+## Models that turn without popping
+
+zpup paints whole shapes back to front, so a shape that crosses into another changes order all at once.
+
+- Shapes of different colors should only touch, never cut into each other.
+- Shapes that do cut into each other (a snout sunk into a head) should have the same color.
+- Color changes on a surface (eyes, cheeks, a belly patch) are flat, filled shapes with `stroke: 0` and `backface: false`, rotated to face out from the surface and placed on the plane that touches it, just outside: `group({ rotate: { x: 15, y: -25 }, children: [ellipse({ translate: { z: 40.5 }, width: 8, height: 11, fill: true, stroke: 0, color: "#222", backface: false })] })` on a head of `stroke: 80`. Such a shape vanishes exactly when it turns edge-on. A stroke stays visible edge-on, so keep it 0 or thin, and add half the stroke to the distance.
 
 ## Turning animation
 

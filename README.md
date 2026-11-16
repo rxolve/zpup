@@ -90,6 +90,38 @@ cone({ diameter: 44, length: 18, rotate: up, color: '#d8463c' }); // the hut's r
 
 Solids are depth-sorted like everything else, against each other and against flat shapes. Rest one solid on a flat face of another; solids that cut into each other cannot be drawn correctly.
 
+### Faces that turn away
+
+A flat shape takes `backface`, as in Zdog: `true` (the default) draws it from both sides, `false` leaves it out while its front (its local +z side) faces away, and a color paints its back in that color.
+
+This is what keeps a turning character clean. zpup paints whole shapes back to front, so an eye drawn as a dot on a head has to jump from in front of the head to behind it as the head turns, and it does so while it still covers part of the head: the eye flickers. Built this way instead, a model turns without popping:
+
+- Parts of different colors touch but do not cut into each other.
+- Parts that cut into each other have the same color.
+- Color on a surface (eyes, cheeks, a patch on the belly) is a flat, filled shape with no stroke and `backface: false`, on the plane that touches the surface, just outside it. It disappears at the moment it is seen edge-on, when it covers nothing.
+
+```ts
+import { dot, ellipse, group } from '@zpup/core';
+
+const head = [
+  dot({ stroke: 80, color: '#f4c95d' }),
+  group({
+    rotate: { x: 15, y: -25 }, // points the eye's +z up and to the left
+    children: [
+      ellipse({
+        translate: { z: 40.5 },
+        width: 8,
+        height: 11,
+        fill: true,
+        stroke: 0,
+        color: '#222',
+        backface: false,
+      }),
+    ],
+  }),
+];
+```
+
 ### Turning in place
 
 `renderSpinSvg` returns an SVG that turns the scene one full rotation, forever, using SMIL animation. It needs no JavaScript, so it also plays inside an `<img>` tag and in a GitHub README.

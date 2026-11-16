@@ -134,6 +134,33 @@ The sorter runs 720 times per turning animation, so its speed matters. Profiled 
 
 What is left is the area grid itself (12 by 12 points for each pair against a round surface, at every step) and the overlap tests. Checking the order at fewer angles and bisecting where it changes would be faster still, but it can miss a pair that overlaps for less than the coarse step, so the half-degree check stays. A test counts sorts and comparisons instead of timing them, so a regression fails on any machine.
 
+**A detail on a plane that faces the viewer is in front of whatever lies behind that plane.** (settled)
+Every flat shape whose points lie in its local x/y plane (all ellipses, rects and polygons, and paths with z = 0) passes that plane to the sorter. Before sampling, a pair is checked against it: if all of the other shape, stroke included, lies behind the plane by at least this shape's stroke radius, a parallel plane separates them and this shape is in front wherever they overlap. This was added for details on a sphere (see below). Filled ellipses on a plane half a unit outside a sphere already sorted right at every half degree, but an open curve with a stroke of 1 there was put behind the sphere at 8 to 22 of the 720 angles per turn, in runs of a few degrees near the sphere's outline, where the sphere's depth changes steeply and most samples fell on the inner edge of the stroke. With the plane test, every case in the test (filled with and without a stroke, and an open curve; facing front, sideways, up and diagonally; three view tilts; 720 angles each) sorts the detail after the sphere while it faces the viewer. A stroke that cuts into the sphere (a curve of stroke 3 half a unit outside) still fails near the outline, which is right: the two then intersect. The examples render byte for byte as before, and the pup's turn got faster (86 to 71 ms), since separated pairs skip sampling.
+
+## Flat shapes seen from behind
+
+**`backface` on flat shapes, with Zdog's meaning.** (settled)
+`true` (default) draws both sides, `false` leaves the shape out while its front faces away, a color paints the back in that color. Zdog's option of the same name does the same on its shapes. Solids keep `backface` as a face color, which is also Zdog's (`Cylinder.backface`, `Cone.backface`, `Hemisphere.backface`), and `box` keeps `rearFace`; groups draw nothing and do not take it.
+
+Why it is needed. In a turning character, an eye drawn as a dot on a head flickered as it went round: the sorter paints whole shapes, so the eye must switch from in front of the head to behind it, and the switch happened while the eye still overlapped the head's outline, so the overlapping area changed color in one frame, and every feature did it in turn. Making the eye a flat piece on the head's tangent plane shrinks the area at the switch to almost nothing, but the moment it moves behind the head still depends on the depth samples and can come a little early or late. With `backface: false` the piece is not drawn at all once it faces away, and it faces away exactly when it is edge-on, where it covers nothing; the order no longer decides.
+
+**The front is the local +z side, carried as a normal.** (settled)
+The front direction is local +z transformed by the inverse transpose of the node's whole transform (view included), with the sign kept under mirroring, as solids already do for their faces. Transforming +z as a direction instead (Zdog moves a `front` point with the shape) points it off the plane under a non-uniform scale with a rotation, and the shape would then disappear while it still had area. As a normal it turns edge-on exactly with the shape. Mirroring in x or y keeps the front; a negative z scale moves it to the other side, as in Zdog. Exactly edge-on counts as facing away, and so does a shape flattened to a line by a zero scale, which has no front.
+
+**The still picture leaves hidden shapes out of the depth sort, not only out of the output.** (settled)
+They have no area to compare, and an unneeded constraint could only bend the order of the rest.
+
+**The turning animation switches at the exact angle.** (settled)
+The turning angle enters one rotation about one axis, so the depth component of a front normal is `a cos θ + b sin θ + c`. zpup reads it at 0, 90 and 180 degrees, solves it in closed form, and adds both roots to the epoch boundaries; in a test across all three axes, both directions, mirrored and tilted shapes, the roots agree with bisection on the compiled pieces to under 0.000001 degrees, and key times are written with six digits (0.00036 degrees). The stretch that starts at such a root is depth-sorted in its middle, where the shape has some area; whole steps are sorted as before. An epoch ends where a shape turns even if its order stays valid, and the next keeps that order. A shape with a back color is defined twice, the same geometry in two colors, and each epoch refers to the one it shows; a shape that never shows is not defined. When a shape turns exactly at angle 0, the epoch at 0 keeps its still-picture side for a millionth of the turn, so a renderer without SMIL still shows `renderSvg`'s picture. A scene without the option plans and renders byte for byte as before.
+
+Measured on the test face (a ball with two eyes and a mouth, all filled, no stroke, `backface: false`): 8 epochs, all from the three features turning, with one order throughout; 14 KB. In Chromium, frames paused about 0.05 degrees before and after an eye and the mouth disappear and reappear show no jump: the piece is a sliver of under a pixel on either side. The lighthouse, which does not use the option, went from about 550 to 570 ms (median of five, measured before and after on one laptop).
+
+**Strokes stay visible edge-on.** (settled)
+A stroke is a tube, so a stroked flat piece is still a line when it is edge-on and pops when it goes. The guidance is to give surface details no stroke (or a thin one, placed half the stroke farther out so it does not cut into the surface). Zdog has the same limit.
+
+**No warning for `backface: false` on an open line.** (settled)
+An unfilled open path with `backface: false` does vanish at angles that surprise someone who did not think of its local +z, but the same scene is also the right way to draw a smile on a head. A warning could not tell the two apart, so there is none. The one warning added is for a scene where every shape is hidden this way.
+
 ## Rendering
 
 **Core produces a `Frame`; renderers only paint it.** (settled)
