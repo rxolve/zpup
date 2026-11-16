@@ -1,15 +1,9 @@
 import { depthOrder } from './depth.ts';
-import {
-  controlPoints,
-  flatten,
-  type PathGeometry,
-  type Segment,
-  splitPath,
-  transformGeometry,
-} from './geometry.ts';
-import { compose, localMatrix, type Matrix, rotationMatrix, strokeScale } from './math.ts';
+import { controlPoints, type PathGeometry, type Segment } from './geometry.ts';
+import type { Vec3 } from './math.ts';
+import { compilePieces, depthShapes, type Piece } from './pieces.ts';
 import type { Scene } from './types.ts';
-import { type NormalizedNode, normalizeScene } from './validate.ts';
+import { type NormalizedScene, normalizeScene } from './validate.ts';
 
 /** A 2D path command in screen pixels. */
 export type PathCommand =
@@ -66,81 +60,33 @@ export interface Frame {
   readonly items: readonly DrawItem[];
 }
 
-/** One depth-sorted piece of a shape. Unfilled strokes are split into pieces. */
-interface Piece {
-  readonly shape: number;
-  readonly piece: number;
-  readonly pieceCount: number;
-  readonly geometry: PathGeometry;
-  /** True for the line a closed polyline adds from its last point back to its start. */
-  readonly closing: boolean;
-  /** Whether the whole shape is closed. */
-  readonly shapeClosed: boolean;
-  readonly color: string;
-  readonly stroke: number;
-  readonly fill: boolean;
-  readonly nodeId: string | undefined;
-}
-
 /**
  * Validates a scene, applies every transform, projects it orthographically
  * and sorts the shapes by depth.
  * @throws {ZpupValidationError} when the scene is invalid.
  */
 export function compileScene(scene: Scene): Frame {
-  const s = normalizeScene(scene);
-  // Screen space: origin at the image center, scaled by zoom, rotated by the view.
-  const view = compose(
-    [s.zoom, 0, 0, 0, s.zoom, 0, 0, 0, s.zoom, s.width / 2, s.height / 2, 0],
-    rotationMatrix(s.rotate),
-  );
-  const pieces: Piece[] = [];
-  let shapeCount = 0;
-  const visit = (node: NormalizedNode, parent: Matrix) => {
-    if (!node.visible) return;
-    const world = compose(parent, localMatrix(node.translate, node.rotate, node.scale));
-    if (node.shape) {
-      const { color, fill } = node.shape;
-      const stroke = node.shape.stroke * strokeScale(world);
-      const geometry = transformGeometry(world, node.shape.geometry);
-      if (stroke > 0 || fill) {
-        const shape = shapeCount++;
-        // A filled shape is one flat sheet. An outline can pass in front of
-        // one thing and behind another, so each of its segments is sorted
-        // on its own and adjacent pieces are joined again when drawn.
-        const split = fill ? [{ geometry, closing: false }] : splitPath(geometry);
-        split.forEach((part, piece) => {
-          pieces.push({
-            shape,
-            piece,
-            pieceCount: split.length,
-            geometry: part.geometry,
-            closing: part.closing,
-            shapeClosed: geometry.closed,
-            color,
-            stroke,
-            fill,
-            nodeId: node.id,
-          });
-        });
-      }
-    }
-    for (const child of node.children) visit(child, world);
+  return compileNormalized(normalizeScene(scene));
+}
+
+/** {@link compileScene} for a scene that is already validated. */
+export function compileNormalized(s: NormalizedScene, rotate: Vec3 = s.rotate): Frame {
+  const pieces = compilePieces(s, rotate);
+  const order = depthOrder(depthShapes(pieces));
+  return {
+    width: s.width,
+    height: s.height,
+    background: s.background,
+    title: s.title,
+    items: joinPieces(pieces, order),
   };
-  for (const child of s.children) visit(child, view);
+}
 
-  const flattened = pieces.map((p) => flatten(p.geometry));
-  const order = depthOrder(
-    pieces.map((p, i) => ({
-      points: flattened[i] ?? [],
-      closed: p.geometry.closed,
-      fill: p.fill,
-      radius: p.stroke / 2,
-      ...(p.piece > 0 ? { follows: i - 1 } : {}),
-    })),
-  );
-
-  // Join runs of consecutive pieces of the same shape back into one path.
+/**
+ * Turns pieces painted in `order` into draw items, joining runs of
+ * consecutive pieces of the same shape back into one path.
+ */
+export function joinPieces(pieces: readonly Piece[], order: readonly number[]): DrawItem[] {
   const runs: number[][] = [];
   for (const i of order) {
     const p = pieces[i] as Piece;
@@ -167,7 +113,7 @@ export function compileScene(scene: Scene): Frame {
     let depthSum = 0;
     let depthCount = 0;
     for (const i of run) {
-      for (const q of flattened[i] ?? []) {
+      for (const q of (pieces[i] as Piece).points) {
         depthSum += q.z;
         depthCount++;
       }
@@ -202,7 +148,7 @@ export function compileScene(scene: Scene): Frame {
       nodeId: first.nodeId,
     });
   }
-  return { width: s.width, height: s.height, background: s.background, title: s.title, items };
+  return items;
 }
 
 function toCommands(g: PathGeometry): PathCommand[] {
