@@ -4,6 +4,7 @@ Draw the requested subject as one zpup scene in JSON, 400 by 400 pixels.
 Make it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.
 Use only what zpup itself provides. Write plain JSON, not TypeScript or JavaScript.
 Reply with the JSON scene only: no explanation and no Markdown code fence.
+Write it compactly, without indentation or line breaks you do not need.
 
 <reference>
 {{reference}}

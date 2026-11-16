@@ -31,6 +31,7 @@ renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene foreve
 - Node transform order: scale, then rotate, then translate. Children inherit the parent's transform.
 - Projection is orthographic. There is no perspective and no lighting.
 - Unknown options are errors (this catches typos such as `colour`).
+- Scene JSON may be written without any whitespace; indentation and line breaks are optional.
 
 ## Scene
 
