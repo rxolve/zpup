@@ -1,9 +1,15 @@
 import { parseColor } from './color.ts';
 import { compileNormalized } from './compile.ts';
-import type { ValidationIssue } from './errors.ts';
+import { formatPath, type ValidationIssue } from './errors.ts';
 import { compilePieces } from './pieces.ts';
 import { formatNumber } from './svg.ts';
-import { Checker, type NormalizedNode, type NormalizedScene, normalize } from './validate.ts';
+import {
+  Checker,
+  type NormalizedNode,
+  type NormalizedScene,
+  normalize,
+  type Path,
+} from './validate.ts';
 
 /**
  * Looks for things in a valid scene that are allowed but probably not what
@@ -39,17 +45,13 @@ const TWO_PI = 2 * Math.PI;
  * its own only counts when it is close to a common radian value such as π/4.
  */
 function radians(c: Checker, s: NormalizedScene): void {
-  const angles: { path: string; nodeId: string | undefined; value: number }[] = [];
-  const add = (
-    path: string,
-    nodeId: string | undefined,
-    r: { x: number; y: number; z: number },
-  ) => {
+  const angles: { path: Path; nodeId: string | undefined; value: number }[] = [];
+  const add = (path: Path, nodeId: string | undefined, r: { x: number; y: number; z: number }) => {
     for (const axis of ['x', 'y', 'z'] as const) {
-      if (r[axis] !== 0) angles.push({ path: `${path}.rotate.${axis}`, nodeId, value: r[axis] });
+      if (r[axis] !== 0) angles.push({ path: [...path, 'rotate', axis], nodeId, value: r[axis] });
     }
   };
-  add('scene', undefined, s.rotate);
+  add(['scene'], undefined, s.rotate);
   walk(s.children, (node) => add(node.location, node.id, node.rotate));
   if (angles.length === 0) return;
   if (!angles.every((a) => Math.abs(a.value) <= TWO_PI + 1e-3)) return;
@@ -108,7 +110,7 @@ function nothingDrawn(c: Checker, s: NormalizedScene): boolean {
     received = 'shapes that are too small to draw';
     hint = 'Check "scale" and the sizes of the shapes.';
   }
-  c.note('scene.children', undefined, 'at least one visible shape', received, hint);
+  c.note(['scene', 'children'], undefined, 'at least one visible shape', received, hint);
   return true;
 }
 
@@ -116,22 +118,32 @@ const MAX_OFF_SCREEN = 3;
 
 /** Shapes that lie entirely outside the image, typically from top-left coordinates. */
 function offScreen(c: Checker, s: NormalizedScene): void {
+  // Keyed by the node's location written out, since arrays compare by identity.
   const bounds = new Map<
     string,
-    { nodeId: string | undefined; minX: number; maxX: number; minY: number; maxY: number }
+    {
+      location: Path;
+      nodeId: string | undefined;
+      minX: number;
+      maxX: number;
+      minY: number;
+      maxY: number;
+    }
   >();
   for (const p of compilePieces(s)) {
     const pad = p.stroke / 2;
-    let b = bounds.get(p.location);
+    const key = formatPath(p.location);
+    let b = bounds.get(key);
     if (!b) {
       b = {
+        location: p.location,
         nodeId: p.nodeId,
         minX: Number.POSITIVE_INFINITY,
         maxX: Number.NEGATIVE_INFINITY,
         minY: Number.POSITIVE_INFINITY,
         maxY: Number.NEGATIVE_INFINITY,
       };
-      bounds.set(p.location, b);
+      bounds.set(key, b);
     }
     for (const q of p.points) {
       b.minX = Math.min(b.minX, q.x - pad);
@@ -151,13 +163,13 @@ function offScreen(c: Checker, s: NormalizedScene): void {
     `The origin (0, 0) is the center of the image, so x runs from ${n(-halfW)} to ${n(halfW)} ` +
     `and y from ${n(-halfH)} to ${n(halfH)} (y down). If you placed shapes from the top-left ` +
     `corner as in SVG, subtract ${n(halfW)} from x and ${n(halfH)} from y.`;
-  outside.slice(0, MAX_OFF_SCREEN).forEach(([path, b], i) => {
+  outside.slice(0, MAX_OFF_SCREEN).forEach(([, b], i) => {
     const rest =
       i === MAX_OFF_SCREEN - 1 && outside.length > MAX_OFF_SCREEN
         ? ` ${outside.length - MAX_OFF_SCREEN} more shapes are outside too.`
         : '';
     c.note(
-      path,
+      b.location,
       b.nodeId,
       `a shape at least partly inside the ${n(s.width)} by ${n(s.height)} image`,
       `a shape entirely outside it (from ${n(b.minX)}, ${n(b.minY)} to ${n(b.maxX)}, ${n(b.maxY)} in image pixels)`,
@@ -173,7 +185,7 @@ function unshadedSolids(c: Checker, s: NormalizedScene): void {
     if (!solid?.shade || parseColor(solid.color)) return;
     if (solid.kind === 'box' && Object.keys(solid.faces).length === 6) return;
     c.note(
-      `${node.location}.color`,
+      [...node.location, 'color'],
       node.id,
       'a color that can be shaded: hex, rgb(), hsl() or a color name',
       JSON.stringify(solid.color),

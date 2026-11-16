@@ -1,4 +1,10 @@
-import { closest, describe, type ValidationIssue, ZpupValidationError } from './errors.ts';
+import {
+  closest,
+  describe,
+  makeIssue,
+  type ValidationIssue,
+  ZpupValidationError,
+} from './errors.ts';
 import { controlPoints, flatten, type PathGeometry, type Segment } from './geometry.ts';
 import { lerp, type Vec3 } from './math.ts';
 import { compilePieces, type Piece, paintConstraints, positions } from './pieces.ts';
@@ -83,25 +89,29 @@ export function resolveSpinOptions(options: unknown): {
 } {
   const issues: ValidationIssue[] = [];
   const report = (key: string, expected: string, value: unknown, hint?: string) => {
-    const path = `options.${key}`;
     const received = describe(value);
-    const issue: ValidationIssue = {
-      path,
-      expected,
-      received,
-      message: `${path}: expected ${expected}, received ${received}.${hint ? ` ${hint}` : ''}`,
-    };
-    if (hint !== undefined) issue.hint = hint;
-    issues.push(issue);
+    issues.push(
+      makeIssue({
+        pathSegments: ['options', key],
+        expected,
+        received,
+        hint,
+        detail: `expected ${expected}, received ${received}.${hint ? ` ${hint}` : ''}`,
+      }),
+    );
   };
   if (options === undefined) options = {};
   if (typeof options !== 'object' || options === null || Array.isArray(options)) {
-    issues.push({
-      path: 'options',
-      expected: 'an options object such as { "duration": 8 }',
-      received: describe(options),
-      message: `options: expected an options object such as { "duration": 8 }, received ${describe(options)}.`,
-    });
+    const expected = 'an options object such as { "duration": 8 }';
+    const received = describe(options);
+    issues.push(
+      makeIssue({
+        pathSegments: ['options'],
+        expected,
+        received,
+        detail: `expected ${expected}, received ${received}.`,
+      }),
+    );
     return { resolved: undefined, issues };
   }
   const o = options as Record<string, unknown>;
@@ -110,13 +120,15 @@ export function resolveSpinOptions(options: unknown): {
     if ((OPTION_KEYS as readonly string[]).includes(key)) continue;
     const guess = closest(key, OPTION_KEYS);
     const hint = guess ? `Did you mean "${guess}"?` : 'Remove this option.';
-    issues.push({
-      path: `options.${key}`,
-      expected: `${allowed} (spin options)`,
-      received: `unknown option "${key}"`,
-      hint,
-      message: `options.${key}: unknown option "${key}". ${hint} Allowed: ${allowed}.`,
-    });
+    issues.push(
+      makeIssue({
+        pathSegments: ['options', key],
+        expected: `${allowed} (spin options)`,
+        received: `unknown option "${key}"`,
+        hint,
+        detail: `unknown option "${key}". ${hint} Allowed: ${allowed}.`,
+      }),
+    );
   }
 
   const choice = <T extends string>(key: string, values: readonly T[], fallback: T): T => {

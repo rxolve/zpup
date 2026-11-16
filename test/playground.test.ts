@@ -151,10 +151,10 @@ describe('playground: JSON', () => {
       '{\n  "width": 10,\n  "children": [\n    { "type": "path", "colour": "red" }\n  ]\n}';
     const scan = scanJson(text);
     expect(scan.error).toBeUndefined();
-    const span = locate(scan, 'scene.children[0].colour');
+    const span = locate(scan, ['scene', 'children', 0, 'colour']);
     expect(span && text.slice(span.start, span.end)).toBe('"colour": "red"');
     // A missing option points at the node that lacks it.
-    const node = locate(scan, 'scene.children[0].path');
+    const node = locate(scan, ['scene', 'children', 0, 'path']);
     expect(node && text.slice(node.start, node.end)).toBe('{ "type": "path", "colour": "red" }');
   });
 
@@ -167,7 +167,19 @@ describe('playground: JSON', () => {
     const scan = scanJson(text);
     const issues = checkScene(JSON.parse(text));
     expect(issues.length).toBeGreaterThan(1);
-    for (const issue of issues) expect(locate(scan, issue.path)).toBeDefined();
+    for (const issue of issues) expect(locate(scan, issue.pathSegments)).toBeDefined();
+  });
+
+  it('locates keys that contain dots or brackets exactly', () => {
+    const text = formatJson({
+      width: 100,
+      height: 100,
+      children: [{ type: 'path', path: [{}], 'a.b[0]': 1 }],
+    });
+    const issue = checkScene(JSON.parse(text)).find((i) => i.path.endsWith('a.b[0]'));
+    expect(issue?.pathSegments).toEqual(['scene', 'children', 0, 'a.b[0]']);
+    const span = locate(scanJson(text), issue?.pathSegments ?? []);
+    expect(span && text.slice(span.start, span.end)).toBe('"a.b[0]": 1');
   });
 
   it('points at syntax errors', () => {

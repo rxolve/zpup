@@ -1,4 +1,11 @@
-import { closest, describe, type ValidationIssue, ZpupValidationError } from './errors.ts';
+import {
+  closest,
+  describe,
+  makeIssue,
+  type PathSegment,
+  type ValidationIssue,
+  ZpupValidationError,
+} from './errors.ts';
 import {
   ellipseGeometry,
   type PathGeometry,
@@ -10,12 +17,15 @@ import type { Vec3 } from './math.ts';
 import { FACE_KEYS, type NormalizedSolid, type SolidKind } from './solids.ts';
 import type { NodeType, Scene } from './types.ts';
 
+/** A location in the input: object keys and array indices from the root. */
+export type Path = readonly PathSegment[];
+
 /** A node after validation, with every default filled in. */
 export interface NormalizedNode {
   readonly type: NodeType;
   readonly id: string | undefined;
-  /** JSON-style location in the input, for messages. */
-  readonly location: string;
+  /** Location in the input, for messages, such as `["scene", "children", 0]`. */
+  readonly location: Path;
   readonly translate: Vec3;
   readonly rotate: Vec3;
   readonly scale: Vec3;
@@ -229,7 +239,7 @@ export class Checker {
   private readonly seen = new Set<object>();
 
   report(
-    path: string,
+    path: Path,
     nodeId: string | undefined,
     expected: string,
     value: unknown,
@@ -237,40 +247,28 @@ export class Checker {
     unknownKey?: string,
   ): void {
     const received = unknownKey === undefined ? describe(value) : `unknown option "${unknownKey}"`;
-    const where = nodeId === undefined ? path : `${path} (in node "${nodeId}")`;
     const tail = hint ? ` ${hint}` : '';
-    const message =
+    const detail =
       unknownKey === undefined
-        ? `${where}: expected ${expected}, received ${received}.${tail}`
-        : `${where}: unknown option "${unknownKey}".${tail} Allowed: ${expected}.`;
-    const issue: ValidationIssue = { path, expected, received, message };
-    if (nodeId !== undefined) issue.nodeId = nodeId;
-    if (hint !== undefined) issue.hint = hint;
-    this.issues.push(issue);
+        ? `expected ${expected}, received ${received}.${tail}`
+        : `unknown option "${unknownKey}".${tail} Allowed: ${expected}.`;
+    this.issues.push(makeIssue({ pathSegments: path, nodeId, expected, received, hint, detail }));
   }
 
   /** Like {@link report}, with `received` already written out as text. */
   note(
-    path: string,
+    path: Path,
     nodeId: string | undefined,
     expected: string,
     received: string,
     hint: string,
   ): void {
-    const where = nodeId === undefined ? path : `${path} (in node "${nodeId}")`;
-    const issue: ValidationIssue = {
-      path,
-      expected,
-      received,
-      hint,
-      message: `${where}: expected ${expected}, received ${received}. ${hint}`,
-    };
-    if (nodeId !== undefined) issue.nodeId = nodeId;
-    this.issues.push(issue);
+    const detail = `expected ${expected}, received ${received}. ${hint}`;
+    this.issues.push(makeIssue({ pathSegments: path, nodeId, expected, received, hint, detail }));
   }
 
   /** Guards against the same object appearing twice (which includes cycles). */
-  enter(value: object, path: string, nodeId: string | undefined): boolean {
+  enter(value: object, path: Path, nodeId: string | undefined): boolean {
     if (this.seen.has(value)) {
       this.report(
         path,
@@ -317,7 +315,7 @@ function readNumber(
   c: Checker,
   obj: Record<string, unknown>,
   key: string,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
   rule: {
     min?: number;
@@ -328,7 +326,7 @@ function readNumber(
   },
 ): number | undefined {
   const value = obj[key];
-  const where = `${path}.${key}`;
+  const where = [...path, key];
   let expected = rule.integer ? 'an integer' : 'a number';
   if (rule.min !== undefined)
     expected += rule.exclusiveMin ? ` greater than ${rule.min}` : ` of at least ${rule.min}`;
@@ -348,7 +346,7 @@ function readNumber(
 function readVector(
   c: Checker,
   value: unknown,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
   example: string,
 ): Vec3 | undefined {
@@ -365,7 +363,7 @@ function readVector(
     if (key !== 'x' && key !== 'y' && key !== 'z') {
       const guess = closest(key, ['x', 'y', 'z']);
       c.report(
-        `${path}.${key}`,
+        [...path, key],
         nodeId,
         '"x", "y", "z"',
         undefined,
@@ -380,13 +378,7 @@ function readVector(
     const component = value[axis];
     if (component === undefined) continue;
     if (typeof component !== 'number' || !Number.isFinite(component)) {
-      c.report(
-        `${path}.${axis}`,
-        nodeId,
-        'a finite number',
-        component,
-        numberHint(component, '10'),
-      );
+      c.report([...path, axis], nodeId, 'a finite number', component, numberHint(component, '10'));
       ok = false;
     } else {
       out[axis] = component;
@@ -399,7 +391,7 @@ function readBoolean(
   c: Checker,
   obj: Record<string, unknown>,
   key: string,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
   fallback: boolean,
 ): boolean {
@@ -407,7 +399,7 @@ function readBoolean(
   if (value === undefined) return fallback;
   if (typeof value !== 'boolean') {
     const hint = value === 'true' || value === 'false' ? `Remove the quotes: ${value}.` : undefined;
-    c.report(`${path}.${key}`, nodeId, 'true or false', value, hint);
+    c.report([...path, key], nodeId, 'true or false', value, hint);
     return fallback;
   }
   return value;
@@ -417,14 +409,14 @@ function readColor(
   c: Checker,
   obj: Record<string, unknown>,
   key: string,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
 ): string | undefined {
   const value = obj[key];
   if (value === undefined) return undefined;
   if (!isColor(value)) {
     c.report(
-      `${path}.${key}`,
+      [...path, key],
       nodeId,
       'a CSS color string such as "#e62", "rgb(230, 100, 30)" or "tomato"',
       value,
@@ -438,12 +430,12 @@ function readColor(
 function readFill(
   c: Checker,
   obj: Record<string, unknown>,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
   solid: boolean,
 ): boolean {
   const value = obj.fill;
-  const where = `${path}.fill`;
+  const where = [...path, 'fill'];
   if (value === undefined) return solid;
   if (solid) {
     if (value !== true) {
@@ -484,7 +476,7 @@ function checkKeys(
   c: Checker,
   obj: Record<string, unknown>,
   allowed: readonly string[],
-  path: string,
+  path: Path,
   nodeId: string | undefined,
   owner: string,
   type?: NodeType,
@@ -508,7 +500,7 @@ function checkKeys(
       hint = 'Remove this option.';
     }
     c.report(
-      `${path}.${key}`,
+      [...path, key],
       nodeId,
       `${allowed.map((k) => `"${k}"`).join(', ')} (options of ${owner})`,
       undefined,
@@ -547,7 +539,7 @@ function keyHint(type: NodeType, key: string): string | undefined {
 function readChildren(
   c: Checker,
   value: unknown,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
 ): NormalizedNode[] {
   if (value === undefined) return [];
@@ -557,7 +549,7 @@ function readChildren(
   }
   const out: NormalizedNode[] = [];
   value.forEach((child, i) => {
-    const node = readNode(c, child, `${path}[${i}]`);
+    const node = readNode(c, child, [...path, i]);
     if (node) out.push(node);
   });
   return out;
@@ -566,7 +558,7 @@ function readChildren(
 function readPath(
   c: Checker,
   value: unknown,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
   closed: boolean,
 ): PathGeometry | undefined {
@@ -585,7 +577,7 @@ function readPath(
   const segments: Segment[] = [];
   let ok = true;
   value.forEach((entry, i) => {
-    const where = `${path}[${i}]`;
+    const where = [...path, i];
     if (isPlainObject(entry) && 'bezier' in entry) {
       if (i === 0) {
         c.report(
@@ -600,13 +592,13 @@ function readPath(
       }
       const extra = Object.keys(entry).filter((k) => k !== 'bezier');
       for (const key of extra) {
-        c.report(`${where}.${key}`, nodeId, '"bezier"', undefined, 'Remove this key.', key);
+        c.report([...where, key], nodeId, '"bezier"', undefined, 'Remove this key.', key);
         ok = false;
       }
       const b = entry.bezier;
       if (!Array.isArray(b) || b.length !== 3) {
         c.report(
-          `${where}.bezier`,
+          [...where, 'bezier'],
           nodeId,
           'an array of three points [control1, control2, end]',
           b,
@@ -616,7 +608,7 @@ function readPath(
         return;
       }
       const [c1, c2, to] = b.map((p, j) =>
-        readVector(c, p, `${where}.bezier[${j}]`, nodeId, example),
+        readVector(c, p, [...where, 'bezier', j], nodeId, example),
       );
       if (c1 && c2 && to) segments.push({ kind: 'bezier', c1, c2, to });
       else ok = false;
@@ -637,7 +629,7 @@ function readPath(
 function readEllipseSize(
   c: Checker,
   obj: Record<string, unknown>,
-  path: string,
+  path: Path,
   nodeId: string | undefined,
 ): [number, number] | undefined {
   const hasDiameter = obj.diameter !== undefined;
@@ -647,7 +639,7 @@ function readEllipseSize(
   if (hasDiameter) {
     if (hasWidth || hasHeight) {
       c.report(
-        `${path}.diameter`,
+        [...path, 'diameter'],
         nodeId,
         'either "diameter" or "width" and "height", not both',
         obj.diameter,
@@ -660,7 +652,7 @@ function readEllipseSize(
   }
   if (!hasWidth && !hasHeight) {
     c.report(
-      `${path}.diameter`,
+      [...path, 'diameter'],
       nodeId,
       'a "diameter", or a "width" and a "height"',
       undefined,
@@ -673,7 +665,7 @@ function readEllipseSize(
   return w === undefined || h === undefined ? undefined : [w, h];
 }
 
-function readNode(c: Checker, input: unknown, path: string): NormalizedNode | undefined {
+function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | undefined {
   if (!isPlainObject(input)) {
     c.report(path, undefined, 'a node object such as { "type": "ellipse", "diameter": 20 }', input);
     return undefined;
@@ -681,7 +673,7 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
   let nodeId: string | undefined;
   if (input.id !== undefined) {
     if (typeof input.id === 'string') nodeId = input.id;
-    else c.report(`${path}.id`, undefined, 'a string', input.id);
+    else c.report([...path, 'id'], undefined, 'a string', input.id);
   }
   if (!c.enter(input, path, nodeId)) return undefined;
 
@@ -714,7 +706,7 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
       }
       if (type) hint += ` The other options were checked as ${article(type)} "${type}".`;
     }
-    c.report(`${path}.type`, nodeId, `one of ${typeList}`, typeValue, hint);
+    c.report([...path, 'type'], nodeId, `one of ${typeList}`, typeValue, hint);
     lenient = true;
   }
 
@@ -728,17 +720,17 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
   const translate =
     input.translate === undefined
       ? ZERO
-      : (readVector(c, input.translate, `${path}.translate`, nodeId, vectorExample) ?? ZERO);
+      : (readVector(c, input.translate, [...path, 'translate'], nodeId, vectorExample) ?? ZERO);
   const rotate =
     input.rotate === undefined
       ? ZERO
-      : (readVector(c, input.rotate, `${path}.rotate`, nodeId, '{ "x": 0, "y": 45, "z": 0 }') ??
+      : (readVector(c, input.rotate, [...path, 'rotate'], nodeId, '{ "x": 0, "y": 45, "z": 0 }') ??
         ZERO);
   let scale = ONE;
   if (typeof input.scale === 'number' && Number.isFinite(input.scale)) {
     scale = { x: input.scale, y: input.scale, z: input.scale };
   } else if (isPlainObject(input.scale)) {
-    const s = readVector(c, input.scale, `${path}.scale`, nodeId, '{ "x": 2, "y": 1, "z": 1 }');
+    const s = readVector(c, input.scale, [...path, 'scale'], nodeId, '{ "x": 2, "y": 1, "z": 1 }');
     if (s) {
       scale = {
         x: input.scale.x === undefined ? 1 : s.x,
@@ -748,7 +740,7 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
     }
   } else if (input.scale !== undefined) {
     c.report(
-      `${path}.scale`,
+      [...path, 'scale'],
       nodeId,
       'a number or an object with optional numeric x, y and z',
       input.scale,
@@ -756,7 +748,7 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
     );
   }
   const visible = readBoolean(c, input, 'visible', path, nodeId, true);
-  const children = readChildren(c, input.children, `${path}.children`, nodeId);
+  const children = readChildren(c, input.children, [...path, 'children'], nodeId);
 
   // Options that a node of the wrong type has not got are skipped; required
   // options are not demanded, since the intended type may not need them.
@@ -781,7 +773,7 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
     let geometry: PathGeometry | undefined;
     if (shapeType === 'path') {
       const closed = readBoolean(c, input, 'closed', path, nodeId, false);
-      if (present('path')) geometry = readPath(c, input.path, `${path}.path`, nodeId, closed);
+      if (present('path')) geometry = readPath(c, input.path, [...path, 'path'], nodeId, closed);
     } else if (shapeType === 'ellipse') {
       if (!lenient || ['diameter', 'width', 'height'].some((k) => input[k] !== undefined)) {
         const ellipse = readEllipseSize(c, input, path, nodeId);
@@ -805,7 +797,7 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
         if (value === undefined) continue;
         if (typeof value === 'boolean') {
           c.report(
-            `${path}.${key}`,
+            [...path, key],
             nodeId,
             'a CSS color string such as "#e62"',
             value,
@@ -880,7 +872,7 @@ export function normalizeScene(input: Scene | unknown): NormalizedScene {
 
 export function normalize(input: unknown): { scene?: NormalizedScene; issues: ValidationIssue[] } {
   const c = new Checker();
-  const path = 'scene';
+  const path: Path = ['scene'];
   if (!isPlainObject(input)) {
     c.report(
       path,
@@ -902,22 +894,23 @@ export function normalize(input: unknown): { scene?: NormalizedScene; issues: Va
   let title: string | undefined;
   if (input.title !== undefined) {
     if (typeof input.title === 'string') title = input.title;
-    else c.report(`${path}.title`, undefined, 'a string', input.title);
+    else c.report([...path, 'title'], undefined, 'a string', input.title);
   }
   const rotate =
     input.rotate === undefined
       ? ZERO
-      : (readVector(c, input.rotate, `${path}.rotate`, undefined, '{ "x": -15, "y": 30 }') ?? ZERO);
+      : (readVector(c, input.rotate, [...path, 'rotate'], undefined, '{ "x": -15, "y": 30 }') ??
+        ZERO);
   if (input.children === undefined) {
     c.report(
-      `${path}.children`,
+      [...path, 'children'],
       undefined,
       'an array of nodes',
       undefined,
       'Use [] for an empty scene.',
     );
   }
-  const children = readChildren(c, input.children, `${path}.children`, undefined);
+  const children = readChildren(c, input.children, [...path, 'children'], undefined);
   if (c.issues.length > 0 || width === undefined || height === undefined || zoom === undefined) {
     return { issues: c.issues };
   }

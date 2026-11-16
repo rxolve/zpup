@@ -19,7 +19,7 @@ export {
   type PathCommand,
   type PathItem,
 } from './compile.ts';
-export { type ValidationIssue, ZpupValidationError } from './errors.ts';
+export { type PathSegment, type ValidationIssue, ZpupValidationError } from './errors.ts';
 export {
   add,
   compose,

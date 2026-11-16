@@ -10,7 +10,7 @@ import {
   type Vec3,
 } from './math.ts';
 import { type Surface, solidFaces } from './solids.ts';
-import type { NormalizedNode, NormalizedScene } from './validate.ts';
+import type { NormalizedNode, NormalizedScene, Path } from './validate.ts';
 
 /**
  * One depth-sorted piece of a shape, in screen space. A filled shape is one
@@ -37,8 +37,8 @@ export interface Piece {
   readonly stroke: number;
   readonly fill: boolean;
   readonly nodeId: string | undefined;
-  /** JSON-style location of the node in the input, for messages. */
-  readonly location: string;
+  /** Location of the node in the input, for messages. */
+  readonly location: Path;
   /** The outline approximated by straight lines, for depth analysis. */
   readonly points: readonly Vec3[];
   /** For a face of a solid: the index of the solid, in tree order. */

@@ -180,6 +180,23 @@ describe('validation', () => {
     expect(messages({ width: 1, height: 1, children: [shared, shared] })).toHaveLength(1);
   });
 
+  it('gives the path as segments and the message without its location', () => {
+    const [issue] = checkScene({
+      width: 10,
+      height: 10,
+      children: [{ type: 'group', children: [{ id: 'eye', type: 'path', path: [{ x: 'a' }] }] }],
+    });
+    expect(issue).toMatchObject({
+      path: 'scene.children[0].children[0].path[0].x',
+      pathSegments: ['scene', 'children', 0, 'children', 0, 'path', 0, 'x'],
+      nodeId: 'eye',
+    });
+    expect(issue?.message).toBe(
+      `scene.children[0].children[0].path[0].x (in node "eye"): ${issue?.detail}`,
+    );
+    expect(issue?.detail).toMatch(/^expected a finite number, received "a"\./);
+  });
+
   it('throws a ZpupValidationError with structured issues', () => {
     const bad = {
       width: 10,

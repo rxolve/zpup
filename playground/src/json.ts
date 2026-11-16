@@ -11,11 +11,19 @@ export interface Span {
   readonly end: number;
 }
 
+/** A location in the JSON: object keys and array indices, starting with `"scene"`. */
+export type JsonPath = readonly (string | number)[];
+
+/** The map key for a path; paths are arrays, which maps compare by identity. */
+export function pathKey(path: JsonPath): string {
+  return JSON.stringify(path);
+}
+
 /** What {@link scanJson} found. */
 export interface JsonScan {
-  /** Span of each value, keyed by path such as `scene.children[0].stroke`. */
+  /** Span of each value, keyed by {@link pathKey}. */
   readonly values: Map<string, Span>;
-  /** Span of each object property, from its key to the end of its value. */
+  /** Span of each object property, from its key to the end of its value, keyed by {@link pathKey}. */
   readonly properties: Map<string, Span>;
   /** The first syntax error, if any. */
   readonly error?: { readonly offset: number; readonly message: string };
@@ -71,7 +79,8 @@ function inline(value: unknown): string | undefined {
 
 /**
  * Walks JSON text, recording where each value and property is, and stops at
- * the first syntax error. Paths start with `scene`, as in zpup's issues.
+ * the first syntax error. Paths start with `"scene"`, as in the
+ * `pathSegments` of zpup's issues.
  */
 export function scanJson(text: string): JsonScan {
   const values = new Map<string, Span>();
@@ -128,7 +137,7 @@ export function scanJson(text: string): JsonScan {
     i += (match as RegExpExecArray)[0].length;
   };
 
-  const value = (path: string) => {
+  const value = (path: JsonPath) => {
     space();
     const start = i;
     const ch = text[i];
@@ -143,10 +152,10 @@ export function scanJson(text: string): JsonScan {
       else if (ch === undefined) fail('Expected a value, found the end of the text');
       else fail(`Expected a value, found ${describeAt(i)}`);
     }
-    values.set(path, { start, end: i });
+    values.set(pathKey(path), { start, end: i });
   };
 
-  const object = (path: string) => {
+  const object = (path: JsonPath) => {
     i++; // {
     space();
     if (text[i] === '}') {
@@ -164,9 +173,9 @@ export function scanJson(text: string): JsonScan {
       space();
       if (text[i] !== ':') fail(`Expected ":" after the property name, found ${describeAt(i)}`);
       i++;
-      const childPath = `${path}.${key}`;
+      const childPath = [...path, key];
       value(childPath);
-      properties.set(childPath, { start: keyStart, end: i });
+      properties.set(pathKey(childPath), { start: keyStart, end: i });
       space();
       if (text[i] === ',') {
         i++;
@@ -180,7 +189,7 @@ export function scanJson(text: string): JsonScan {
     }
   };
 
-  const array = (path: string) => {
+  const array = (path: JsonPath) => {
     i++; // [
     space();
     if (text[i] === ']') {
@@ -190,7 +199,7 @@ export function scanJson(text: string): JsonScan {
     for (let index = 0; ; index++) {
       space();
       if (text[i] === ']') fail('A comma before "]" is not allowed in JSON');
-      value(`${path}[${index}]`);
+      value([...path, index]);
       space();
       if (text[i] === ',') {
         i++;
@@ -205,7 +214,7 @@ export function scanJson(text: string): JsonScan {
   };
 
   try {
-    value('scene');
+    value(['scene']);
     space();
     if (i < text.length) fail(`Unexpected ${describeAt(i)} after the end of the scene`);
     return { values, properties };
@@ -218,20 +227,18 @@ export function scanJson(text: string): JsonScan {
 }
 
 /**
- * Finds the text for an issue path such as `scene.children[0].colour`.
- * Prefers the whole property (key and value), then the value, then the
- * nearest enclosing path that exists, so an issue about a missing option
- * points at the node that lacks it.
+ * Finds the text for an issue's `pathSegments`, such as
+ * `["scene", "children", 0, "colour"]`. Prefers the whole property (key and
+ * value), then the value, then the nearest enclosing path that exists, so an
+ * issue about a missing option points at the node that lacks it.
  */
-export function locate(scan: JsonScan, path: string): Span | undefined {
-  let p = path;
-  for (;;) {
-    const found = scan.properties.get(p) ?? scan.values.get(p);
+export function locate(scan: JsonScan, path: JsonPath): Span | undefined {
+  for (let length = path.length; length > 0; length--) {
+    const key = pathKey(path.slice(0, length));
+    const found = scan.properties.get(key) ?? scan.values.get(key);
     if (found) return found;
-    const cut = Math.max(p.lastIndexOf('.'), p.lastIndexOf('['));
-    if (cut <= 0) return undefined;
-    p = p.slice(0, cut);
   }
+  return undefined;
 }
 
 /** 1-based line and column of an offset. */

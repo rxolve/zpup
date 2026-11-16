@@ -11,7 +11,7 @@ import {
   type ValidationIssue,
 } from '@zpup/core';
 import { isAllowedSvgElement, isAllowedSvgValue } from './allowlist.ts';
-import { formatJson, lineColumn, locate, type Span, scanJson } from './json.ts';
+import { formatJson, lineColumn, locate, pathKey, type Span, scanJson } from './json.ts';
 import { decodeHash, encodeHash, formatBytes, gzipSize } from './share.ts';
 import type { SpinRequest, SpinResponse } from './spin-worker.ts';
 import {
@@ -240,17 +240,13 @@ interface Problem {
 }
 
 function issueProblem(kind: Problem['kind'], issue: ValidationIssue): Problem {
-  // The message repeats the path (and the node's id) shown separately here.
+  // The path (and the node's id) are shown separately, so the message is the detail alone.
   const node = issue.nodeId === undefined ? '' : ` (in node ${JSON.stringify(issue.nodeId)})`;
-  const prefix = `${issue.path}${node}: `;
-  const message = issue.message.startsWith(prefix)
-    ? issue.message.slice(prefix.length)
-    : issue.message;
   return {
     kind,
     where: `${issue.path}${node}`,
-    message,
-    target: () => locate(scanJson(editor.value), issue.path),
+    message: issue.detail,
+    target: () => locate(scanJson(editor.value), issue.pathSegments),
   };
 }
 
@@ -468,8 +464,8 @@ keepButton.addEventListener('click', () => {
   }
   const json = formatJson(rotate).trimEnd();
   const scan = scanJson(editor.value);
-  const existing = scan.values.get('scene.rotate');
-  const root = scan.values.get('scene');
+  const existing = scan.values.get(pathKey(['scene', 'rotate']));
+  const root = scan.values.get(pathKey(['scene']));
   offset = NO_OFFSET;
   if (existing) {
     replaceRange(existing.start, existing.end, json);

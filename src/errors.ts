@@ -1,7 +1,16 @@
+/** One step of an issue's location: an object key or an array index. */
+export type PathSegment = string | number;
+
 /** One problem found in a scene description. */
 export interface ValidationIssue {
   /** Where the problem is, as a JSON-style path such as `scene.children[0].stroke`. */
   path: string;
+  /**
+   * The same location as {@link path}, one key or index per entry, such as
+   * `["scene", "children", 0, "stroke"]`. Unlike the string, it stays exact
+   * for keys that contain dots or brackets.
+   */
+  pathSegments: PathSegment[];
   /** The `id` of the nearest node, when it has one. */
   nodeId?: string;
   /** What is allowed at this path. */
@@ -10,8 +19,49 @@ export interface ValidationIssue {
   received: string;
   /** A concrete suggestion for fixing the problem, when there is one. */
   hint?: string;
-  /** The full, human-readable message for this issue. */
+  /**
+   * The message without the leading path and node id, for screens that show
+   * the location separately.
+   */
+  detail: string;
+  /**
+   * The full, human-readable message: the path, the node id when there is
+   * one, then {@link detail}.
+   */
   message: string;
+}
+
+/** Writes path segments as a JSON-style path such as `scene.children[0].stroke`. */
+export function formatPath(segments: readonly PathSegment[]): string {
+  let out = '';
+  for (const s of segments) {
+    out += typeof s === 'number' ? `[${s}]` : out === '' ? s : `.${s}`;
+  }
+  return out;
+}
+
+/** Builds an issue, writing `path` and `message` from the parts. */
+export function makeIssue(parts: {
+  pathSegments: readonly PathSegment[];
+  nodeId?: string | undefined;
+  expected: string;
+  received: string;
+  hint?: string | undefined;
+  detail: string;
+}): ValidationIssue {
+  const path = formatPath(parts.pathSegments);
+  const where = parts.nodeId === undefined ? path : `${path} (in node "${parts.nodeId}")`;
+  const issue: ValidationIssue = {
+    path,
+    pathSegments: [...parts.pathSegments],
+    expected: parts.expected,
+    received: parts.received,
+    detail: parts.detail,
+    message: `${where}: ${parts.detail}`,
+  };
+  if (parts.nodeId !== undefined) issue.nodeId = parts.nodeId;
+  if (parts.hint !== undefined) issue.hint = parts.hint;
+  return issue;
 }
 
 /**
