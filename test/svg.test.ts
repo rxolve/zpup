@@ -1,7 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { pup } from '../examples/pup.ts';
-import { dot, ellipse, formatNumber, path, rect, renderSvg, type Scene } from '../src/index.ts';
+import {
+  compileScene,
+  dot,
+  ellipse,
+  formatNumber,
+  frameToSvg,
+  path,
+  rect,
+  renderSvg,
+  type Scene,
+  type SvgOptions,
+  ZpupValidationError,
+} from '../src/index.ts';
 
 const small: Scene = {
   width: 120,
@@ -68,6 +80,36 @@ describe('renderSvg', () => {
     expect(svg).toContain('<title>&lt;b&gt; &quot;a&quot; &amp; b</title>');
   });
 
+  it('rejects bad options with the same error as bad scenes', () => {
+    const scene = { width: 10, height: 10, children: [] };
+    const thrown = (f: () => unknown) => {
+      try {
+        f();
+      } catch (e) {
+        return e;
+      }
+      return undefined;
+    };
+    const bad = thrown(() => renderSvg(scene, { precision: 1.5 })) as ZpupValidationError;
+    expect(bad).toBeInstanceOf(ZpupValidationError);
+    expect(bad.message).toMatch(/^Invalid SVG options \(1 problem\)/);
+    expect(bad.issues[0]).toMatchObject({
+      path: 'options.precision',
+      pathSegments: ['options', 'precision'],
+      detail: 'expected an integer from 0 to 10, received 1.5. Use a whole number such as 2.',
+    });
+    const typo = thrown(() =>
+      renderSvg(scene, { precison: 1 } as unknown as SvgOptions),
+    ) as ZpupValidationError;
+    expect(typo.issues[0]?.hint).toBe('Did you mean "precision"?');
+    const both = thrown(() =>
+      renderSvg({ width: 10, children: [] } as unknown as Scene, { precision: -1 }),
+    ) as ZpupValidationError;
+    expect(both.message).toMatch(/^Invalid zpup scene and SVG options \(2 problems\)/);
+    const frame = compileScene(scene);
+    expect(thrown(() => frameToSvg(frame, { precision: 11 }))).toBeInstanceOf(ZpupValidationError);
+  });
+
   it('honors precision', () => {
     const scene: Scene = {
       width: 10,
@@ -76,7 +118,7 @@ describe('renderSvg', () => {
     };
     expect(renderSvg(scene, { precision: 0 })).toContain('cx="5"');
     expect(renderSvg(scene, { precision: 3 })).toContain('cx="5.333"');
-    expect(() => renderSvg(scene, { precision: 1.5 })).toThrow(RangeError);
+    expect(() => renderSvg(scene, { precision: 1.5 })).toThrow(ZpupValidationError);
   });
 });
 
