@@ -1,0 +1,135 @@
+# zpup
+
+> zpup renders round, flat pseudo-3D illustrations (in the style of Zdog) from a plain JSON scene tree to an SVG string. ESM-only TypeScript, no runtime dependencies, no DOM needed.
+
+## Entry points
+
+```ts
+import { renderSvg, checkScene, compileScene, ZpupValidationError } from 'zpup';
+import { group, path, dot, ellipse, rect, polygon } from 'zpup'; // optional typed helpers
+
+renderSvg(scene, { precision: 2 }) // -> "<svg ...>...</svg>\n" (pure, deterministic)
+checkScene(scene)                  // -> ValidationIssue[] (empty when valid), never throws
+compileScene(scene)                // -> Frame: projected, depth-sorted 2D draw items
+```
+
+`renderSvg` and `compileScene` throw `ZpupValidationError` on invalid input. Its `message` lists every problem; `issues` has `{ path, expected, received, hint, message }` for each.
+
+## Conventions
+
+- Axes: x right, y down, z toward the viewer. Origin = center of the image.
+- Units: scene units; 1 unit = 1 SVG pixel at `zoom: 1`.
+- Angles: degrees, never radians. Rotation applies z first, then y, then x.
+  - `rotate.z > 0`: clockwise on screen.
+  - `rotate.y > 0`: the +x side moves away from the viewer.
+  - `rotate.x > 0`: the bottom (+y) side moves toward the viewer. `scene.rotate = { x: -15 }` looks down from above.
+- Vectors are objects with optional keys: `{ x: 10 }`, `{ y: -5, z: 2 }`, `{}`. Arrays such as `[1, 2, 3]` are rejected.
+- Node transform order: scale, then rotate, then translate. Children inherit the parent's transform.
+- Projection is orthographic. There is no perspective, lighting, shading or backface option.
+- Unknown options are errors (this catches typos such as `colour`).
+
+## Scene
+
+```ts
+{
+  width: number,          // required, pixels, > 0
+  height: number,         // required, pixels, > 0
+  zoom?: number,          // default 1
+  background?: string,    // CSS color; default transparent
+  title?: string,         // accessible title
+  rotate?: { x?, y?, z? },// view rotation in degrees
+  children: Node[],       // required (may be [])
+}
+```
+
+## Nodes
+
+Every node: `type` (required), `id?` (string, shown in errors), `translate?`, `rotate?`, `scale?` (number or `{ x?, y?, z? }`, missing axes = 1), `visible?` (default true), `children?`.
+
+Every shape (all types except `group`): `color?` (CSS color, default `"#333"`), `stroke?` (width >= 0, default 1, round caps and joins), `fill?` (boolean, default false; fills with `color`).
+
+| type | own options | notes |
+| --- | --- | --- |
+| `group` | none | Draws nothing; moves its children together. No `color`. |
+| `path` | `path` (required, array of points), `closed?` (default false) | 1 point = dot/sphere, 2 = line/tube, 3+ = polyline or polygon. |
+| `ellipse` | `diameter`, or `width` and `height` | Circle or ellipse in the local x/y plane. |
+| `rect` | `width`, `height` (required) | Centered on the origin, in the local x/y plane. |
+| `polygon` | `sides` (integer >= 3), `radius` (required) | Regular polygon, one corner pointing up. |
+
+Path entries are points `{ x?, y?, z? }` or cubic curves `{ "bezier": [control1, control2, end] }`. The first entry must be a point.
+
+Helpers: `group(o)`, `path(o)`, `ellipse(o)`, `rect(o)`, `polygon(o)` return `{ ...o, type }`. `dot(o)` returns a `path` with `path: [{}]`.
+
+## How to get volume
+
+- Sphere: `dot({ stroke: 40 })` (diameter = stroke).
+- Tube or limb: a 2-point `path` with a thick `stroke`.
+- Disc or plate: `ellipse({ diameter, fill: true })`, optionally with a stroke for a rounded rim.
+- Ring: `ellipse({ diameter, stroke })` without fill. Rotate it with `rotate: { x: 90 }` to lay it flat.
+- Lay a flat shape on the ground with `rotate: { x: 90 }`.
+
+## Depth sorting
+
+Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Coplanar shapes keep tree order (later children paint on top).
+
+Place details slightly in front of the surface they sit on: an eye on a sphere of stroke 40 goes at `z` around 18 to 20.
+
+## Examples
+
+Sphere with a ring:
+
+```json
+{
+  "width": 120,
+  "height": 120,
+  "rotate": { "x": -20, "y": 30 },
+  "children": [
+    { "type": "path", "path": [{}], "stroke": 40, "color": "#e62" },
+    { "type": "ellipse", "diameter": 70, "stroke": 5, "color": "#636", "rotate": { "x": 90 } }
+  ]
+}
+```
+
+Face with grouped features:
+
+```ts
+import { dot, group, path, renderSvg } from 'zpup';
+
+const svg = renderSvg({
+  width: 160,
+  height: 160,
+  rotate: { y: -25 },
+  children: [
+    group({
+      id: 'head',
+      children: [
+        dot({ stroke: 90, color: '#f4c95d' }),
+        dot({ translate: { x: -16, y: -8, z: 40 }, stroke: 10, color: '#222' }),
+        dot({ translate: { x: 16, y: -8, z: 40 }, stroke: 10, color: '#222' }),
+        path({
+          id: 'smile',
+          translate: { y: 12, z: 42 },
+          path: [{ x: -14 }, { bezier: [{ x: -7, y: 10 }, { x: 7, y: 10 }, { x: 14 }] }],
+          stroke: 5,
+          color: '#222',
+        }),
+      ],
+    }),
+  ],
+});
+```
+
+A longer example lives in `examples/pup.ts`.
+
+## Common mistakes
+
+- `type: "circle"` -> use `"ellipse"` with `diameter`. `type: "line"` -> use `"path"` with two points.
+- `radius` on an ellipse -> use `diameter`.
+- Radians (`Math.PI / 4`) -> use degrees (`45`).
+- `stroke: "12px"` -> use a number (`12`).
+- `color` on a `group` -> set it on the shapes inside.
+- Expecting `y` to point up -> negative `y` is up.
+
+## Not available yet
+
+Canvas rendering, animation, perspective, React or other framework bindings.
