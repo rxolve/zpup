@@ -125,8 +125,110 @@ export interface PolygonNode extends ShapeBase {
   radius: number;
 }
 
+/**
+ * Options shared by the solids: `box`, `cylinder`, `cone` and `hemisphere`.
+ *
+ * A solid is always filled. With one `color`, each face gets a fixed lighter
+ * or darker version of it, chosen by the direction the face points in the
+ * scene (not by the view), so the solid reads as 3D without lighting. The
+ * face pointing toward the viewer of an unrotated scene, and the round
+ * surface of an upright cylinder or cone, keep `color` exactly.
+ */
+export interface SolidBase extends NodeBase {
+  /** Base color of every face. Any CSS color. Default `"#333"`. */
+  color?: string;
+  /**
+   * Width of the round-capped outline drawn around every face in that face's
+   * color. It rounds the edges and hides seams between faces. Default 1.
+   */
+  stroke?: number;
+  /** Solids are always filled. Only `true` is accepted. */
+  fill?: true;
+  /**
+   * Give each face a fixed lighter or darker version of `color`. Set to false
+   * to paint every face in `color` exactly. Faces with their own color are
+   * never shaded. Default true.
+   */
+  shade?: boolean;
+}
+
+/**
+ * A box centered on the origin: `width` along x, `height` along y and `depth`
+ * along z. Faces: front (+z), rear (-z), left (-x), right (+x), top (-y),
+ * bottom (+y).
+ */
+export interface BoxNode extends SolidBase {
+  type: 'box';
+  width: number;
+  height: number;
+  depth: number;
+  /** Color of the face toward +z. */
+  frontFace?: string;
+  /** Color of the face toward -z. */
+  rearFace?: string;
+  /** Color of the face toward -x. */
+  leftFace?: string;
+  /** Color of the face toward +x. */
+  rightFace?: string;
+  /** Color of the face toward -y (up). */
+  topFace?: string;
+  /** Color of the face toward +y (down). */
+  bottomFace?: string;
+}
+
+/**
+ * A cylinder along the local z axis, centered on the origin, like Zdog's.
+ * Use `rotate: { x: 90 }` to stand it up with `frontFace` on top.
+ */
+export interface CylinderNode extends SolidBase {
+  type: 'cylinder';
+  /** Diameter of the round ends. */
+  diameter: number;
+  /** Distance between the ends, along z. */
+  length: number;
+  /** Color of the end at z = +length / 2. */
+  frontFace?: string;
+  /** Color of the end at z = -length / 2. */
+  backface?: string;
+}
+
+/**
+ * A cone with its round base at z = 0 and its tip at z = `length`, like
+ * Zdog's. Use `rotate: { x: 90 }` to point the tip up.
+ */
+export interface ConeNode extends SolidBase {
+  type: 'cone';
+  /** Diameter of the base. */
+  diameter: number;
+  /** Distance from the base to the tip, along z. */
+  length: number;
+  /** Color of the flat base. */
+  backface?: string;
+}
+
+/**
+ * Half a sphere with its flat side at z = 0 and its dome toward +z, like
+ * Zdog's. Use `rotate: { x: 90 }` to point the dome up.
+ */
+export interface HemisphereNode extends SolidBase {
+  type: 'hemisphere';
+  /** Diameter of the sphere. */
+  diameter: number;
+  /** Color of the flat side. */
+  backface?: string;
+}
+
 /** Any node that can appear in a scene tree. */
-export type Node = GroupNode | PathNode | EllipseNode | RectNode | PolygonNode;
+export type Node =
+  | GroupNode
+  | PathNode
+  | EllipseNode
+  | RectNode
+  | PolygonNode
+  | BoxNode
+  | CylinderNode
+  | ConeNode
+  | HemisphereNode;
 
 /** The `type` values a node can have. */
 export type NodeType = Node['type'];

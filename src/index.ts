@@ -1,4 +1,16 @@
-export { dot, ellipse, group, path, polygon, rect, scene } from './build.ts';
+export {
+  box,
+  cone,
+  cylinder,
+  dot,
+  ellipse,
+  group,
+  hemisphere,
+  path,
+  polygon,
+  rect,
+  scene,
+} from './build.ts';
 export {
   compileScene,
   type DotItem,
@@ -30,8 +42,12 @@ export { renderSpinSvg, type SpinOptions } from './spin.ts';
 export { formatNumber, frameToSvg, renderSvg, type SvgOptions } from './svg.ts';
 export type {
   BezierInput,
+  BoxNode,
+  ConeNode,
+  CylinderNode,
   EllipseNode,
   GroupNode,
+  HemisphereNode,
   Node,
   NodeBase,
   NodeType,
@@ -42,6 +58,7 @@ export type {
   RotationInput,
   Scene,
   ShapeBase,
+  SolidBase,
   VectorInput,
 } from './types.ts';
 export { checkScene } from './validate.ts';

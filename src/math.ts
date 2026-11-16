@@ -188,3 +188,50 @@ export function determinant(m: Matrix): number {
 export function strokeScale(m: Matrix): number {
   return Math.cbrt(Math.abs(determinant(m)));
 }
+
+/** The inverse of a transform, or undefined when it flattens space (determinant 0). */
+export function invert(m: Matrix): Matrix | undefined {
+  const det = determinant(m);
+  if (det === 0 || !Number.isFinite(det)) return undefined;
+  const [a, b, c, d, e, f, g, h, i, tx, ty, tz] = m;
+  const A = (e * i - f * h) / det;
+  const B = (c * h - b * i) / det;
+  const C = (b * f - c * e) / det;
+  const D = (f * g - d * i) / det;
+  const E = (a * i - c * g) / det;
+  const F = (c * d - a * f) / det;
+  const G = (d * h - e * g) / det;
+  const H = (b * g - a * h) / det;
+  const I = (a * e - b * d) / det;
+  return [
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    -(A * tx + B * ty + C * tz),
+    -(D * tx + E * ty + F * tz),
+    -(G * tx + H * ty + I * tz),
+  ];
+}
+
+/**
+ * The direction a surface normal `n` points in after the transform `m`, not
+ * normalized: the inverse transpose of the linear part, with the sign kept so
+ * that an outward normal stays outward under a mirroring transform.
+ */
+export function transformNormal(m: Matrix, n: Vec3): Vec3 {
+  const r0: Vec3 = { x: m[0], y: m[1], z: m[2] };
+  const r1: Vec3 = { x: m[3], y: m[4], z: m[5] };
+  const r2: Vec3 = { x: m[6], y: m[7], z: m[8] };
+  const sign = determinant(m) < 0 ? -1 : 1;
+  return {
+    x: sign * dot(cross(r1, r2), n),
+    y: sign * dot(cross(r2, r0), n),
+    z: sign * dot(cross(r0, r1), n),
+  };
+}

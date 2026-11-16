@@ -1,7 +1,7 @@
 import { depthOrder } from './depth.ts';
 import { controlPoints, type PathGeometry, type Segment } from './geometry.ts';
 import type { Vec3 } from './math.ts';
-import { compilePieces, depthShapes, type Piece } from './pieces.ts';
+import { compilePieces, depthShapes, type Piece, visiblePieces } from './pieces.ts';
 import type { Scene } from './types.ts';
 import { type NormalizedScene, normalizeScene } from './validate.ts';
 
@@ -71,7 +71,7 @@ export function compileScene(scene: Scene): Frame {
 
 /** {@link compileScene} for a scene that is already validated. */
 export function compileNormalized(s: NormalizedScene, rotate: Vec3 = s.rotate): Frame {
-  const pieces = compilePieces(s, rotate);
+  const pieces = visiblePieces(compilePieces(s, rotate));
   const order = depthOrder(depthShapes(pieces));
   return {
     width: s.width,

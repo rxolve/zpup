@@ -1,6 +1,7 @@
 import { gzipSync } from 'node:zlib';
 import { SaxesParser } from 'saxes';
 import { describe, expect, it } from 'vitest';
+import { lighthouse } from '../examples/lighthouse.ts';
 import { pup } from '../examples/pup.ts';
 import {
   dot,
@@ -327,6 +328,44 @@ describe('renderSpinSvg options', () => {
       expect((error as ZpupValidationError).message).toMatch(
         /^Invalid zpup scene and spin options \(2 problems\)/,
       );
+    }
+  });
+});
+
+describe('renderSpinSvg with solids', () => {
+  const svg = renderSpinSvg(lighthouse);
+  const tree = parse(svg);
+  const s = normalizeScene(lighthouse);
+
+  it('keeps every face, including those turned away, so they can come into view', () => {
+    const defs = tree.children.find((e) => e.name === 'defs');
+    expect(defs?.children).toHaveLength(compilePieces(s).length);
+  });
+
+  it('shows one group at every step and paints every overlapping pair in order', () => {
+    const groups = groupsOf(tree);
+    for (let step = 0; step < SPIN_STEPS; step++) {
+      const shown = groups.filter((g) => g.visible[step]);
+      expect(shown.length, `step ${step}`).toBe(1);
+      const position: number[] = [];
+      (shown[0] as Group).order.forEach((piece, n) => {
+        position[piece] = n;
+      });
+      const pieces = compilePieces(s, { ...s.rotate, y: s.rotate.y + (step * 360) / SPIN_STEPS });
+      for (const [before, after] of paintConstraints(pieces).constraints) {
+        expect(position[before] as number, `step ${step}`).toBeLessThan(position[after] as number);
+      }
+    }
+  });
+
+  it('gives every piece the same path commands in every keyframe', () => {
+    for (const path of tree.children.find((e) => e.name === 'defs')?.children ?? []) {
+      const animate = path.children.find((a) => a.attributes.attributeName === 'd');
+      if (!animate) continue;
+      const shapes = new Set(
+        (animate.attributes.values ?? '').split(';').map((d) => d.replace(/[^A-Z]/g, '')),
+      );
+      expect(shapes.size).toBe(1);
     }
   });
 });

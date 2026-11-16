@@ -3,7 +3,18 @@
  * field and returns a plain object, so `group({ children: [...] })` is exactly
  * `{ type: "group", children: [...] }` and stays JSON-serializable.
  */
-import type { EllipseNode, GroupNode, PathNode, PolygonNode, RectNode, Scene } from './types.ts';
+import type {
+  BoxNode,
+  ConeNode,
+  CylinderNode,
+  EllipseNode,
+  GroupNode,
+  HemisphereNode,
+  PathNode,
+  PolygonNode,
+  RectNode,
+  Scene,
+} from './types.ts';
 
 type Options<T extends { type: string }> = Omit<T, 'type'>;
 
@@ -40,4 +51,24 @@ export function rect(options: Options<RectNode>): RectNode {
 /** A regular polygon in the local x/y plane. */
 export function polygon(options: Options<PolygonNode>): PolygonNode {
   return { ...options, type: 'polygon' };
+}
+
+/** A box centered on the origin, `width` by `height` by `depth`. */
+export function box(options: Options<BoxNode>): BoxNode {
+  return { ...options, type: 'box' };
+}
+
+/** A cylinder along the local z axis. `rotate: { x: 90 }` stands it up. */
+export function cylinder(options: Options<CylinderNode>): CylinderNode {
+  return { ...options, type: 'cylinder' };
+}
+
+/** A cone with its base at z = 0 and its tip toward +z. `rotate: { x: 90 }` points it up. */
+export function cone(options: Options<ConeNode>): ConeNode {
+  return { ...options, type: 'cone' };
+}
+
+/** Half a sphere with its dome toward +z. `rotate: { x: 90 }` points it up. */
+export function hemisphere(options: Options<HemisphereNode>): HemisphereNode {
+  return { ...options, type: 'hemisphere' };
 }

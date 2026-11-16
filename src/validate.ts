@@ -7,6 +7,7 @@ import {
   type Segment,
 } from './geometry.ts';
 import type { Vec3 } from './math.ts';
+import { FACE_KEYS, type NormalizedSolid, type SolidKind } from './solids.ts';
 import type { NodeType, Scene } from './types.ts';
 
 /** A node after validation, with every default filled in. */
@@ -20,8 +21,10 @@ export interface NormalizedNode {
   readonly scale: Vec3;
   readonly visible: boolean;
   readonly children: readonly NormalizedNode[];
-  /** Drawing options; undefined for groups. */
+  /** Drawing options of a flat shape; undefined for groups and solids. */
   readonly shape: NormalizedShape | undefined;
+  /** Drawing options of a solid; undefined for everything else. */
+  readonly solid: NormalizedSolid | undefined;
 }
 
 export interface NormalizedShape {
@@ -41,34 +44,167 @@ export interface NormalizedScene {
   readonly children: readonly NormalizedNode[];
 }
 
-const NODE_TYPES: readonly NodeType[] = ['group', 'path', 'ellipse', 'rect', 'polygon'];
+const NODE_TYPES: readonly NodeType[] = [
+  'group',
+  'path',
+  'ellipse',
+  'rect',
+  'polygon',
+  'box',
+  'cylinder',
+  'cone',
+  'hemisphere',
+];
+const SOLID_TYPES: readonly SolidKind[] = ['box', 'cylinder', 'cone', 'hemisphere'];
 
-/** Common names for node types that zpup spells differently. */
-const TYPE_ALIASES: Readonly<Record<string, NodeType>> = {
-  anchor: 'group',
-  circle: 'ellipse',
-  oval: 'ellipse',
-  line: 'path',
-  polyline: 'path',
-  shape: 'path',
-  dot: 'path',
-  point: 'path',
-  sphere: 'path',
-  square: 'rect',
-  rectangle: 'rect',
-  triangle: 'polygon',
-  hexagon: 'polygon',
+function isSolid(type: NodeType): type is SolidKind {
+  return (SOLID_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Names other tools use for node types. A `direct` alias takes the same
+ * options, so the rest of the node is checked as that type; otherwise the
+ * node has to be written differently and only the options every node shares
+ * are checked.
+ */
+interface TypeAlias {
+  readonly type?: NodeType;
+  readonly direct: boolean;
+  readonly hint: string;
+}
+
+const DOT = '{ "type": "path", "path": [{}], "stroke": 20 }';
+const polygonOf = (sides: number): TypeAlias => ({
+  type: 'polygon',
+  direct: false,
+  hint: `Use { "type": "polygon", "sides": ${sides}, "radius": 20 }.`,
+});
+const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
+  anchor: { type: 'group', direct: true, hint: 'Zdog\'s Anchor is a "group".' },
+  g: { type: 'group', direct: true, hint: 'SVG\'s <g> is a "group".' },
+  container: { type: 'group', direct: true, hint: 'A "group" holds other nodes.' },
+  circle: {
+    type: 'ellipse',
+    direct: true,
+    hint: 'A circle is an "ellipse" with "diameter", e.g. { "type": "ellipse", "diameter": 40 }.',
+  },
+  oval: { type: 'ellipse', direct: true, hint: 'Give it a "width" and a "height".' },
+  disc: {
+    type: 'ellipse',
+    direct: true,
+    hint: 'A disc is a filled "ellipse": { "type": "ellipse", "diameter": 40, "fill": true }.',
+  },
+  disk: {
+    type: 'ellipse',
+    direct: true,
+    hint: 'A disc is a filled "ellipse": { "type": "ellipse", "diameter": 40, "fill": true }.',
+  },
+  ring: {
+    type: 'ellipse',
+    direct: false,
+    hint: 'For a ring use an unfilled "ellipse" with a thick stroke: { "type": "ellipse", "diameter": 60, "stroke": 8 }.',
+  },
+  torus: {
+    type: 'ellipse',
+    direct: false,
+    hint: 'For a ring use an unfilled "ellipse" with a thick stroke: { "type": "ellipse", "diameter": 60, "stroke": 8 }.',
+  },
+  sphere: {
+    type: 'path',
+    direct: false,
+    hint: `For a sphere use a dot: ${DOT} (the stroke is its diameter). For half a sphere use "hemisphere".`,
+  },
+  ball: {
+    type: 'path',
+    direct: false,
+    hint: `For a ball use a dot: ${DOT} (the stroke is its diameter).`,
+  },
+  dot: { type: 'path', direct: false, hint: `For a dot use ${DOT}.` },
+  point: { type: 'path', direct: false, hint: `For a dot use ${DOT}.` },
+  line: {
+    type: 'path',
+    direct: false,
+    hint: 'For a line use { "type": "path", "path": [{ "x": -20 }, { "x": 20 }] }.',
+  },
+  segment: {
+    type: 'path',
+    direct: false,
+    hint: 'For a line use { "type": "path", "path": [{ "x": -20 }, { "x": 20 }] }.',
+  },
+  polyline: { type: 'path', direct: true, hint: 'List the points in "path".' },
+  shape: { type: 'path', direct: true, hint: 'Zdog\'s Shape is a "path".' },
+  curve: {
+    type: 'path',
+    direct: false,
+    hint: 'Use a "path" with a { "bezier": [control1, control2, end] } entry.',
+  },
+  arc: {
+    type: 'path',
+    direct: false,
+    hint: 'Use a "path" with a { "bezier": [control1, control2, end] } entry.',
+  },
+  capsule: {
+    type: 'path',
+    direct: false,
+    hint: 'For a capsule use a two-point "path" with a thick stroke: { "type": "path", "path": [{ "y": -20 }, { "y": 20 }], "stroke": 16 }.',
+  },
+  square: { type: 'rect', direct: true, hint: 'Give it a "width" and a "height".' },
+  rectangle: { type: 'rect', direct: true, hint: 'Give it a "width" and a "height".' },
+  plane: { type: 'rect', direct: true, hint: 'Give it a "width" and a "height".' },
+  roundedrect: {
+    type: 'rect',
+    direct: true,
+    hint: 'A thick "stroke" rounds its corners.',
+  },
+  triangle: {
+    type: 'polygon',
+    direct: false,
+    hint: 'For a triangle use { "type": "polygon", "sides": 3, "radius": 20 }, or a closed "path" with three points and "fill": true.',
+  },
+  pentagon: polygonOf(5),
+  hexagon: polygonOf(6),
+  octagon: polygonOf(8),
+  cube: {
+    type: 'box',
+    direct: true,
+    hint: 'Give it a "width", "height" and "depth", e.g. { "type": "box", "width": 40, "height": 40, "depth": 40 }.',
+  },
+  cuboid: { type: 'box', direct: true, hint: 'Give it a "width", "height" and "depth".' },
+  block: { type: 'box', direct: true, hint: 'Give it a "width", "height" and "depth".' },
+  tube: {
+    type: 'cylinder',
+    direct: true,
+    hint: 'Give it a "diameter" and a "length".',
+  },
+  dome: { type: 'hemisphere', direct: true, hint: 'Give it a "diameter".' },
+  halfsphere: { type: 'hemisphere', direct: true, hint: 'Give it a "diameter".' },
+  pyramid: {
+    type: 'cone',
+    direct: false,
+    hint: 'There is no pyramid. Use a "cone", or build the sides from closed, filled "path" nodes.',
+  },
+  text: {
+    direct: false,
+    hint: 'zpup draws no text; build letters from "path" nodes or leave them out.',
+  },
+  image: { direct: false, hint: 'zpup draws no images; build the picture from shapes.' },
 };
 
 const NODE_KEYS = ['type', 'id', 'translate', 'rotate', 'scale', 'visible', 'children'] as const;
 const SHAPE_KEYS = ['color', 'stroke', 'fill'] as const;
+const SOLID_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'shade'];
 const KEYS_BY_TYPE: Readonly<Record<NodeType, readonly string[]>> = {
   group: NODE_KEYS,
   path: [...NODE_KEYS, ...SHAPE_KEYS, 'path', 'closed'],
   ellipse: [...NODE_KEYS, ...SHAPE_KEYS, 'diameter', 'width', 'height'],
   rect: [...NODE_KEYS, ...SHAPE_KEYS, 'width', 'height'],
   polygon: [...NODE_KEYS, ...SHAPE_KEYS, 'sides', 'radius'],
+  box: [...SOLID_KEYS, 'width', 'height', 'depth', ...FACE_KEYS.box],
+  cylinder: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cylinder],
+  cone: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cone],
+  hemisphere: [...SOLID_KEYS, 'diameter', ...FACE_KEYS.hemisphere],
 };
+const ALL_NODE_KEYS = [...new Set(NODE_TYPES.flatMap((t) => KEYS_BY_TYPE[t]))];
 const SCENE_KEYS = ['width', 'height', 'zoom', 'background', 'title', 'rotate', 'children'];
 
 /** Well-known aliases for option names. */
@@ -88,7 +224,7 @@ const DEFAULT_COLOR = '#333';
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
 const ONE: Vec3 = { x: 1, y: 1, z: 1 };
 
-class Checker {
+export class Checker {
   readonly issues: ValidationIssue[] = [];
   private readonly seen = new Set<object>();
 
@@ -110,6 +246,26 @@ class Checker {
     const issue: ValidationIssue = { path, expected, received, message };
     if (nodeId !== undefined) issue.nodeId = nodeId;
     if (hint !== undefined) issue.hint = hint;
+    this.issues.push(issue);
+  }
+
+  /** Like {@link report}, with `received` already written out as text. */
+  note(
+    path: string,
+    nodeId: string | undefined,
+    expected: string,
+    received: string,
+    hint: string,
+  ): void {
+    const where = nodeId === undefined ? path : `${path} (in node "${nodeId}")`;
+    const issue: ValidationIssue = {
+      path,
+      expected,
+      received,
+      hint,
+      message: `${where}: expected ${expected}, received ${received}. ${hint}`,
+    };
+    if (nodeId !== undefined) issue.nodeId = nodeId;
     this.issues.push(issue);
   }
 
@@ -163,7 +319,13 @@ function readNumber(
   key: string,
   path: string,
   nodeId: string | undefined,
-  rule: { min?: number; exclusiveMin?: boolean; integer?: boolean; example: string },
+  rule: {
+    min?: number;
+    exclusiveMin?: boolean;
+    integer?: boolean;
+    example: string;
+    hint?: (value: unknown) => string | undefined;
+  },
 ): number | undefined {
   const value = obj[key];
   const where = `${path}.${key}`;
@@ -171,7 +333,7 @@ function readNumber(
   if (rule.min !== undefined)
     expected += rule.exclusiveMin ? ` greater than ${rule.min}` : ` of at least ${rule.min}`;
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    c.report(where, nodeId, expected, value, numberHint(value, rule.example));
+    c.report(where, nodeId, expected, value, rule.hint?.(value) ?? numberHint(value, rule.example));
     return undefined;
   }
   const tooSmall =
@@ -272,6 +434,52 @@ function readColor(
   return value.trim();
 }
 
+/** Reads `fill`, which takes true or false; colors belong in `color`. */
+function readFill(
+  c: Checker,
+  obj: Record<string, unknown>,
+  path: string,
+  nodeId: string | undefined,
+  solid: boolean,
+): boolean {
+  const value = obj.fill;
+  const where = `${path}.fill`;
+  if (value === undefined) return solid;
+  if (solid) {
+    if (value !== true) {
+      c.report(
+        where,
+        nodeId,
+        'true (solids are always filled)',
+        value,
+        isColor(value)
+          ? 'Colors go in "color", e.g. "color": "#e62". Remove "fill".'
+          : 'Remove "fill"; for an outline only, use "path", "ellipse", "rect" or "polygon".',
+      );
+    }
+    return true;
+  }
+  if (typeof value === 'boolean') return value;
+  let hint: string | undefined;
+  if (value === 'true' || value === 'false') hint = `Remove the quotes: ${value}.`;
+  else if (value === 'none' || value === 'transparent' || value === '')
+    hint = 'Use false, or leave "fill" out, for no fill.';
+  else if (isColor(value))
+    hint = `"fill" only switches filling on; the fill color is "color". Write "color": "${value.trim()}", "fill": true.`;
+  c.report(where, nodeId, 'true or false', value, hint);
+  return false;
+}
+
+/** Hint for a `stroke` that is not a number: it is a width, and its color is `color`. */
+function strokeHint(value: unknown): string | undefined {
+  if (value === 'none' || value === false) return 'Use 0 for no outline.';
+  if (value === true) return 'Use a width in scene units, e.g. 2.';
+  if (typeof value === 'string' && Number.isNaN(Number.parseFloat(value)) && isColor(value)) {
+    return `"stroke" is the outline width in scene units; its color is "color". Write "stroke": 2, "color": "${value.trim()}".`;
+  }
+  return undefined;
+}
+
 function checkKeys(
   c: Checker,
   obj: Record<string, unknown>,
@@ -279,18 +487,19 @@ function checkKeys(
   path: string,
   nodeId: string | undefined,
   owner: string,
+  type?: NodeType,
 ): void {
   for (const key of Object.keys(obj)) {
     if (allowed.includes(key)) continue;
     let hint: string;
     const alias = KEY_ALIASES[key];
     const guess = alias && allowed.includes(alias) ? alias : closest(key, allowed);
-    const isEllipse = owner === 'an "ellipse" node';
     const otherTypes = NODE_TYPES.filter((t) => KEYS_BY_TYPE[t].includes(key));
-    if (owner === 'a "group" node' && (SHAPE_KEYS as readonly string[]).includes(key)) {
+    const special = type === undefined ? undefined : keyHint(type, key);
+    if (type === 'group' && (SHAPE_KEYS as readonly string[]).includes(key)) {
       hint = `Groups draw nothing; set "${key}" on the shapes inside the group.`;
-    } else if (isEllipse && key === 'radius') {
-      hint = 'Use "diameter" (twice the radius).';
+    } else if (special) {
+      hint = special;
     } else if (guess) {
       hint = `Did you mean "${guess}"?`;
     } else if (otherTypes.length > 0 && owner !== 'the scene') {
@@ -307,6 +516,32 @@ function checkKeys(
       key,
     );
   }
+}
+
+/** Hints for options that are easy to get wrong on a particular node type. */
+function keyHint(type: NodeType, key: string): string | undefined {
+  const round = type === 'cylinder' || type === 'cone' || type === 'hemisphere';
+  if (key === 'radius' && (type === 'ellipse' || round))
+    return 'Use "diameter" (twice the radius).';
+  if ((type === 'cylinder' || type === 'cone') && (key === 'height' || key === 'depth')) {
+    return 'Use "length", the size along the local z axis. Add "rotate": { "x": 90 } to stand it up.';
+  }
+  if (type === 'hemisphere' && (key === 'height' || key === 'length')) {
+    return 'A hemisphere is as tall as its radius; set only "diameter".';
+  }
+  if (type === 'box' && (key === 'size' || key === 'diameter' || key === 'length')) {
+    return 'Use "width", "height" and "depth".';
+  }
+  if (type === 'cylinder' && key.endsWith('Face') && key !== 'frontFace') {
+    return 'A cylinder\'s ends are "frontFace" (+z) and "backface" (-z); with "rotate": { "x": 90 } the frontFace is on top. The side uses "color".';
+  }
+  if ((type === 'cone' || type === 'hemisphere') && /face$/i.test(key) && key !== 'backface') {
+    return `The flat side of a ${type} is "backface"; the round surface uses "color".`;
+  }
+  if (isSolid(type) && /^(fill|stroke|side|top|front)(Color|Colour)$/i.test(key)) {
+    return 'Use "color" for the whole solid, or a face option such as "frontFace" for one face.';
+  }
+  return undefined;
 }
 
 function readChildren(
@@ -452,30 +687,42 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
 
   const typeValue = input.type;
   const typeList = NODE_TYPES.map((t) => `"${t}"`).join(', ');
-  if (typeof typeValue !== 'string' || !(NODE_TYPES as readonly string[]).includes(typeValue)) {
+  // When the type is wrong, the node is still checked as fully as possible,
+  // so that one round of fixes is enough: as the intended type when it is
+  // clear, otherwise only the options every node shares.
+  let type: NodeType | undefined;
+  let lenient = false;
+  if (typeof typeValue === 'string' && (NODE_TYPES as readonly string[]).includes(typeValue)) {
+    type = typeValue as NodeType;
+  } else {
     let hint = 'Every node needs a "type".';
     if (typeof typeValue === 'string') {
-      const guess = TYPE_ALIASES[typeValue.toLowerCase()] ?? closest(typeValue, NODE_TYPES);
-      hint = guess ? `Did you mean "${guess}"?` : `Use one of ${typeList}.`;
-      if (typeValue.toLowerCase() === 'dot' || typeValue.toLowerCase() === 'sphere') {
-        hint = 'Use { "type": "path", "path": [{}], "stroke": 20 } for a dot.';
+      const key = typeValue.toLowerCase().replace(/[\s_-]/g, '');
+      const alias = TYPE_ALIASES[key];
+      const guess = alias ? undefined : closest(typeValue, NODE_TYPES);
+      if (alias) {
+        hint = alias.hint;
+        if (alias.direct && alias.type) {
+          type = alias.type;
+          hint = `Did you mean "${type}"? ${hint}`;
+        }
+      } else if (guess) {
+        hint = `Did you mean "${guess}"?`;
+        type = guess as NodeType;
+      } else {
+        hint = `Use one of ${typeList}.`;
       }
+      if (type) hint += ` The other options were checked as ${article(type)} "${type}".`;
     }
     c.report(`${path}.type`, nodeId, `one of ${typeList}`, typeValue, hint);
-    // Still look inside so that problems in children are reported too.
-    readChildren(c, input.children, `${path}.children`, nodeId);
-    return undefined;
+    lenient = true;
   }
-  const type = typeValue as NodeType;
 
-  checkKeys(
-    c,
-    input,
-    KEYS_BY_TYPE[type],
-    path,
-    nodeId,
-    `${type === 'ellipse' ? 'an' : 'a'} "${type}" node`,
-  );
+  if (type) {
+    checkKeys(c, input, KEYS_BY_TYPE[type], path, nodeId, `${article(type)} "${type}" node`, type);
+  } else {
+    checkKeys(c, input, ALL_NODE_KEYS, path, nodeId, 'any node');
+  }
 
   const vectorExample = '{ "x": 0, "y": -20, "z": 10 }';
   const translate =
@@ -511,39 +758,106 @@ function readNode(c: Checker, input: unknown, path: string): NormalizedNode | un
   const visible = readBoolean(c, input, 'visible', path, nodeId, true);
   const children = readChildren(c, input.children, `${path}.children`, nodeId);
 
+  // Options that a node of the wrong type has not got are skipped; required
+  // options are not demanded, since the intended type may not need them.
+  const present = (key: string) => !lenient || input[key] !== undefined;
+  const shapeType = type;
   let shape: NormalizedShape | undefined;
-  if (type !== 'group') {
+  let solid: NormalizedSolid | undefined;
+  if (shapeType !== 'group') {
     const color = readColor(c, input, 'color', path, nodeId) ?? DEFAULT_COLOR;
     const stroke =
       input.stroke === undefined
         ? 1
-        : (readNumber(c, input, 'stroke', path, nodeId, { min: 0, example: '4' }) ?? 1);
-    const fill = readBoolean(c, input, 'fill', path, nodeId, false);
+        : (readNumber(c, input, 'stroke', path, nodeId, {
+            min: 0,
+            example: '4',
+            hint: strokeHint,
+          }) ?? 1);
+    const fill = readFill(c, input, path, nodeId, shapeType !== undefined && isSolid(shapeType));
+    const size = { min: 0, example: '20' };
+    const dimension = (key: string) =>
+      present(key) ? readNumber(c, input, key, path, nodeId, size) : undefined;
     let geometry: PathGeometry | undefined;
-    if (type === 'path') {
+    if (shapeType === 'path') {
       const closed = readBoolean(c, input, 'closed', path, nodeId, false);
-      geometry = readPath(c, input.path, `${path}.path`, nodeId, closed);
-    } else if (type === 'ellipse') {
-      const size = readEllipseSize(c, input, path, nodeId);
-      if (size) geometry = ellipseGeometry(size[0], size[1]);
-    } else if (type === 'rect') {
-      const size = { min: 0, example: '20' };
-      const w = readNumber(c, input, 'width', path, nodeId, size);
-      const h = readNumber(c, input, 'height', path, nodeId, size);
+      if (present('path')) geometry = readPath(c, input.path, `${path}.path`, nodeId, closed);
+    } else if (shapeType === 'ellipse') {
+      if (!lenient || ['diameter', 'width', 'height'].some((k) => input[k] !== undefined)) {
+        const ellipse = readEllipseSize(c, input, path, nodeId);
+        if (ellipse) geometry = ellipseGeometry(ellipse[0], ellipse[1]);
+      }
+    } else if (shapeType === 'rect') {
+      const w = dimension('width');
+      const h = dimension('height');
       if (w !== undefined && h !== undefined) geometry = rectGeometry(w, h);
-    } else {
-      const sides = readNumber(c, input, 'sides', path, nodeId, {
-        min: 3,
-        integer: true,
-        example: '6',
-      });
-      const radius = readNumber(c, input, 'radius', path, nodeId, { min: 0, example: '20' });
+    } else if (shapeType === 'polygon') {
+      const sides = present('sides')
+        ? readNumber(c, input, 'sides', path, nodeId, { min: 3, integer: true, example: '6' })
+        : undefined;
+      const radius = dimension('radius');
       if (sides !== undefined && radius !== undefined) geometry = polygonGeometry(sides, radius);
+    } else if (shapeType !== undefined && isSolid(shapeType)) {
+      const shade = readBoolean(c, input, 'shade', path, nodeId, true);
+      const faces: Record<string, string> = {};
+      for (const key of FACE_KEYS[shapeType]) {
+        const value = input[key];
+        if (value === undefined) continue;
+        if (typeof value === 'boolean') {
+          c.report(
+            `${path}.${key}`,
+            nodeId,
+            'a CSS color string such as "#e62"',
+            value,
+            value
+              ? 'Leave the option out to shade this face from "color".'
+              : 'Faces cannot be left out. Leave the option out to shade this face from "color".',
+          );
+          continue;
+        }
+        const face = readColor(c, input, key, path, nodeId);
+        if (face !== undefined) faces[key] = face;
+      }
+      const dims = {
+        width: 0,
+        height: 0,
+        depth: 0,
+        diameter: 0,
+        length: 0,
+      };
+      let ok = true;
+      const need =
+        shapeType === 'box'
+          ? (['width', 'height', 'depth'] as const)
+          : shapeType === 'hemisphere'
+            ? (['diameter'] as const)
+            : (['diameter', 'length'] as const);
+      for (const key of need) {
+        const value = dimension(key);
+        if (value === undefined) ok = false;
+        else dims[key] = value;
+      }
+      if (ok) solid = { kind: shapeType, ...dims, color, stroke, shade, faces };
     }
     if (geometry) shape = { geometry, color, stroke, fill };
   }
+  if (lenient || type === undefined) return undefined;
+  return {
+    type,
+    id: nodeId,
+    location: path,
+    translate,
+    rotate,
+    scale,
+    visible,
+    children,
+    shape,
+    solid,
+  };
+}
 
-  return { type, id: nodeId, location: path, translate, rotate, scale, visible, children, shape };
+function article(type: string): string {
+  return /^[aeiou]/.test(type) ? 'an' : 'a';
 }
 
 /**
@@ -564,7 +878,7 @@ export function normalizeScene(input: Scene | unknown): NormalizedScene {
   return scene;
 }
 
-function normalize(input: unknown): { scene?: NormalizedScene; issues: ValidationIssue[] } {
+export function normalize(input: unknown): { scene?: NormalizedScene; issues: ValidationIssue[] } {
   const c = new Checker();
   const path = 'scene';
   if (!isPlainObject(input)) {

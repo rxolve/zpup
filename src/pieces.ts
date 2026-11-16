@@ -2,12 +2,14 @@ import { type DepthShape, depthOrder } from './depth.ts';
 import { flatten, type PathGeometry, splitPath, transformGeometry } from './geometry.ts';
 import {
   compose,
+  IDENTITY,
   localMatrix,
   type Matrix,
   rotationMatrix,
   strokeScale,
   type Vec3,
 } from './math.ts';
+import { type Surface, solidFaces } from './solids.ts';
 import type { NormalizedNode, NormalizedScene } from './validate.ts';
 
 /**
@@ -35,8 +37,24 @@ export interface Piece {
   readonly stroke: number;
   readonly fill: boolean;
   readonly nodeId: string | undefined;
+  /** JSON-style location of the node in the input, for messages. */
+  readonly location: string;
   /** The outline approximated by straight lines, for depth analysis. */
   readonly points: readonly Vec3[];
+  /** For a face of a solid: the index of the solid, in tree order. */
+  readonly solid: number | undefined;
+  /** Paint order within a solid: lower first. */
+  readonly layer: number;
+  /**
+   * A face of a solid that is turned away from the viewer. The solid's other
+   * faces always cover it, so the still renderer leaves it out; the turning
+   * animation keeps it, since it comes into view as the scene turns.
+   */
+  readonly backfacing: boolean;
+  /** For a round surface of a solid: its exact depth, which a plane cannot give. */
+  readonly surface: Surface | undefined;
+  /** Whether the outline depends on the view angle (round surfaces). */
+  readonly viewDependent: boolean;
 }
 
 /**
@@ -59,9 +77,13 @@ export function viewMatrix(s: NormalizedScene, rotate: Vec3 = s.rotate): Matrix 
 export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piece[] {
   const pieces: Piece[] = [];
   let shapeCount = 0;
-  const visit = (node: NormalizedNode, parent: Matrix) => {
+  let solidCount = 0;
+  const visit = (node: NormalizedNode, parent: Matrix, parentModel: Matrix) => {
     if (!node.visible) return;
-    const world = compose(parent, localMatrix(node.translate, node.rotate, node.scale));
+    const local = localMatrix(node.translate, node.rotate, node.scale);
+    const world = compose(parent, local);
+    const model = compose(parentModel, local);
+    const base = { nodeId: node.id, location: node.location };
     if (node.shape) {
       const { color, fill } = node.shape;
       const stroke = node.shape.stroke * strokeScale(world);
@@ -74,6 +96,7 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
         const split = fill ? [{ geometry, closing: false }] : splitPath(geometry);
         split.forEach((part, piece) => {
           pieces.push({
+            ...base,
             shape,
             piece,
             pieceCount: split.length,
@@ -83,16 +106,50 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
             color,
             stroke,
             fill,
-            nodeId: node.id,
             points: flatten(part.geometry),
+            solid: undefined,
+            layer: 0,
+            backfacing: false,
+            surface: undefined,
+            viewDependent: false,
           });
         });
       }
     }
-    for (const child of node.children) visit(child, world);
+    if (node.solid) {
+      const solid = solidCount++;
+      const stroke = node.solid.stroke * strokeScale(world);
+      for (const face of solidFaces(node.solid, world, model)) {
+        pieces.push({
+          ...base,
+          shape: shapeCount++,
+          piece: 0,
+          pieceCount: 1,
+          geometry: face.geometry,
+          closing: false,
+          shapeClosed: true,
+          color: face.color,
+          stroke,
+          fill: true,
+          points: flatten(face.geometry),
+          solid,
+          layer: face.layer,
+          backfacing: face.backfacing,
+          surface: face.surface,
+          viewDependent: face.viewDependent,
+        });
+      }
+    }
+    for (const child of node.children) visit(child, world, model);
   };
-  for (const child of s.children) visit(child, viewMatrix(s, rotate));
+  const view = viewMatrix(s, rotate);
+  for (const child of s.children) visit(child, view, IDENTITY);
   return pieces;
+}
+
+/** The pieces the still renderer paints: everything except faces turned away. */
+export function visiblePieces(pieces: readonly Piece[]): Piece[] {
+  return pieces.filter((p) => !p.backfacing);
 }
 
 /** The input the depth sorter needs for each piece, in the same order. */
@@ -103,6 +160,8 @@ export function depthShapes(pieces: readonly Piece[]): DepthShape[] {
     fill: p.fill,
     radius: p.stroke / 2,
     ...(p.piece > 0 ? { follows: i - 1 } : {}),
+    ...(p.solid === undefined ? {} : { solid: p.solid, layer: p.layer }),
+    ...(p.surface === undefined ? {} : { surface: p.surface }),
   }));
 }
 
@@ -115,13 +174,32 @@ export function paintConstraints(pieces: readonly Piece[]): {
   order: number[];
   constraints: [number, number][];
 } {
-  const order = depthOrder(depthShapes(pieces));
+  // Faces turned away go first. Their own solid always covers them, so they
+  // only need to stay behind that solid's other faces.
+  const front: number[] = [];
+  const back: number[] = [];
+  pieces.forEach((p, i) => {
+    (p.backfacing ? back : front).push(i);
+  });
+  const frontOrder = depthOrder(depthShapes(front.map((i) => pieces[i] as Piece))).map(
+    (k) => front[k] as number,
+  );
+  const order = [...back, ...frontOrder];
   const position = positions(order);
   const constraints: [number, number][] = [];
   const bounds = pieces.map(pieceBounds);
   for (let a = 0; a < pieces.length; a++) {
     for (let b = a + 1; b < pieces.length; b++) {
-      if (!piecesOverlap(pieces[a] as Piece, pieces[b] as Piece, bounds[a], bounds[b])) continue;
+      const pa = pieces[a] as Piece;
+      const pb = pieces[b] as Piece;
+      const sameSolid = pa.solid !== undefined && pa.solid === pb.solid;
+      if (pa.backfacing || pb.backfacing) {
+        if (!sameSolid || (pa.backfacing && pb.backfacing)) continue;
+      } else if (sameSolid && pa.layer === pb.layer) {
+        // Faces of one solid that both face the viewer only share edges.
+        continue;
+      }
+      if (!piecesOverlap(pa, pb, bounds[a], bounds[b])) continue;
       constraints.push((position[a] as number) < (position[b] as number) ? [a, b] : [b, a]);
     }
   }

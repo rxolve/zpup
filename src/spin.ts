@@ -1,6 +1,6 @@
 import { closest, describe, type ValidationIssue, ZpupValidationError } from './errors.ts';
-import { controlPoints, type PathGeometry } from './geometry.ts';
-import type { Vec3 } from './math.ts';
+import { controlPoints, flatten, type PathGeometry, type Segment } from './geometry.ts';
+import { lerp, type Vec3 } from './math.ts';
 import { compilePieces, type Piece, paintConstraints, positions } from './pieces.ts';
 import { escapeXml, formatNumber } from './svg.ts';
 import type { Scene } from './types.ts';
@@ -279,20 +279,25 @@ const PREFIX = '\u0001';
 
 function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly Epoch[]): string {
   const n = (value: number) => formatNumber(value, o.precision);
-  const sign = o.direction === 'negative' ? -1 : 1;
+  const at = framesAt(s, o);
   const keyframes: Piece[][] = [];
-  for (let k = 0; k < o.keyframes; k++) {
-    keyframes.push(compilePieces(s, turned(s, o.axis, (sign * k * 360) / o.keyframes)));
-  }
+  for (let k = 0; k < o.keyframes; k++) keyframes.push(at(k / o.keyframes));
   const first = keyframes[0] as Piece[];
   const timing = `dur="${formatNumber(o.duration, 3)}s" repeatCount="indefinite"`;
-  /** An attribute's starting value and, if it moves, its animation. */
-  const animated = (attribute: string, values: string[]) => {
+  /**
+   * An attribute's starting value and, if it moves, its animation. `times`
+   * are the fractions of the turn at which `values` apply; when omitted the
+   * values are evenly spaced.
+   */
+  const animated = (attribute: string, values: string[], times?: readonly number[]) => {
     const start = values[0] as string;
     if (values.every((v) => v === start)) return { start, animate: '' };
+    const keyTimes = times
+      ? ` keyTimes="${[...times, 1].map((t) => formatNumber(t, KEY_TIME_DIGITS)).join(';')}"`
+      : '';
     return {
       start,
-      animate: `<animate attributeName="${attribute}" ${timing} values="${[...values, start].join(';')}"/>`,
+      animate: `<animate attributeName="${attribute}" ${timing}${keyTimes} values="${[...values, start].join(';')}"/>`,
     };
   };
 
@@ -300,8 +305,8 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
   const defs: string[] = [];
   first.forEach((piece, i) => {
     const color = escapeXml(piece.color);
-    const frames = keyframes.map((f) => (f[i] as Piece).geometry);
     if (isDot(piece.geometry)) {
+      const frames = keyframes.map((f) => (f[i] as Piece).geometry);
       if (piece.stroke <= 0) return;
       const cx = animated(
         'cx',
@@ -315,9 +320,20 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
       const animate = cx.animate + cy.animate;
       defs.push(animate === '' ? `${circle}/>` : `${circle}>${animate}</circle>`);
     } else {
+      // An outline that depends on the view is not a fixed 3D shape, so
+      // straight-line interpolation between keyframes can bend it out of
+      // shape; it gets extra keyframes where it would.
+      const times = piece.viewDependent
+        ? refineTimes(o.keyframes, (f) => (at(f)[i] as Piece).geometry)
+        : undefined;
+      const frames = times
+        ? times.map((t) => (at(t)[i] as Piece).geometry)
+        : keyframes.map((f) => (f[i] as Piece).geometry);
+      const even = !times || times.length === o.keyframes;
       const d = animated(
         'd',
         frames.map((g) => pathData(g, n)),
+        even ? undefined : times,
       );
       const fill = piece.fill ? color : 'none';
       const stroke =
@@ -392,6 +408,118 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
   return text
     .replaceAll(`id="${PREFIX}`, `id="${prefix}`)
     .replaceAll(`href="#${PREFIX}`, `href="#${prefix}`);
+}
+
+/** Digits kept in key times (fractions of the turn). */
+const KEY_TIME_DIGITS = 6;
+
+/**
+ * How far, in pixels, an interpolated outline may stray from the exact one
+ * before a view-dependent piece gets an extra keyframe.
+ */
+export const SPIN_TOLERANCE = 0.5;
+
+/** The shortest gap between key times: a little over 0.004 degrees. */
+const MIN_KEY_GAP = 10 ** -(KEY_TIME_DIGITS - 1) * 1.2;
+
+/** Compiles the scene at a fraction of the turn, remembering every result. */
+function framesAt(s: NormalizedScene, o: ResolvedSpinOptions): (fraction: number) => Piece[] {
+  const sign = o.direction === 'negative' ? -1 : 1;
+  const cache = new Map<number, Piece[]>();
+  return (fraction) => {
+    let pieces = cache.get(fraction);
+    if (!pieces) {
+      pieces = compilePieces(s, turned(s, o.axis, sign * fraction * 360));
+      cache.set(fraction, pieces);
+    }
+    return pieces;
+  };
+}
+
+/**
+ * Key times (fractions of the turn, starting at 0) for a piece whose outline
+ * depends on the view. Starts from evenly spaced keyframes and splits every
+ * interval where the outline drawn by linear interpolation strays more than
+ * {@link SPIN_TOLERANCE} from the exact outline, checked at a quarter, half
+ * and three quarters of the interval.
+ *
+ * Where an outline is rebuilt from different points (when a round surface's
+ * axis points straight at the viewer, its outline starts at a point that
+ * jumps to the opposite side), splitting confines the jump to an interval of
+ * a few thousandths of a degree.
+ */
+export function refineTimes(keyframes: number, at: (fraction: number) => PathGeometry): number[] {
+  const times: number[] = [];
+  const refine = (from: number, to: number) => {
+    times.push(from);
+    if (to - from >= 2 * MIN_KEY_GAP) {
+      const a = at(from);
+      const b = at(to % 1);
+      for (const t of [0.5, 0.25, 0.75]) {
+        const exact = at(from + (to - from) * t);
+        if (outlineDistance(lerpGeometry(a, b, t), exact) > SPIN_TOLERANCE) {
+          const middle = (from + to) / 2;
+          times.pop();
+          refine(from, middle);
+          refine(middle, to);
+          return;
+        }
+      }
+    }
+  };
+  for (let k = 0; k < keyframes; k++) refine(k / keyframes, (k + 1) / keyframes);
+  return times;
+}
+
+/** Linear interpolation between two outlines with the same commands. */
+export function lerpGeometry(a: PathGeometry, b: PathGeometry, t: number): PathGeometry {
+  return {
+    start: lerp(a.start, b.start, t),
+    segments: a.segments.map((s, i): Segment => {
+      const e = b.segments[i] as Segment;
+      if (s.kind === 'line' || e.kind === 'line') return { kind: 'line', to: lerp(s.to, e.to, t) };
+      return {
+        kind: 'bezier',
+        c1: lerp(s.c1, e.c1, t),
+        c2: lerp(s.c2, e.c2, t),
+        to: lerp(s.to, e.to, t),
+      };
+    }),
+    closed: a.closed,
+  };
+}
+
+/**
+ * How far apart two outlines are on screen, in pixels: the larger of the
+ * distance from any point of one to the other (a Hausdorff distance over
+ * points sampled along both).
+ */
+export function outlineDistance(a: PathGeometry, b: PathGeometry): number {
+  const pa = flatten(a);
+  const pb = flatten(b);
+  const reach = (from: readonly Vec3[], to: readonly Vec3[], closed: boolean) => {
+    let worst = 0;
+    for (const p of from) {
+      let best = Number.POSITIVE_INFINITY;
+      const count = closed ? to.length : to.length - 1;
+      for (let i = 0; i < Math.max(1, count); i++) {
+        const q = to[i] as Vec3;
+        const r = (to[(i + 1) % to.length] ?? q) as Vec3;
+        best = Math.min(best, distanceToSegment(p, q, r));
+      }
+      worst = Math.max(worst, best);
+    }
+    return worst;
+  };
+  return Math.max(reach(pa, pb, b.closed), reach(pb, pa, a.closed));
+}
+
+function distanceToSegment(p: Vec3, a: Vec3, b: Vec3): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.min(1, Math.max(0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
 }
 
 function pathData(g: PathGeometry, n: (value: number) => string): string {

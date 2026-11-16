@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import { lighthouse } from '../examples/lighthouse.ts';
 import { pup } from '../examples/pup.ts';
 import { compareShapes, type DepthShape, depthOrder, meanDepthOrder } from '../src/depth.ts';
-import { compileScene, dot, ellipse, path, rect } from '../src/index.ts';
+import {
+  box,
+  compileScene,
+  cylinder,
+  dot,
+  ellipse,
+  hemisphere,
+  path,
+  rect,
+  type Scene,
+} from '../src/index.ts';
 import { compilePieces, paintConstraints, positions } from '../src/pieces.ts';
 import { normalizeScene } from '../src/validate.ts';
 
@@ -224,5 +235,146 @@ describe('depth sorting while the view turns', () => {
     });
     // They do overlap for most of the turn.
     expect(overlapping).toBeGreaterThan(STEPS * 3);
+  });
+});
+
+describe('depth sorting of solids while the view turns', () => {
+  /** For every pair of overlapping pieces, which one is painted first at each half degree. */
+  const sides = (scene: Scene) => {
+    const s = normalizeScene(scene);
+    const steps = 720;
+    const history = new Map<string, Int8Array>();
+    for (let step = 0; step < steps; step++) {
+      const pieces = compilePieces(s, { ...s.rotate, y: s.rotate.y + step / 2 });
+      for (const [before, after] of paintConstraints(pieces).constraints) {
+        const key = `${Math.min(before, after)}|${Math.max(before, after)}`;
+        const line = history.get(key) ?? new Int8Array(steps);
+        history.set(key, line);
+        line[step] = before < after ? 1 : -1;
+      }
+    }
+    return { history, names: compilePieces(s).map((p) => p.nodeId) };
+  };
+  const flickers = (scene: Scene) => {
+    const { history, names } = sides(scene);
+    const found: string[] = [];
+    for (const [key, line] of history) {
+      for (let step = 0; step < line.length; step++) {
+        const a = line[step] as number;
+        const b = line[(step + 1) % line.length] as number;
+        if (a === 0 || b === 0 || a === b) continue;
+        for (let k = 1; k <= 4; k++) {
+          const next = line[(step + k) % line.length] as number;
+          if (next === 0) break;
+          if (next !== b) {
+            const [i, j] = key.split('|').map(Number);
+            found.push(`${names[i as number]}/${names[j as number]} at ${(step + 1) / 2}`);
+            break;
+          }
+        }
+      }
+    }
+    return found;
+  };
+
+  const mug: Scene = {
+    width: 240,
+    height: 240,
+    rotate: { x: -25, y: 20 },
+    children: [
+      cylinder({
+        id: 'body',
+        diameter: 90,
+        length: 100,
+        rotate: { x: 90 },
+        color: '#4a7bd0',
+        frontFace: '#5b3a29',
+      }),
+      path({
+        id: 'handle',
+        translate: { x: 44 },
+        path: [{ y: -30 }, { bezier: [{ x: 34, y: -30 }, { x: 34, y: 26 }, { y: 26 }] }],
+        stroke: 12,
+        color: '#4a7bd0',
+      }),
+      ellipse({
+        id: 'saucer',
+        translate: { y: 52 },
+        rotate: { x: 90 },
+        diameter: 150,
+        fill: true,
+        stroke: 4,
+        color: '#eee',
+      }),
+    ],
+  };
+  const robot: Scene = {
+    width: 240,
+    height: 300,
+    rotate: { x: -15, y: 30 },
+    children: [
+      box({ id: 'body', width: 70, height: 80, depth: 44, color: '#8aa1b1' }),
+      box({
+        id: 'head',
+        translate: { y: -64 },
+        width: 54,
+        height: 48,
+        depth: 40,
+        color: '#8aa1b1',
+      }),
+      ...[-1, 1].flatMap((side) => [
+        box({
+          id: `arm${side}`,
+          translate: { x: side * 45 },
+          width: 20,
+          height: 70,
+          depth: 20,
+          color: '#6d8594',
+        }),
+        box({
+          id: `leg${side}`,
+          translate: { x: side * 18, y: 70 },
+          width: 24,
+          height: 60,
+          depth: 26,
+          color: '#556',
+        }),
+        dot({
+          id: `eye${side}`,
+          translate: { x: side * 12, y: -66, z: 21 },
+          stroke: 9,
+          color: '#222',
+        }),
+      ]),
+      hemisphere({
+        id: 'antenna',
+        translate: { y: -88 },
+        rotate: { x: 90 },
+        diameter: 14,
+        color: '#e33',
+      }),
+    ],
+  };
+
+  it('never flips a pair back within 2 degrees: lighthouse, mug, robot', () => {
+    // The lighthouse includes a door and a window on round walls, which
+    // overlap the wall only by a pixel or two as they pass its edge.
+    expect(flickers(lighthouse)).toEqual([]);
+    expect(flickers(mug)).toEqual([]);
+    expect(flickers(robot)).toEqual([]);
+  });
+
+  it('keeps the handle in front of the mug on its side of the mug and behind it on the far side', () => {
+    const s = normalizeScene(mug);
+    const front = (y: number) => {
+      const pieces = compilePieces(s, { ...s.rotate, y });
+      const { order } = paintConstraints(pieces);
+      const position = positions(order);
+      const body = pieces.findIndex((p) => p.nodeId === 'body' && p.layer === 0);
+      const handle = pieces.map((p, i) => (p.nodeId === 'handle' ? i : -1)).filter((i) => i >= 0);
+      return handle.every((i) => (position[i] as number) > (position[body] as number));
+    };
+    expect(front(-60)).toBe(true); // handle toward the viewer
+    expect(front(120)).toBe(false); // handle behind the mug
   });
 });

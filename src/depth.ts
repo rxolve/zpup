@@ -1,4 +1,5 @@
 import type { Vec3 } from './math.ts';
+import { type Surface, surfaceDepth } from './solids.ts';
 
 /**
  * A projected shape as seen by the depth sorter. Points are in screen space:
@@ -19,6 +20,15 @@ export interface DepthShape {
    * the piece it continues so that renderers can join them into one path.
    */
   readonly follows?: number;
+  /**
+   * Shapes with the same `solid` are faces of one convex solid. They are not
+   * compared by depth: the one with the lower `layer` is painted first, and
+   * faces on the same layer only share edges, so either order is right.
+   */
+  readonly solid?: number;
+  readonly layer?: number;
+  /** For a filled area that is not flat: its exact front surface. */
+  readonly surface?: Surface;
 }
 
 interface Plane {
@@ -35,6 +45,11 @@ interface Analyzed {
   readonly fill: boolean;
   /** Present for filled shapes that are flat and not seen edge-on. */
   readonly plane: Plane | undefined;
+  readonly surface: Surface | undefined;
+  /** Whether the inside has a known depth (a plane or a surface). */
+  readonly area: boolean;
+  readonly solid: number | undefined;
+  readonly layer: number;
   readonly minX: number;
   readonly maxX: number;
   readonly minY: number;
@@ -59,6 +74,8 @@ function analyze(shape: DepthShape, index: number): Analyzed {
   let minY = Number.POSITIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
   let depthSum = 0;
+  const surface = shape.fill ? shape.surface : undefined;
+  const plane = shape.fill && !surface ? fitPlane(points) : undefined;
   for (const p of points) {
     minX = Math.min(minX, p.x);
     maxX = Math.max(maxX, p.x);
@@ -73,7 +90,11 @@ function analyze(shape: DepthShape, index: number): Analyzed {
     segments,
     radius,
     fill: shape.fill,
-    plane: shape.fill ? fitPlane(points) : undefined,
+    plane,
+    surface,
+    area: plane !== undefined || surface !== undefined,
+    solid: shape.solid,
+    layer: shape.layer ?? 0,
     minX: minX - radius,
     maxX: maxX + radius,
     minY: minY - radius,
@@ -121,7 +142,8 @@ function insidePolygon(points: readonly Vec3[], x: number, y: number): boolean {
  * Depth of the front surface of a shape at a screen point, or undefined when
  * the shape does not cover that point. Round strokes are treated as tubes
  * (and single points as spheres), so their surface bulges toward the viewer;
- * filled areas are treated as flat sheets.
+ * filled areas are treated as flat sheets, except the round surfaces of
+ * solids, whose exact depth is known.
  */
 function depthAt(s: Analyzed, x: number, y: number): number | undefined {
   let best: number | undefined;
@@ -138,10 +160,13 @@ function depthAt(s: Analyzed, x: number, y: number): number | undefined {
       }
     }
   }
-  if (s.plane && insidePolygon(s.points, x, y)) {
-    const { center: c, normal: n } = s.plane;
-    const z = c.z - (n.x * (x - c.x) + n.y * (y - c.y)) / n.z;
-    if (best === undefined || z > best) best = z;
+  if (s.area && insidePolygon(s.points, x, y)) {
+    const z = s.plane
+      ? s.plane.center.z -
+        (s.plane.normal.x * (x - s.plane.center.x) + s.plane.normal.y * (y - s.plane.center.y)) /
+          s.plane.normal.z
+      : s.surface && surfaceDepth(s.surface, x, y);
+    if (z !== undefined && (best === undefined || z > best)) best = z;
   }
   return best;
 }
@@ -226,11 +251,11 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
       // inside test can go either way, so also sample halfway between the
       // edge and the far side of the stroke.
       if (distance > 0) {
-        if (b.plane && distance <= a.radius) {
+        if (b.area && distance <= a.radius) {
           const t = (distance + a.radius) / 2 / distance;
           samples.push([px + (qx - px) * t, py + (qy - py) * t]);
         }
-        if (a.plane && distance <= b.radius) {
+        if (a.area && distance <= b.radius) {
           const t = (distance + b.radius) / 2 / distance;
           samples.push([qx + (px - qx) * t, qy + (py - qy) * t]);
         }
@@ -245,6 +270,8 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
 /** 1 when `a` is in front of `b`, -1 when behind, 0 when they do not overlap or it is unclear. */
 function compare(a: Analyzed, b: Analyzed): number {
   if (a.maxX < b.minX || b.maxX < a.minX || a.maxY < b.minY || b.maxY < a.minY) return 0;
+  if (a.solid !== undefined && a.solid === b.solid) return Math.sign(a.layer - b.layer);
+  if (a.surface || b.surface) return compareRound(a, b);
   let front = 0;
   let behind = 0;
   let total = 0;
@@ -259,6 +286,53 @@ function compare(a: Analyzed, b: Analyzed): number {
     total += d;
   }
   if (front !== behind) return front > behind ? 1 : -1;
+  if (total > EPSILON) return 1;
+  if (total < -EPSILON) return -1;
+  return 0;
+}
+
+/** Grid points per side used to estimate overlapping area against a round surface. */
+const AREA_GRID = 12;
+
+/**
+ * {@link compare} for pairs where one shape is the round surface of a solid.
+ *
+ * A flat detail lying on a round surface (a door on a tower) can be partly in
+ * front of the surface and partly behind it as it passes the surface's edge,
+ * where the surface's depth changes steeply; both parts are inside the
+ * overlap. No single order is right then, so the order that is right for the
+ * larger share of the area both cover (strokes included) wins. The area is
+ * estimated on a grid over the common bounds. When the grid finds no common
+ * point, the usual sample points decide, by the sum of depth differences.
+ */
+function compareRound(a: Analyzed, b: Analyzed): number {
+  const minX = Math.max(a.minX, b.minX);
+  const maxX = Math.min(a.maxX, b.maxX);
+  const minY = Math.max(a.minY, b.minY);
+  const maxY = Math.min(a.maxY, b.maxY);
+  let front = 0;
+  let behind = 0;
+  for (let i = 0; i < AREA_GRID; i++) {
+    for (let j = 0; j < AREA_GRID; j++) {
+      const x = minX + ((maxX - minX) * (i + 0.5)) / AREA_GRID;
+      const y = minY + ((maxY - minY) * (j + 0.5)) / AREA_GRID;
+      const za = depthAt(a, x, y);
+      if (za === undefined) continue;
+      const zb = depthAt(b, x, y);
+      if (zb === undefined) continue;
+      if (za - zb > EPSILON) front++;
+      else if (zb - za > EPSILON) behind++;
+    }
+  }
+  if (front !== behind) return front > behind ? 1 : -1;
+  let total = 0;
+  for (const [x, y] of samplePoints(a, b)) {
+    const za = depthAt(a, x, y);
+    if (za === undefined) continue;
+    const zb = depthAt(b, x, y);
+    if (zb === undefined) continue;
+    total += za - zb;
+  }
   if (total > EPSILON) return 1;
   if (total < -EPSILON) return -1;
   return 0;
