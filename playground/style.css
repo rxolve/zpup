@@ -1,0 +1,384 @@
+:root {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --stage: #f1efea;
+  --text: #1d1d1f;
+  --muted: #66666e;
+  --line: #dddbd5;
+  --accent: #c2491f;
+  --error: #b42318;
+  --error-bg: #fdf0ee;
+  --warn: #8a5a00;
+  --warn-bg: #fdf6e6;
+  --focus: #2563eb;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151517;
+    --surface: #1c1c1f;
+    --stage: #232327;
+    --text: #ececef;
+    --muted: #a0a0a8;
+    --line: #34343a;
+    --accent: #f08a5d;
+    --error: #ff8a7a;
+    --error-bg: #2d1a18;
+    --warn: #e8b85a;
+    --warn-bg: #2a2416;
+    --focus: #7aa2ff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    15px / 1.5 system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.intro {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 24px 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 24px;
+  align-items: baseline;
+}
+
+.intro h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.intro h1 span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.intro p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+.intro nav {
+  display: flex;
+  gap: 16px;
+  white-space: nowrap;
+}
+
+.workspace {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 24px 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 20px;
+  /* A fixed height, so a long scene scrolls inside the editor and the
+     problems under it stay in view. */
+  height: max(560px, calc(100vh - 140px));
+}
+
+.editor-pane,
+.preview-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.bar > label:first-child {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+button,
+select,
+.segmented label {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled),
+select:hover {
+  border-color: var(--muted);
+}
+
+button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.segmented {
+  display: inline-flex;
+}
+
+.segmented label {
+  border-radius: 0;
+  user-select: none;
+}
+
+.segmented label:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.segmented label:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: 0;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label:has(input:checked) {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+.segmented label:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+#editor {
+  flex: 1;
+  min-height: 200px;
+  width: 100%;
+  resize: none;
+  padding: 12px 14px;
+  font: 13px / 1.55 var(--mono);
+  tab-size: 2;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+#editor:focus-visible {
+  outline-offset: -1px;
+}
+
+.help {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 1.5em;
+}
+
+.problems:empty {
+  display: none;
+}
+
+.problems {
+  margin-top: 8px;
+  max-height: 30vh;
+  overflow: auto;
+}
+
+.problems h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+.problems ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.problems li + li {
+  margin-top: 4px;
+}
+
+.problems button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  border: 0;
+}
+
+.problems .error button {
+  background: var(--error-bg);
+  color: var(--text);
+}
+
+.problems .warning button {
+  background: var(--warn-bg);
+  color: var(--text);
+}
+
+.problems code {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.problems .error code {
+  color: var(--error);
+}
+
+.problems .warning code {
+  color: var(--warn);
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--stage);
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+.stage.dragging {
+  cursor: grabbing;
+}
+
+.stage.stale > * {
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}
+
+.stage > svg,
+.stage > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+
+.stage:focus-visible {
+  outline-offset: -2px;
+}
+
+.exports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.export-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.export-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.size {
+  font-variant-numeric: tabular-nums;
+}
+
+#export-status {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .intro {
+    grid-template-columns: 1fr;
+    padding: 16px 16px 4px;
+  }
+
+  .intro nav {
+    order: 3;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 8px 16px 24px;
+    height: auto;
+  }
+
+  .preview-pane {
+    order: -1;
+  }
+
+  .stage {
+    flex: none;
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+
+  #editor {
+    flex: none;
+    height: 55vh;
+  }
+}

@@ -6,3 +6,4 @@ coverage/
 .env
 .env.*
 bench/results/mock-*/
+playground/dist/

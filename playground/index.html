@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zpup playground</title>
+<meta name="description" content="Write a pseudo-3D illustration as JSON and get an SVG that needs no JavaScript, still or turning.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "@zpup/core": "./lib/index.js" } }</script>
+<script type="module" src="main.js"></script>
+</head>
+<body>
+<header class="intro">
+  <h1>zpup <span>playground</span></h1>
+  <p>
+    Round pseudo-3D illustrations written as plain JSON, rendered to SVG with no DOM and no
+    JavaScript in the output. Edit the scene, drag the picture to turn it, and export a still
+    or a turning SVG that plays even inside a README.
+  </p>
+  <nav aria-label="Links">
+    <a href="https://github.com/rxolve/zpup">GitHub</a>
+    <a href="llms.txt">llms.txt</a>
+    <a href="https://github.com/rxolve/zpup/blob/main/docs/decisions.md">Design notes</a>
+  </nav>
+</header>
+
+<main class="workspace">
+  <section class="editor-pane" aria-labelledby="editor-label">
+    <div class="bar">
+      <label id="editor-label" for="editor">Scene JSON</label>
+      <label class="example-picker">
+        <span class="visually-hidden">Example</span>
+        <select id="example" aria-label="Example scene">
+          <option value="hello">Hello: a planet</option>
+          <option value="pup">Pup</option>
+          <option value="lighthouse">Lighthouse</option>
+          <option value="" hidden>Your scene</option>
+        </select>
+      </label>
+    </div>
+    <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off"
+      aria-describedby="editor-help" wrap="off">{{EDITOR_TEXT}}</textarea>
+    <p id="editor-help" class="help">Tab indents. Press Esc, then Tab, to leave the editor.</p>
+    <div id="problems" class="problems" aria-live="polite"></div>
+  </section>
+
+  <section class="preview-pane" aria-label="Preview">
+    <div class="bar">
+      <div class="segmented" role="radiogroup" aria-label="View">
+        <label><input type="radio" name="view" value="drag" checked> Drag</label>
+        <label><input type="radio" name="view" value="spin"> Spin</label>
+      </div>
+      <button type="button" id="reset" disabled>Reset view</button>
+      <button type="button" id="keep" disabled>Save angle to JSON</button>
+    </div>
+    <div id="stage" class="stage" role="application" aria-roledescription="turnable picture" aria-label="Picture" aria-describedby="stage-help">{{PREVIEW_SVG}}</div>
+    <p id="stage-help" class="help"><span id="stage-hint">Drag the picture, or use the arrow keys, to turn it.</span> <span id="stage-status" aria-live="polite"></span></p>
+
+    <div class="exports">
+      <div class="export-group">
+        <span class="export-label">Still SVG <span id="still-size" class="size"></span></span>
+        <button type="button" data-action="download-still" aria-label="Download still SVG">Download</button>
+        <button type="button" data-action="copy-still" aria-label="Copy still SVG">Copy</button>
+      </div>
+      <div class="export-group">
+        <span class="export-label">Turning SVG <span id="spin-size" class="size"></span></span>
+        <button type="button" data-action="download-spin" aria-label="Download turning SVG">Download</button>
+        <button type="button" data-action="copy-spin" aria-label="Copy turning SVG">Copy</button>
+        <button type="button" data-action="copy-markdown">Copy Markdown</button>
+      </div>
+      <div class="export-group">
+        <span class="export-label">Link</span>
+        <button type="button" data-action="copy-link" id="copy-link">Copy link</button>
+      </div>
+      <p id="export-status" class="help" role="status"></p>
+    </div>
+  </section>
+</main>
+<script type="application/json" id="examples">{}</script>
+</body>
+</html>

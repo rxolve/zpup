@@ -15,8 +15,9 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": { "@zpup/core": ["./src/index.ts"] }
   },
-  "include": ["src", "test", "examples", "bench", "vitest.config.ts"],
+  "include": ["src", "test", "examples", "bench", "playground/build.ts", "vitest.config.ts"],
   "exclude": ["bench/results"]
 }

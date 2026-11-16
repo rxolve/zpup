@@ -38,11 +38,12 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p playground/tsconfig.json",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
     "example": "node examples/render.ts",
+    "playground:build": "pnpm run build && node playground/build.ts",
     "bench": "node bench/run.ts",
     "bench:report": "node bench/report.ts",
     "bench:models": "node bench/models.ts",
