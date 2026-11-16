@@ -34,7 +34,15 @@ function side(sample: ScoredSample | undefined, blindLabel: string, alt: string)
   let body: string;
   if (!sample) body = invalidBox(undefined, 'no sample');
   else if (sample.status === 'api-error') body = invalidBox(undefined, 'API error');
-  else if (sample.finalValid && sample.final?.svg) {
+  else if (sample.status === 'truncated') {
+    const tokens = sample.firstOutputTokens;
+    const reasoning = sample.firstReasoningTokens;
+    const detail =
+      tokens === undefined
+        ? 'Cut off at the output token limit.'
+        : `Cut off at the output token limit after ${tokens} tokens${reasoning === undefined ? '' : `, ${reasoning} of them reasoning`}.`;
+    body = `<div class="invalid truncated"><strong>truncated</strong><p class="open-only">${escapeHtml(detail)} Not scored, not repaired.</p></div>`;
+  } else if (sample.finalValid && sample.final?.svg) {
     const rotations = sample.final.rotations ?? [];
     const extra = rotations
       .filter((r) => r.offsetDeg !== 0)
@@ -48,11 +56,22 @@ function side(sample: ScoredSample | undefined, blindLabel: string, alt: string)
       condition === 'svg'
         ? '<figure class="open-only placeholder" aria-hidden="true"><div>one angle only</div></figure>'
         : '';
-    body = `<figure>${picture(sample.final.svg, alt)}<figcaption>${sample.repaired ? 'after repair' : 'first try'}</figcaption></figure>${extra}${single}`;
+    const warnings = sample.final.sceneWarnings ?? [];
+    const warningList = warnings.length
+      ? `<details class="open-only scene-warnings"><summary>${warnings.length} scene warning${warnings.length === 1 ? '' : 's'}: ${escapeHtml([...new Set(warnings.map((w) => w.kind))].join(', '))}</summary><ul>${warnings
+          .slice(0, 6)
+          .map((w) => `<li>${escapeHtml(w.message.slice(0, 300))}</li>`)
+          .join('')}</ul></details>`
+      : '';
+    body = `<figure>${picture(sample.final.svg, alt)}<figcaption>${sample.repaired ? 'after repair' : 'first try'}</figcaption></figure>${extra}${single}${warningList}`;
   } else {
     body = invalidBox(
       sample.final,
-      sample.status === 'skipped' ? 'invalid (repair skipped)' : 'invalid',
+      sample.status === 'skipped'
+        ? 'invalid (repair skipped)'
+        : sample.repairTruncated
+          ? 'invalid (repair truncated)'
+          : 'invalid',
     );
   }
   return `<div class="side" style="--order:${blindLabel === 'X' ? 0 : 1}"><div class="label"><span class="open-label">${openLabel}</span><span class="blind-label">${blindLabel}</span></div><div class="pics">${body}</div></div>`;
@@ -120,6 +139,10 @@ figcaption { color: var(--muted); font-size: 11px; }
 img, .invalid, .placeholder > div { width: 160px; height: 160px; display: block; background: #fff; border: 1px solid var(--line); border-radius: 4px; }
 .invalid { color: var(--bad); font-size: 11px; padding: 6px; overflow: auto; background: var(--card); }
 .invalid ul { padding-left: 14px; margin: 4px 0; }
+.invalid p { margin: 4px 0; }
+.truncated { color: var(--muted); border-style: dashed; }
+.scene-warnings { flex-basis: 100%; max-width: 520px; font-size: 11px; color: var(--muted); }
+.scene-warnings ul { padding-left: 14px; margin: 4px 0; }
 .placeholder > div { display: flex; align-items: center; justify-content: center; color: var(--muted); background: transparent; border-style: dashed; font-size: 12px; }
 .warn { color: var(--bad); font-weight: 600; }
 .blind-label { display: none; }

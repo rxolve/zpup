@@ -5,13 +5,18 @@
  *   node bench/run.ts --provider mock           # full pipeline with canned replies
  *   node bench/run.ts --provider openrouter     # real calls (asks before starting)
  */
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { gitCommit, timestampId, writeReport } from './lib/cli.ts';
 import { BENCH_DIR, loadConfig, loadTasks, REPO_DIR } from './lib/config.ts';
-import { estimateRun, formatEstimate } from './lib/estimate.ts';
+import {
+  estimateRun,
+  formatEstimate,
+  largestReservation,
+  readObservedCosts,
+} from './lib/estimate.ts';
 import { loadPrompts } from './lib/prompts.ts';
 import { MockProvider, OpenRouterProvider, readOpenRouterKey } from './lib/providers.ts';
 import { runBenchmark } from './lib/runner.ts';
@@ -28,6 +33,7 @@ const { values } = parseArgs({
     concurrency: { type: 'string' },
     'run-id': { type: 'string' },
     'dry-run': { type: 'boolean', default: false },
+    'estimate-from': { type: 'string' },
     yes: { type: 'boolean', default: false },
     help: { type: 'boolean', default: false },
   },
@@ -38,6 +44,8 @@ if (values.help) {
 
   --provider mock|openrouter   required unless --dry-run
   --dry-run                    print the plan and the cost estimate, make no calls
+  --estimate-from <run dir>    base the expected cost on what an earlier run spent per sample,
+                               by model and format (others fall back to the config's assumptions)
   --config <file>              default bench/config.json
   --tasks a,b                  task ids to run (default: all in bench/tasks.json)
   --models a,b                 model ids to run (default: all in the config)
@@ -74,11 +82,22 @@ if (values.concurrency)
   config.concurrency = Math.floor(positive(values.concurrency, 'concurrency'));
 
 const templates = loadPrompts();
-const rows = estimateRun(config, tasks, templates);
+const observedFrom = values['estimate-from'];
+const rows = estimateRun(
+  config,
+  tasks,
+  templates,
+  observedFrom ? readObservedCosts(resolve(observedFrom)) : undefined,
+);
 console.log(
   `Plan: ${tasks.length} tasks x ${config.models.length} models x 2 formats x ${config.repetitions} samples = ${tasks.length * config.models.length * 2 * config.repetitions} samples.\n`,
 );
-console.log(formatEstimate(config, rows));
+console.log(
+  formatEstimate(config, rows, {
+    ...(observedFrom ? { observedFrom } : {}),
+    largestReservationUsd: largestReservation(config, tasks, templates),
+  }),
+);
 
 if (values['dry-run']) process.exit(0);
 

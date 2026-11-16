@@ -23,11 +23,30 @@ export interface BenchConfig {
   models: ModelConfig[];
   repetitions: number;
   maxCostUsd: number;
+  /** Output token limit per call, reasoning included. */
   maxTokens: number;
+  /**
+   * OpenRouter's `reasoning` request parameter, sent unchanged to both conditions.
+   * Missing means the parameter is not sent and each model reasons as it does by default.
+   */
+  reasoning?: ReasoningConfig;
+  /**
+   * Each call reserves its worst case (the whole `maxTokens`, at the listed prices)
+   * times this factor before it starts, because providers sometimes bill above the
+   * listed price. Default 1.5.
+   */
+  reserveMargin: number;
   concurrency: number;
   canvas: { width: number; height: number };
   rotationOffsetsDeg: number[];
   estimate: { outputTokensPerCall: number; repairRate: number };
+}
+
+/** See https://openrouter.ai/docs/use-cases/reasoning-tokens. Use `effort` or `maxTokens`, not both. */
+export interface ReasoningConfig {
+  effort?: 'max' | 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
+  /** A reasoning token budget, sent as `reasoning.max_tokens`. */
+  maxTokens?: number;
 }
 
 export interface ChatMessage {
@@ -48,6 +67,7 @@ export interface CompletionRequest {
   model: string;
   messages: ChatMessage[];
   maxTokens: number;
+  reasoning?: ReasoningConfig;
   meta: RequestMeta;
 }
 
@@ -83,6 +103,8 @@ export interface Score {
   warnings: string[];
   /** For valid replies: the SVG to show. For zpup, the scene at its own view angle. */
   svg?: string;
+  /** zpup only, valid scenes only: what `checkSceneWarnings` reported, by kind. */
+  sceneWarnings?: { kind: string; message: string }[];
   /** zpup only: the scene rendered at each configured rotation offset. */
   rotations?: { offsetDeg: number; svg?: string; error?: string }[];
 }
@@ -107,7 +129,10 @@ export interface SampleRecord {
   sample: number;
   attempts: AttemptRecord[];
   startedAt: string;
-  /** Set when the first try was invalid but the cost cap stopped the repair call. */
+  /**
+   * Set when the first try was invalid but no repair was asked for: the cost cap
+   * stopped it, or the reply was cut off at the output token limit.
+   */
   repairSkipped?: string;
 }
 

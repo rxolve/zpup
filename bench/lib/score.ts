@@ -4,7 +4,15 @@
  * good the picture is.
  */
 import { SaxesParser } from 'saxes';
-import { checkScene, compileScene, frameToSvg, renderSvg, type Scene } from '../../src/index.ts';
+import {
+  checkScene,
+  checkSceneWarnings,
+  compileScene,
+  frameToSvg,
+  renderSvg,
+  type Scene,
+  type ValidationIssue,
+} from '../../src/index.ts';
 import type { Condition, Score } from './types.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -210,5 +218,18 @@ export function scoreZpup(
       return { offsetDeg, error: (error as Error).message };
     }
   });
-  return { valid: true, problems: [], warnings, svg, rotations };
+  const sceneWarnings = checkSceneWarnings(valid).map((issue) => ({
+    kind: warningKind(issue),
+    message: issue.message,
+  }));
+  return { valid: true, problems: [], warnings, sceneWarnings, svg, rotations };
+}
+
+/** A short name for each kind of warning `checkSceneWarnings` gives, for counting. */
+export function warningKind(issue: ValidationIssue): string {
+  if (issue.expected.startsWith('an angle in degrees')) return 'angles look like radians';
+  if (issue.expected.startsWith('a shape at least partly inside')) return 'shape off screen';
+  if (issue.expected.startsWith('at least one visible shape')) return 'nothing drawn';
+  if (issue.expected.startsWith('a color that can be shaded')) return 'solid cannot be shaded';
+  return issue.expected.replace(/\d+(\.\d+)?/g, 'N').slice(0, 80);
 }

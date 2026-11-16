@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
-import type { BenchConfig, ModelConfig, Task } from './types.ts';
+import type { BenchConfig, ModelConfig, ReasoningConfig, Task } from './types.ts';
+
+const REASONING_EFFORTS = ['max', 'xhigh', 'high', 'medium', 'low', 'minimal', 'none'];
 
 export const BENCH_DIR = new URL('../', import.meta.url);
 export const REPO_DIR = new URL('../../', import.meta.url);
@@ -50,11 +52,29 @@ export function parseConfig(input: unknown): BenchConfig {
   if (!Array.isArray(c.rotationOffsetsDeg) || c.rotationOffsetsDeg.length === 0) {
     fail('rotationOffsetsDeg must be a non-empty array of numbers');
   }
-  return {
+  let reasoning: ReasoningConfig | undefined;
+  if (c.reasoning !== undefined && c.reasoning !== null) {
+    const r = obj(c.reasoning, 'reasoning');
+    reasoning = {};
+    if (r.effort !== undefined) {
+      if (!REASONING_EFFORTS.includes(r.effort as never)) {
+        fail(`reasoning.effort must be one of ${REASONING_EFFORTS.join(', ')}`);
+      }
+      reasoning.effort = r.effort as NonNullable<ReasoningConfig['effort']>;
+    }
+    if (r.maxTokens !== undefined)
+      reasoning.maxTokens = Math.floor(num(r.maxTokens, 'reasoning.maxTokens', 1));
+    if (reasoning.effort !== undefined && reasoning.maxTokens !== undefined) {
+      fail('reasoning takes effort or maxTokens, not both');
+    }
+    if (reasoning.effort === undefined && reasoning.maxTokens === undefined) reasoning = undefined;
+  }
+  const config: BenchConfig = {
     models,
     repetitions: Math.floor(num(c.repetitions, 'repetitions', 1)),
     maxCostUsd: num(c.maxCostUsd, 'maxCostUsd'),
     maxTokens: Math.floor(num(c.maxTokens, 'maxTokens', 1)),
+    reserveMargin: c.reserveMargin === undefined ? 1.5 : num(c.reserveMargin, 'reserveMargin', 1),
     concurrency: Math.floor(num(c.concurrency, 'concurrency', 1)),
     canvas: {
       width: num(canvas.width, 'canvas.width', 1),
@@ -68,6 +88,8 @@ export function parseConfig(input: unknown): BenchConfig {
       repairRate: num(estimate.repairRate, 'estimate.repairRate'),
     },
   };
+  if (reasoning) config.reasoning = reasoning;
+  return config;
 }
 
 export function parseTasks(input: unknown): Task[] {

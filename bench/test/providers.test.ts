@@ -71,6 +71,19 @@ describe('OpenRouterProvider', () => {
     expect(result.finishReason).toBe('stop');
   });
 
+  it('sends the reasoning parameter only when one is configured', async () => {
+    const { calls, fetchStub } = stubFetch([
+      { status: 200, body: okBody },
+      { status: 200, body: okBody },
+    ]);
+    const provider = new OpenRouterProvider({ apiKey: KEY, fetch: fetchStub });
+    await provider.complete({ ...request, reasoning: { effort: 'high' } });
+    await provider.complete({ ...request, reasoning: { maxTokens: 8000 } });
+    const bodies = calls.map((c) => JSON.parse(String(c.init.body)));
+    expect(bodies[0].reasoning).toEqual({ effort: 'high' });
+    expect(bodies[1].reasoning).toEqual({ max_tokens: 8000 });
+  });
+
   it('retries rate limits and server errors, then succeeds', async () => {
     const { calls, fetchStub } = stubFetch([
       { status: 429, body: 'slow down' },
