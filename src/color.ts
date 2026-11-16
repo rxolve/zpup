@@ -47,9 +47,27 @@ const NAMED =
 
 let namedColors: Map<string, string> | undefined;
 
-function named(name: string): string | undefined {
+function namedTable(): Map<string, string> {
   namedColors ??= new Map(NAMED.split(',').map((pair) => pair.split(':') as [string, string]));
-  return namedColors.get(name);
+  return namedColors;
+}
+
+function named(name: string): string | undefined {
+  return namedTable().get(name);
+}
+
+/** Color keywords that are not in the table above, since they have no fixed RGB value. */
+const KEYWORDS = ['transparent', 'currentColor'];
+
+/** Every CSS color name zpup accepts, for "did you mean" suggestions. */
+export function colorNames(): string[] {
+  return [...namedTable().keys(), ...KEYWORDS];
+}
+
+/** Whether `name` is a CSS named color or color keyword, in any letter case. */
+export function isColorName(name: string): boolean {
+  const lower = name.toLowerCase();
+  return named(lower) !== undefined || KEYWORDS.some((k) => k.toLowerCase() === lower);
 }
 
 /**

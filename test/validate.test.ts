@@ -180,6 +180,26 @@ describe('validation', () => {
     expect(messages({ width: 1, height: 1, children: [shared, shared] })).toHaveLength(1);
   });
 
+  it('accepts CSS color names in any case and suggests one for a misspelled name', () => {
+    const scene = (color: string) => ({
+      width: 10,
+      height: 10,
+      children: [{ type: 'path', path: [{}], color }],
+    });
+    for (const ok of [
+      'red',
+      'RebeccaPurple',
+      'transparent',
+      'currentColor',
+      'currentcolor',
+      'grey',
+    ])
+      expect(checkScene(scene(ok))).toEqual([]);
+    expect(checkScene(scene('blu'))[0]?.hint).toBe('Did you mean "blue"?');
+    expect(checkScene(scene('lightgren'))[0]?.hint).toBe('Did you mean "lightgreen"?');
+    expect(checkScene(scene('skin'))[0]?.hint).toMatch(/is not a CSS color name/);
+  });
+
   it('gives the path as segments and the message without its location', () => {
     const [issue] = checkScene({
       width: 10,

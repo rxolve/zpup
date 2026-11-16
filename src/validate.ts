@@ -1,3 +1,4 @@
+import { colorNames, isColorName } from './color.ts';
 import {
   closest,
   describe,
@@ -293,11 +294,21 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 const COLOR_PATTERNS = [
   /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
   /^(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\([0-9a-z.,%/+\-\s]*\)$/i,
-  /^[a-z]+$/i,
 ];
 
 function isColor(value: unknown): value is string {
-  return typeof value === 'string' && COLOR_PATTERNS.some((re) => re.test(value.trim()));
+  if (typeof value !== 'string') return false;
+  const text = value.trim();
+  return isColorName(text) || COLOR_PATTERNS.some((re) => re.test(text));
+}
+
+/** A hint for a word that is not a CSS color name, such as "blu". */
+function colorNameHint(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !/^[a-z]+$/i.test(value.trim())) return undefined;
+  const guess = closest(value.trim(), colorNames());
+  return guess
+    ? `Did you mean "${guess}"?`
+    : `"${value.trim()}" is not a CSS color name. Use a name such as "tomato" or a hex color such as "#e62".`;
 }
 
 function numberHint(value: unknown, example: string): string | undefined {
@@ -420,6 +431,7 @@ function readColor(
       nodeId,
       'a CSS color string such as "#e62", "rgb(230, 100, 30)" or "tomato"',
       value,
+      colorNameHint(value),
     );
     return undefined;
   }
