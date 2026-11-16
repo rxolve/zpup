@@ -70,9 +70,9 @@ The helpers only add a `type` field, so the same scene can be written, stored an
 - **Axes:** x right, y down, z toward the viewer. The origin is the center of the image.
 - **Angles:** degrees. Positive `rotate.z` turns clockwise on screen.
 - **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
-- **Shapes:** `color`, `stroke` (round-capped width; thick strokes give volume) and `fill`.
+- **Shapes:** `color` (hex, `rgb()` and other CSS functions, or one of the CSS color names; a misspelled name is an error), `stroke` (round-capped width; thick strokes give volume) and `fill`.
 - **Solids:** always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up.
-- **Errors:** an invalid scene throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians or shapes placed outside the image.
+- **Errors:** an invalid scene or option throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. Each issue has the path as a string (`path`) and as keys and indices (`pathSegments`), and the message with (`message`) and without (`detail`) the path in front. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians or shapes placed outside the image.
 
 ### Solids
 
@@ -106,7 +106,7 @@ const svg = renderSpinSvg(scene, {
 });
 ```
 
-Every option is optional, and bad values throw a `ZpupValidationError` like an invalid scene does. Renderers without SMIL show the first frame, which is the same picture `renderSvg` draws.
+Every option is optional, and bad values throw a `ZpupValidationError` like an invalid scene does. Renderers without SMIL show the first frame, which is the same picture `renderSvg` draws. It is synchronous and depth-sorts the scene at 720 angles: about 60 ms for a small scene and 0.6 s for the lighthouse on a laptop, so in a browser run it in a worker (the playground does).
 
 Limits:
 

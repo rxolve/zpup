@@ -5,7 +5,7 @@ Short notes on the choices where there was a real fork in the road. Each has a s
 ## Scene format
 
 **The scene is a plain JSON tree; helpers are optional sugar.** (settled)
-`group()`, `ellipse()` and friends only add a `type` field. Nothing is a class instance, so scenes can be generated, diffed, stored and sent over the wire. This is what "AI-friendly" means in practice.
+`group()`, `ellipse()` and friends only add a `type` field, as the first key, so their output serialized as JSON reads like a hand-written scene. Nothing is a class instance, so scenes can be generated, diffed, stored and sent over the wire. This is what "AI-friendly" means in practice.
 
 **Vectors are objects with optional keys, not arrays.** (open)
 `{ x: 10 }` is self-describing and partial; `[10, 0, 0]` is shorter but easy to get wrong. Accepting only one form keeps validation and error messages simple.
@@ -20,7 +20,13 @@ A shape can carry children (eyes on a head) without a wrapping group. `group` is
 Zdog closes paths by default. Open reads more naturally for "a line from A to B".
 
 **Colors are validated CSS color strings.** (settled)
-Hex, functional notation, and named colors pass; anything else is rejected, and all text is escaped on output, so a scene from an untrusted source cannot inject markup.
+Hex, functional notation, and named colors pass; anything else is rejected, and all text is escaped on output, so a scene from an untrusted source cannot inject markup. A bare word must be one of the 148 CSS color names, `transparent` or `currentColor` (in any case); `"blu"` is an error with "Did you mean "blue"?", where it used to pass and draw in the browser's default color. The names are the table the solid shading already needed, so checking them added about 1 KB (0.35 KB gzipped) of code.
+
+**Issues carry their path as segments and their message without it.** (settled)
+`path` (`scene.children[0].stroke`) and `message` (path, node id, then the text) are for people. `pathSegments` (`["scene", "children", 0, "stroke"]`) and `detail` (the text alone) are for tools that show the location on their own, such as the playground; the string form cannot be split back reliably when a key contains a dot or a bracket.
+
+**Option errors are validation errors.** (settled)
+`renderSvg`, `frameToSvg` and `renderSpinSvg` all report bad or unknown options as `ZpupValidationError` issues with paths such as `options.precision`, together with any scene problems, rather than as `RangeError`. One error type means one `catch` for everything a caller passed in.
 
 **A node with the wrong type is still checked.** (open)
 When the intended type is clear (`circle`, a typo such as `cilinder`, `cube`), the other options are checked as that type, but options it requires are not demanded, since they may have been meant under other names. When the node has to be written differently (`sphere`, `line`, `triangle`), only the options every node shares are checked, and the hint shows what to write. Either way one round of fixes should be enough, which matters for a language model repairing its own output.
@@ -117,6 +123,17 @@ Each line segment (and each half of a Bezier segment) is sorted on its own, and 
 
 **Known limits.** Filled shapes are never split, so shapes that intersect or weave through each other cannot be drawn correctly. The pairwise step is O(n²) in the number of pieces; fine for illustrations, not for thousands of shapes.
 
+**Speed without changing answers.** (settled)
+The sorter runs 720 times per turning animation, so its speed matters. Profiled on the lighthouse, 97% of `renderSpinSvg` was in those sorts, mostly in depth queries from the area grid of round surfaces (8 million per animation). These were made cheaper without changing a single result: each shape keeps its stroke segments and outline edges in horizontal bands so a query only looks at the ones that can reach it; the area grid is evaluated a row at a time; pairs from different solids that cannot cover a common point are not compared (the overlap test that `renderSpinSvg` already ran is shared with the sorter); and hot functions stop allocating. The output is byte for byte the same. Median of five runs on a laptop:
+
+| Scene      | Before   | After  |
+| ---------- | -------- | ------ |
+| hello      | 63 ms    | 56 ms  |
+| pup        | 114 ms   | 89 ms  |
+| lighthouse | 1,717 ms | 579 ms |
+
+What is left is the area grid itself (12 by 12 points for each pair against a round surface, at every step) and the overlap tests. Checking the order at fewer angles and bisecting where it changes would be faster still, but it can miss a pair that overlaps for less than the coarse step, so the half-degree check stays. A test counts sorts and comparisons instead of timing them, so a regression fails on any machine.
+
 ## Rendering
 
 **Core produces a `Frame`; renderers only paint it.** (settled)
@@ -155,7 +172,10 @@ Ids carry a four-character hash of the content, so two different animations inli
 
 A flipbook also jumps from frame to frame, while the keyframed version moves smoothly. Before the depth-sorting fix above, the prototype needed 55 epochs and a filter that ignored order changes lasting under 4 degrees. In a check of the prototype, the animation paused at 16 moments matched the still renderer at the same angles, with at most 0.006% of pixels clearly different. It plays inside `<img>` in Chromium.
 
-**Limits.** Only a constant turn about one axis; nothing else moves and there is no interaction. SMIL cannot read `prefers-reduced-motion`, so the page embedding the image has to offer the still picture. Outlines are drawn per segment, so translucent colors show seams. File size grows with pieces times epochs, and epochs grow with overlapping pairs, so large scenes get big fast. Planning compiles and depth-sorts the scene at 720 angles, which takes about 150 ms for the pup.
+**Limits.** Only a constant turn about one axis; nothing else moves and there is no interaction. SMIL cannot read `prefers-reduced-motion`, so the page embedding the image has to offer the still picture. Outlines are drawn per segment, so translucent colors show seams. File size grows with pieces times epochs, and epochs grow with overlapping pairs, so large scenes get big fast. Planning compiles and depth-sorts the scene at 720 angles, which takes about 90 ms for the pup and 0.6 s for the lighthouse (see Depth sorting).
+
+**No `AbortSignal` option.** (settled)
+`renderSpinSvg` is synchronous. A signal can only become aborted when other code runs on the same thread, which cannot happen while the function runs, so checking `signal.aborted` inside it would never see a change; making it asynchronous to give the signal a chance would complicate a pure function for the sake of scenes that now take under a second. A caller that needs to stop a long build runs it in a worker and terminates the worker, as the playground does.
 
 **Possible size reduction, not done.** The `<use>` lists are about a quarter of the file (722 references for the pup). Adjacent epochs usually differ by one swapped pair, so one sequence of references that contains every epoch's order as a subsequence (a common supersequence) would need only about 75 references for the pup. Each reference that is not always visible would then need its own visibility animation, roughly 100 bytes each, so the raw saving would be around 6 KB and the gzipped saving smaller, since the repeated lists compress well. Not worth the extra complexity yet.
 

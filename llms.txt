@@ -17,7 +17,7 @@ compileScene(scene)                // -> Frame: projected, depth-sorted 2D draw 
 renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene forever (SMIL, no JavaScript)
 ```
 
-`renderSvg`, `renderSpinSvg` and `compileScene` throw `ZpupValidationError` on invalid input. Its `message` lists every problem; `issues` has `{ path, expected, received, hint, message }` for each.
+`renderSvg`, `renderSpinSvg` and `compileScene` throw `ZpupValidationError` on an invalid scene or option. Its `message` lists every problem; `issues` has `{ path, pathSegments, expected, received, hint, detail, message }` for each (`detail` is `message` without the path).
 
 ## Conventions
 
@@ -51,7 +51,7 @@ renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene foreve
 
 Every node: `type` (required), `id?` (string, shown in errors), `translate?`, `rotate?`, `scale?` (number or `{ x?, y?, z? }`, missing axes = 1), `visible?` (default true), `children?`.
 
-Every shape (all types except `group`): `color?` (CSS color, default `"#333"`), `stroke?` (width >= 0, default 1, round caps and joins), `fill?` (boolean, default false; fills with `color`).
+Every shape (all types except `group`): `color?` (hex, `rgb()`, or a CSS color name; default `"#333"`), `stroke?` (width >= 0, default 1, round caps and joins), `fill?` (boolean, default false; fills with `color`).
 
 | type | own options | notes |
 | --- | --- | --- |
@@ -103,7 +103,7 @@ Place details slightly in front of the surface they sit on: an eye on a sphere o
 }
 ```
 
-Unknown or invalid options throw `ZpupValidationError` with paths such as `options.duration`. Only a constant turn about one axis is possible; nothing else in the scene moves. Keep scenes small (tens of shapes): file size grows with the number of pieces and of overlapping pairs. Use opaque colors; translucent outlines show seams.
+Only a constant turn about one axis is possible; nothing else in the scene moves. Keep scenes small (tens of shapes): file size grows with the number of pieces and of overlapping pairs. Use opaque colors; translucent outlines show seams.
 
 ## Examples
 
