@@ -8,6 +8,8 @@ Pronounced "zee-pup".
 
 The pup above is a single SVG file with no JavaScript. It was rendered by `renderSpinSvg` from [a short scene description](examples/pup.ts) and turns in current browsers, including inside a GitHub README.
 
+**[Try it in the playground](https://rxolve.github.io/zpup/)**: edit a scene as JSON, drag the picture to turn it, and export a still or turning SVG.
+
 ## Status
 
 Early work in progress. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested, but the API may still change. The npm package is `@zpup/core`. Its `0.0.0` release only reserves the name; nothing usable is published yet.
@@ -136,6 +138,7 @@ pnpm typecheck
 pnpm lint
 pnpm build       # writes dist/
 pnpm example     # writes the pup and lighthouse pictures in examples/
+pnpm playground:build  # builds the playground into playground/dist/, servable as static files
 ```
 
 ## Credits
