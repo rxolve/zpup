@@ -1,0 +1,420 @@
+import { closest, describe, type ValidationIssue, ZpupValidationError } from './errors.ts';
+import { controlPoints, type PathGeometry } from './geometry.ts';
+import type { Vec3 } from './math.ts';
+import { compilePieces, type Piece, paintConstraints, positions } from './pieces.ts';
+import { escapeXml, formatNumber } from './svg.ts';
+import type { Scene } from './types.ts';
+import { checkScene, type NormalizedScene, normalizeScene } from './validate.ts';
+
+/** Options for {@link renderSpinSvg}. */
+export interface SpinOptions {
+  /**
+   * Which angle of the scene's view rotation (`scene.rotate`) turns. Default
+   * `"y"`, a turntable: the scene spins about its vertical axis and keeps its
+   * tilt.
+   */
+  axis?: 'x' | 'y' | 'z';
+  /** Seconds for one full turn, at least 0.1. Default 8. */
+  duration?: number;
+  /**
+   * Angles at which the geometry is computed exactly; the browser
+   * interpolates linearly in between. More keyframes give smoother curves and
+   * larger files. An integer from 4 to 720. Default 36 (every 10 degrees).
+   */
+  keyframes?: number;
+  /** Whether the angle grows (`"positive"`, the default) or shrinks (`"negative"`). */
+  direction?: 'positive' | 'negative';
+  /** Digits kept after the decimal point in coordinates. An integer from 0 to 10. Default 1. */
+  precision?: number;
+}
+
+interface ResolvedSpinOptions {
+  readonly axis: 'x' | 'y' | 'z';
+  readonly duration: number;
+  readonly keyframes: number;
+  readonly direction: 'positive' | 'negative';
+  readonly precision: number;
+}
+
+/** Steps per turn at which the paint order is checked: every half degree. */
+export const SPIN_STEPS = 720;
+
+/** A stretch of the turn, `[start, end)` in steps, during which one paint order is used. */
+export interface Epoch {
+  readonly start: number;
+  readonly end: number;
+  /** Piece indices, back to front. */
+  readonly order: readonly number[];
+}
+
+const OPTION_KEYS = ['axis', 'duration', 'keyframes', 'direction', 'precision'] as const;
+const AXES = ['x', 'y', 'z'] as const;
+const DIRECTIONS = ['positive', 'negative'] as const;
+
+/**
+ * Renders a scene as an SVG document that turns the view one full rotation,
+ * forever, using SMIL animation and no JavaScript. It also plays inside an
+ * `<img>` tag, so it works in a GitHub README. Renderers without SMIL show
+ * the first frame, which is the scene as {@link renderSvg} draws it.
+ *
+ * This is a pure function: the same input gives the same string.
+ * @throws {ZpupValidationError} when the scene or the options are invalid.
+ */
+export function renderSpinSvg(scene: Scene, options: SpinOptions = {}): string {
+  const { resolved, issues } = resolveSpinOptions(options);
+  const sceneIssues = checkScene(scene);
+  if (sceneIssues.length > 0 || issues.length > 0 || !resolved) {
+    const subject =
+      sceneIssues.length === 0
+        ? 'spin options'
+        : issues.length === 0
+          ? 'zpup scene'
+          : 'zpup scene and spin options';
+    throw new ZpupValidationError([...sceneIssues, ...issues], subject);
+  }
+  const s = normalizeScene(scene);
+  return spinToSvg(s, resolved, planSpin(s, resolved));
+}
+
+/** Checks spin options and fills in defaults. */
+export function resolveSpinOptions(options: unknown): {
+  resolved: ResolvedSpinOptions | undefined;
+  issues: ValidationIssue[];
+} {
+  const issues: ValidationIssue[] = [];
+  const report = (key: string, expected: string, value: unknown, hint?: string) => {
+    const path = `options.${key}`;
+    const received = describe(value);
+    const issue: ValidationIssue = {
+      path,
+      expected,
+      received,
+      message: `${path}: expected ${expected}, received ${received}.${hint ? ` ${hint}` : ''}`,
+    };
+    if (hint !== undefined) issue.hint = hint;
+    issues.push(issue);
+  };
+  if (options === undefined) options = {};
+  if (typeof options !== 'object' || options === null || Array.isArray(options)) {
+    issues.push({
+      path: 'options',
+      expected: 'an options object such as { "duration": 8 }',
+      received: describe(options),
+      message: `options: expected an options object such as { "duration": 8 }, received ${describe(options)}.`,
+    });
+    return { resolved: undefined, issues };
+  }
+  const o = options as Record<string, unknown>;
+  const allowed = OPTION_KEYS.map((k) => `"${k}"`).join(', ');
+  for (const key of Object.keys(o)) {
+    if ((OPTION_KEYS as readonly string[]).includes(key)) continue;
+    const guess = closest(key, OPTION_KEYS);
+    const hint = guess ? `Did you mean "${guess}"?` : 'Remove this option.';
+    issues.push({
+      path: `options.${key}`,
+      expected: `${allowed} (spin options)`,
+      received: `unknown option "${key}"`,
+      hint,
+      message: `options.${key}: unknown option "${key}". ${hint} Allowed: ${allowed}.`,
+    });
+  }
+
+  const choice = <T extends string>(key: string, values: readonly T[], fallback: T): T => {
+    const value = o[key];
+    if (value === undefined) return fallback;
+    if (typeof value === 'string' && (values as readonly string[]).includes(value))
+      return value as T;
+    const expected = values.map((v) => `"${v}"`).join(values.length > 2 ? ', ' : ' or ');
+    const guess = typeof value === 'string' ? closest(value, values) : undefined;
+    report(key, `one of ${expected}`, value, guess ? `Did you mean "${guess}"?` : undefined);
+    return fallback;
+  };
+  const integer = (key: string, min: number, max: number, fallback: number): number => {
+    const value = o[key];
+    if (value === undefined) return fallback;
+    if (typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max) {
+      return value;
+    }
+    const hint =
+      typeof value === 'number' && Number.isFinite(value) && !Number.isInteger(value)
+        ? `Use a whole number such as ${Math.min(max, Math.max(min, Math.round(value)))}.`
+        : typeof value === 'string'
+          ? `Use a plain number, e.g. ${fallback}.`
+          : undefined;
+    report(key, `an integer from ${min} to ${max}`, value, hint);
+    return fallback;
+  };
+
+  const axis = choice('axis', AXES, 'y');
+  const direction = choice('direction', DIRECTIONS, 'positive');
+  let duration = 8;
+  if (o.duration !== undefined) {
+    const value = o.duration;
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0.1) duration = value;
+    else {
+      report(
+        'duration',
+        'a number of seconds of at least 0.1',
+        value,
+        typeof value === 'string'
+          ? 'Use a plain number of seconds without a unit, e.g. 8.'
+          : undefined,
+      );
+    }
+  }
+  const keyframes = integer('keyframes', 4, SPIN_STEPS, 36);
+  const precision = integer('precision', 0, 10, 1);
+  if (issues.length > 0) return { resolved: undefined, issues };
+  return { resolved: { axis, duration, keyframes, direction, precision }, issues };
+}
+
+/** The view rotation after turning `degrees` about `axis`. */
+function turned(s: NormalizedScene, axis: 'x' | 'y' | 'z', degrees: number): Vec3 {
+  return { ...s.rotate, [axis]: s.rotate[axis] + degrees };
+}
+
+/**
+ * Cuts one turn into epochs, each with one paint order that agrees with every
+ * overlapping pair for its whole length.
+ *
+ * The first epoch starts with the still renderer's order at angle 0. An order
+ * is kept for as long as it stays valid (hysteresis). When it breaks, the
+ * next order is chosen to satisfy the constraints of as many of the coming
+ * steps as possible at once, and among such orders the one closest to the
+ * previous order. Taking the longest valid stretch each time gives the
+ * fewest epochs for the given steps.
+ */
+export function planSpin(
+  s: NormalizedScene,
+  options: Pick<ResolvedSpinOptions, 'axis' | 'direction'>,
+): Epoch[] {
+  const sign = options.direction === 'negative' ? -1 : 1;
+  const steps: { order: number[]; constraints: [number, number][] }[] = [];
+  let count = 0;
+  for (let step = 0; step < SPIN_STEPS; step++) {
+    const pieces = compilePieces(s, turned(s, options.axis, (sign * step * 360) / SPIN_STEPS));
+    count = pieces.length;
+    steps.push(paintConstraints(pieces));
+  }
+  const satisfies = (position: readonly number[], step: number) =>
+    (steps[step] as (typeof steps)[number]).constraints.every(
+      ([a, b]) => (position[a] as number) < (position[b] as number),
+    );
+
+  const epochs: Epoch[] = [];
+  let order = (steps[0] as (typeof steps)[number]).order;
+  let step = 0;
+  while (step < SPIN_STEPS) {
+    if (step > 0) {
+      // Grow a window of upcoming steps while one order can satisfy them all.
+      const previous = positions(order);
+      const seen = new Set<number>();
+      const window: [number, number][] = [];
+      let best = order;
+      for (let k = step; k < SPIN_STEPS; k++) {
+        const added = (steps[k] as (typeof steps)[number]).constraints.filter(
+          ([a, b]) => !seen.has(a * count + b),
+        );
+        if (added.length === 0 && k > step) continue;
+        const candidate = closestOrder(count, window.concat(added), previous);
+        if (!candidate) break;
+        for (const [a, b] of added) {
+          seen.add(a * count + b);
+          window.push([a, b]);
+        }
+        best = candidate;
+      }
+      order = best;
+    }
+    const position = positions(order);
+    let end = step + 1;
+    while (end < SPIN_STEPS && satisfies(position, end)) end++;
+    epochs.push({ start: step, end, order });
+    step = end;
+  }
+  return epochs;
+}
+
+/**
+ * A topological order of `count` items that satisfies `constraints` and,
+ * among the free choices, keeps items in their `preferred` positions.
+ * Undefined when the constraints form a cycle.
+ */
+function closestOrder(
+  count: number,
+  constraints: readonly (readonly [number, number])[],
+  preferred: readonly number[],
+): number[] | undefined {
+  const after: number[][] = Array.from({ length: count }, () => []);
+  const blockers = new Array<number>(count).fill(0);
+  for (const [a, b] of constraints) {
+    (after[a] as number[]).push(b);
+    blockers[b] = (blockers[b] as number) + 1;
+  }
+  const placed = new Array<boolean>(count).fill(false);
+  const order: number[] = [];
+  const rank = (i: number) => preferred[i] ?? i;
+  while (order.length < count) {
+    let pick = -1;
+    for (let i = 0; i < count; i++) {
+      if (placed[i] || blockers[i] !== 0) continue;
+      if (pick < 0 || rank(i) < rank(pick)) pick = i;
+    }
+    if (pick < 0) return undefined;
+    placed[pick] = true;
+    order.push(pick);
+    for (const next of after[pick] as number[]) blockers[next] = (blockers[next] as number) - 1;
+  }
+  return order;
+}
+
+/** Whether a piece is a single point in 3D, which is the same at every angle. */
+function isDot(g: PathGeometry): boolean {
+  const s = g.start;
+  return controlPoints(g).every((q) => q.x === s.x && q.y === s.y && q.z === s.z);
+}
+
+/** Placeholder for the id prefix, replaced once the content is known. */
+const PREFIX = '\u0001';
+
+function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly Epoch[]): string {
+  const n = (value: number) => formatNumber(value, o.precision);
+  const sign = o.direction === 'negative' ? -1 : 1;
+  const keyframes: Piece[][] = [];
+  for (let k = 0; k < o.keyframes; k++) {
+    keyframes.push(compilePieces(s, turned(s, o.axis, (sign * k * 360) / o.keyframes)));
+  }
+  const first = keyframes[0] as Piece[];
+  const timing = `dur="${formatNumber(o.duration, 3)}s" repeatCount="indefinite"`;
+  /** An attribute's starting value and, if it moves, its animation. */
+  const animated = (attribute: string, values: string[]) => {
+    const start = values[0] as string;
+    if (values.every((v) => v === start)) return { start, animate: '' };
+    return {
+      start,
+      animate: `<animate attributeName="${attribute}" ${timing} values="${[...values, start].join(';')}"/>`,
+    };
+  };
+
+  const drawn = new Set<number>();
+  const defs: string[] = [];
+  first.forEach((piece, i) => {
+    const color = escapeXml(piece.color);
+    const frames = keyframes.map((f) => (f[i] as Piece).geometry);
+    if (isDot(piece.geometry)) {
+      if (piece.stroke <= 0) return;
+      const cx = animated(
+        'cx',
+        frames.map((g) => n(g.start.x)),
+      );
+      const cy = animated(
+        'cy',
+        frames.map((g) => n(g.start.y)),
+      );
+      const circle = `<circle id="${PREFIX}${i}" cx="${cx.start}" cy="${cy.start}" r="${n(piece.stroke / 2)}" fill="${color}"`;
+      const animate = cx.animate + cy.animate;
+      defs.push(animate === '' ? `${circle}/>` : `${circle}>${animate}</circle>`);
+    } else {
+      const d = animated(
+        'd',
+        frames.map((g) => pathData(g, n)),
+      );
+      const fill = piece.fill ? color : 'none';
+      const stroke =
+        piece.stroke > 0
+          ? ` stroke="${color}" stroke-width="${n(piece.stroke)}" stroke-linecap="round" stroke-linejoin="round"`
+          : '';
+      defs.push(
+        d.animate === ''
+          ? `<path id="${PREFIX}${i}" d="${d.start}" fill="${fill}"${stroke}/>`
+          : `<path id="${PREFIX}${i}" d="${d.start}" fill="${fill}"${stroke}>${d.animate}</path>`,
+      );
+    }
+    drawn.add(i);
+  });
+
+  // The turn ends where it started, so a last epoch with the same order as
+  // the first is the same group, shown again.
+  const groups: { intervals: [number, number][]; order: readonly number[] }[] = epochs.map((e) => ({
+    intervals: [[e.start, e.end]],
+    order: e.order,
+  }));
+  const head = groups[0];
+  const tail = groups[groups.length - 1];
+  if (head && tail && groups.length > 1 && sameOrder(head.order, tail.order)) {
+    head.intervals.push(...tail.intervals);
+    groups.pop();
+  }
+  const time = (step: number) => formatNumber(step / SPIN_STEPS, 5);
+  const body = groups.map(({ intervals, order }) => {
+    const uses = order
+      .filter((i) => drawn.has(i))
+      .map((i) => `<use href="#${PREFIX}${i}"/>`)
+      .join('');
+    if (groups.length === 1) return `<g>${uses}</g>`;
+    const keyTimes: string[] = [];
+    const values: string[] = [];
+    let visible = false;
+    const set = (step: number, value: boolean) => {
+      if (keyTimes.length > 0 && value === visible) return;
+      keyTimes.push(time(step));
+      values.push(value ? 'visible' : 'hidden');
+      visible = value;
+    };
+    if ((intervals[0] as [number, number])[0] > 0) set(0, false);
+    for (const [start, end] of intervals) {
+      set(start, true);
+      if (end < SPIN_STEPS) set(end, false);
+    }
+    const initial = (intervals[0] as [number, number])[0] === 0 ? 'visible' : 'hidden';
+    return (
+      `<g visibility="${initial}"><animate attributeName="visibility" ${timing} calcMode="discrete" keyTimes="${keyTimes.join(';')}" values="${values.join(';')}"/>` +
+      `${uses}</g>`
+    );
+  });
+
+  const w = n(s.width);
+  const h = n(s.height);
+  const lines: string[] = [];
+  const label = s.title === undefined ? '' : ` role="img" aria-label="${escapeXml(s.title)}"`;
+  lines.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"${label}>`,
+  );
+  if (s.title !== undefined) lines.push(`<title>${escapeXml(s.title)}</title>`);
+  if (s.background !== undefined) {
+    lines.push(`<rect width="100%" height="100%" fill="${escapeXml(s.background)}"/>`);
+  }
+  lines.push('<defs>', ...defs, '</defs>', ...body, '</svg>');
+  const text = `${lines.join('\n')}\n`;
+  // Ids are prefixed with a hash of the content, so that different
+  // animations inlined in one HTML page do not refer to each other's shapes.
+  const prefix = `z${hash(text)}-`;
+  return text
+    .replaceAll(`id="${PREFIX}`, `id="${prefix}`)
+    .replaceAll(`href="#${PREFIX}`, `href="#${prefix}`);
+}
+
+function pathData(g: PathGeometry, n: (value: number) => string): string {
+  let d = `M${n(g.start.x)} ${n(g.start.y)}`;
+  for (const seg of g.segments) {
+    d +=
+      seg.kind === 'line'
+        ? `L${n(seg.to.x)} ${n(seg.to.y)}`
+        : `C${n(seg.c1.x)} ${n(seg.c1.y)} ${n(seg.c2.x)} ${n(seg.c2.y)} ${n(seg.to.x)} ${n(seg.to.y)}`;
+  }
+  return g.closed ? `${d}Z` : d;
+}
+
+function sameOrder(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+/** FNV-1a, as four base-36 digits. */
+function hash(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return ((h >>> 0) % 36 ** 4).toString(36).padStart(4, '0');
+}

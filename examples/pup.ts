@@ -1,6 +1,6 @@
 /**
  * A small sitting pup, described as a plain scene tree.
- * Run `pnpm example` to write examples/pup.svg.
+ * Run `pnpm example` to write examples/pup.svg and examples/pup-spin.svg.
  */
 import { dot, ellipse, group, path, type Scene } from '../src/index.ts';
 

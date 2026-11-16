@@ -26,6 +26,7 @@ export {
   type Vec3,
   vec3,
 } from './math.ts';
+export { renderSpinSvg, type SpinOptions } from './spin.ts';
 export { formatNumber, frameToSvg, renderSvg, type SvgOptions } from './svg.ts';
 export type {
   BezierInput,

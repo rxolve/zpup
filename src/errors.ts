@@ -22,9 +22,12 @@ export class ZpupValidationError extends Error {
   override readonly name = 'ZpupValidationError';
   readonly issues: readonly ValidationIssue[];
 
-  constructor(issues: readonly ValidationIssue[]) {
+  /**
+   * @param subject What was being checked, for the first line of the message.
+   */
+  constructor(issues: readonly ValidationIssue[], subject = 'zpup scene') {
     const count = issues.length === 1 ? '1 problem' : `${issues.length} problems`;
-    super(`Invalid zpup scene (${count}):\n${issues.map((i) => `  - ${i.message}`).join('\n')}`);
+    super(`Invalid ${subject} (${count}):\n${issues.map((i) => `  - ${i.message}`).join('\n')}`);
     this.issues = issues;
   }
 }

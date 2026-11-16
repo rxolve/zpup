@@ -80,7 +80,8 @@ export function formatNumber(value: number, precision = 2): string {
   return String(rounded);
 }
 
-function escapeXml(text: string): string {
+/** Escapes text for use in XML content and attribute values. */
+export function escapeXml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
