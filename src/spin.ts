@@ -7,7 +7,13 @@ import {
 } from './errors.ts';
 import { controlPoints, flatten, type PathGeometry, type Segment } from './geometry.ts';
 import { lerp, type Vec3 } from './math.ts';
-import { compilePieces, type Piece, paintConstraints, positions } from './pieces.ts';
+import {
+  compilePieces,
+  FACING_EPSILON,
+  type Piece,
+  paintConstraints,
+  positions,
+} from './pieces.ts';
 import { escapeXml, formatNumber } from './svg.ts';
 import type { Scene } from './types.ts';
 import { checkScene, type NormalizedScene, normalizeScene } from './validate.ts';
@@ -45,13 +51,23 @@ interface ResolvedSpinOptions {
 /** Steps per turn at which the paint order is checked: every half degree. */
 export const SPIN_STEPS = 720;
 
-/** A stretch of the turn, `[start, end)` in steps, during which one paint order is used. */
+/**
+ * A stretch of the turn, `[start, end)` in steps, during which one paint
+ * order is used and every piece shows the same side. Ends fall on whole steps,
+ * except where a flat shape with a `backface` option turns edge-on: there they
+ * fall on the exact angle.
+ */
 export interface Epoch {
   readonly start: number;
   readonly end: number;
   /** Piece indices, back to front. */
   readonly order: readonly number[];
+  /** What each piece shows during the epoch, by piece index. */
+  readonly sides: readonly Side[];
 }
+
+/** What a piece shows: its front color, its back color, or nothing (`backface: false`). */
+export type Side = 'front' | 'back' | 'hidden';
 
 const OPTION_KEYS = ['axis', 'duration', 'keyframes', 'direction', 'precision'] as const;
 const AXES = ['x', 'y', 'z'] as const;
@@ -186,8 +202,71 @@ function turned(s: NormalizedScene, axis: 'x' | 'y' | 'z', degrees: number): Vec
 }
 
 /**
+ * How a flat shape faces the viewer through the turn. The depth component of
+ * its front normal is `a cos θ + b sin θ + c` for a turn of θ degrees, since
+ * the turning angle enters one rotation about one axis; `length` is the
+ * normal's length, which the turn does not change.
+ */
+export interface Facing {
+  readonly a: number;
+  readonly b: number;
+  readonly c: number;
+  readonly length: number;
+}
+
+/**
+ * The facing function of a piece, from its normals at turns of 0, 90 and 180
+ * degrees. Undefined for pieces that look the same from both sides.
+ */
+export function facingOf(at0: Piece, at90: Piece, at180: Piece): Facing | undefined {
+  if (at0.backface === true || !at0.normal || !at90.normal || !at180.normal) return undefined;
+  const f0 = at0.normal.z;
+  const f90 = at90.normal.z;
+  const f180 = at180.normal.z;
+  const c = (f0 + f180) / 2;
+  return { a: (f0 - f180) / 2, b: f90 - c, c, length: Math.hypot(at0.normal.x, at0.normal.y, f0) };
+}
+
+/** Whether the front faces the viewer after a turn of `degrees`, by the rule of `facesViewer`. */
+export function facingAt(f: Facing, degrees: number): boolean {
+  const t = (degrees * Math.PI) / 180;
+  return f.a * Math.cos(t) + f.b * Math.sin(t) + f.c > FACING_EPSILON * f.length;
+}
+
+/**
+ * The turns, as fractions in [0, 1), at which the front's depth component
+ * changes sign: the solutions of `a cos θ + b sin θ + c = 0`, found in closed
+ * form. None when it never changes sign (always in front, always turned away,
+ * or touching zero at one angle only).
+ */
+export function facingTurns(f: Facing): number[] {
+  const r = Math.hypot(f.a, f.b);
+  if (r <= FACING_EPSILON * f.length) return [];
+  const k = -f.c / r;
+  if (!(k > -1 && k < 1)) return [];
+  const phi = Math.atan2(f.b, f.a);
+  const delta = Math.acos(k);
+  const turn = (t: number) => {
+    const u = t / (2 * Math.PI);
+    return u - Math.floor(u);
+  };
+  return [turn(phi - delta), turn(phi + delta)].sort((x, y) => x - y);
+}
+
+/** The part of a turn, in steps, given to the still picture's sides when a shape turns at angle 0. */
+const FIRST_FRAME_STEPS = SPIN_STEPS * 1e-6;
+
+/** Turns closer than this, in steps, are one boundary. */
+const SAME_STEP = 1e-9;
+
+/**
  * Cuts one turn into epochs, each with one paint order that agrees with every
- * overlapping pair for its whole length.
+ * overlapping pair for its whole length, and one side shown by every piece.
+ *
+ * The turn is checked every half degree, and also at the exact angles where
+ * a flat shape with a `backface` option turns edge-on, found in closed form
+ * (see {@link facingTurns}); a shape with `backface: false` takes part in the
+ * depth sort only while its front faces the viewer.
  *
  * The first epoch starts with the still renderer's order at angle 0. An order
  * is kept for as long as it stays valid (hysteresis). When it breaks, the
@@ -201,13 +280,73 @@ export function planSpin(
   options: Pick<ResolvedSpinOptions, 'axis' | 'direction'>,
 ): Epoch[] {
   const sign = options.direction === 'negative' ? -1 : 1;
-  const steps: { order: number[]; constraints: [number, number][] }[] = [];
-  let count = 0;
-  for (let step = 0; step < SPIN_STEPS; step++) {
-    const pieces = compilePieces(s, turned(s, options.axis, (sign * step * 360) / SPIN_STEPS));
-    count = pieces.length;
-    steps.push(paintConstraints(pieces));
+  const compileAt = (step: number) =>
+    compilePieces(s, turned(s, options.axis, (sign * step * 360) / SPIN_STEPS));
+  const first = compileAt(0);
+  const quarter = compileAt(SPIN_STEPS / 4);
+  const half = compileAt(SPIN_STEPS / 2);
+  const count = first.length;
+
+  // Pieces that show a different side from behind, and when they turn.
+  const facings = first.map((p, i) => facingOf(p, quarter[i] as Piece, half[i] as Piece));
+  const boundaries: number[] = [];
+  for (let step = 0; step < SPIN_STEPS; step++) boundaries.push(step);
+  for (const f of facings) {
+    if (f) for (const t of facingTurns(f)) boundaries.push(t * SPIN_STEPS);
   }
+  boundaries.sort((x, y) => x - y);
+  const starts: number[] = [];
+  for (const b of boundaries) {
+    const last = starts[starts.length - 1];
+    if (last !== undefined && b - last < SAME_STEP) continue;
+    if (b > SPIN_STEPS - SAME_STEP) continue;
+    starts.push(b);
+  }
+  const sideAt = (i: number, step: number, front?: boolean): Side => {
+    const f = facings[i];
+    const p = first[i] as Piece;
+    if (!f) return 'front';
+    const facing = front ?? facingAt(f, (step * 360) / SPIN_STEPS);
+    return facing ? 'front' : p.backface === false ? 'hidden' : 'back';
+  };
+  // Without such pieces, every piece shows its front all the time.
+  const turning = facings.some((f) => f !== undefined);
+  const allFront = first.map((): Side => 'front');
+  const sidesAt = (step: number): Side[] =>
+    turning ? first.map((_, i) => sideAt(i, step)) : allFront;
+  const segmentSides = starts.map((start, k) =>
+    sidesAt((start + (starts[k + 1] ?? SPIN_STEPS)) / 2),
+  );
+  // The first epoch must show what the still renderer draws at angle 0. If a
+  // shape turns exactly there, its sides at angle 0 are kept for a moment.
+  const still = first.map((p, i) => sideAt(i, 0, p.front));
+  if (!sameSides(still, segmentSides[0] as Side[])) {
+    if ((starts[1] ?? SPIN_STEPS) > FIRST_FRAME_STEPS) {
+      starts.splice(1, 0, FIRST_FRAME_STEPS);
+      segmentSides.unshift(still);
+    } else {
+      segmentSides[0] = still;
+    }
+  }
+
+  const steps: { order: number[]; constraints: [number, number][]; key: string }[] = starts.map(
+    (start, k) => {
+      const sides = segmentSides[k] as Side[];
+      // Whole steps reuse their compiled pieces; a stretch that starts where
+      // a shape turns is checked in its middle, where every shape it shows
+      // has some area.
+      const pieces =
+        start === 0
+          ? first
+          : compileAt(
+              Number.isInteger(start) ? start : (start + (starts[k + 1] ?? SPIN_STEPS)) / 2,
+            );
+      return {
+        ...paintConstraints(turning ? withSides(pieces, sides) : pieces),
+        key: turning ? sides.join() : '',
+      };
+    },
+  );
   const satisfies = (position: readonly number[], step: number) =>
     (steps[step] as (typeof steps)[number]).constraints.every(
       ([a, b]) => (position[a] as number) < (position[b] as number),
@@ -216,14 +355,18 @@ export function planSpin(
   const epochs: Epoch[] = [];
   let order = (steps[0] as (typeof steps)[number]).order;
   let step = 0;
-  while (step < SPIN_STEPS) {
-    if (step > 0) {
+  const total = steps.length;
+  while (step < total) {
+    const here = steps[step] as (typeof steps)[number];
+    // An epoch that ended only because a shape turned keeps its order.
+    const kept = step > 0 && here.key !== steps[step - 1]?.key && satisfies(positions(order), step);
+    if (step > 0 && !kept) {
       // Grow a window of upcoming steps while one order can satisfy them all.
       const previous = positions(order);
       const seen = new Set<number>();
       const window: [number, number][] = [];
       let best = order;
-      for (let k = step; k < SPIN_STEPS; k++) {
+      for (let k = step; k < total; k++) {
         const added = (steps[k] as (typeof steps)[number]).constraints.filter(
           ([a, b]) => !seen.has(a * count + b),
         );
@@ -240,11 +383,31 @@ export function planSpin(
     }
     const position = positions(order);
     let end = step + 1;
-    while (end < SPIN_STEPS && satisfies(position, end)) end++;
-    epochs.push({ start: step, end, order });
+    while (end < total && steps[end]?.key === here.key && satisfies(position, end)) end++;
+    epochs.push({
+      start: starts[step] as number,
+      end: starts[end] ?? SPIN_STEPS,
+      order,
+      sides: segmentSides[step] as Side[],
+    });
     step = end;
   }
   return epochs;
+}
+
+/** The pieces with their culling set by `sides`, for the depth sort. */
+function withSides(pieces: readonly Piece[], sides: readonly Side[]): Piece[] {
+  return pieces.map((p, i) => {
+    const side = sides[i];
+    const culled = side === 'hidden';
+    const front = side === 'front';
+    if (p.backface === true || (p.culled === culled && p.front === front)) return p;
+    return { ...p, culled, front };
+  });
+}
+
+function sameSides(a: readonly Side[], b: readonly Side[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
 /**
@@ -313,13 +476,23 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
     };
   };
 
-  const drawn = new Set<number>();
+  // A piece that shows its back color is defined twice, with the same
+  // geometry and the two colors; one that never shows is not defined.
+  const shown = first.map(() => new Set<Side>());
+  for (const e of epochs) {
+    e.sides.forEach((side, i) => {
+      shown[i]?.add(side);
+    });
+  }
+  const ref = (i: number, side: Side) => `${PREFIX}${i}${side === 'back' ? 'b' : ''}`;
+  const drawn = new Set<string>();
   const defs: string[] = [];
   first.forEach((piece, i) => {
-    const color = escapeXml(piece.color);
+    const sides = (['front', 'back'] as const).filter((side) => shown[i]?.has(side));
+    if (sides.length === 0) return;
     if (isDot(piece.geometry)) {
-      const frames = keyframes.map((f) => (f[i] as Piece).geometry);
       if (piece.stroke <= 0) return;
+      const frames = keyframes.map((f) => (f[i] as Piece).geometry);
       const cx = animated(
         'cx',
         frames.map((g) => n(g.start.x)),
@@ -328,9 +501,13 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
         'cy',
         frames.map((g) => n(g.start.y)),
       );
-      const circle = `<circle id="${PREFIX}${i}" cx="${cx.start}" cy="${cy.start}" r="${n(piece.stroke / 2)}" fill="${color}"`;
       const animate = cx.animate + cy.animate;
-      defs.push(animate === '' ? `${circle}/>` : `${circle}>${animate}</circle>`);
+      for (const side of sides) {
+        const color = escapeXml(sideColor(piece, side));
+        const circle = `<circle id="${ref(i, side)}" cx="${cx.start}" cy="${cy.start}" r="${n(piece.stroke / 2)}" fill="${color}"`;
+        defs.push(animate === '' ? `${circle}/>` : `${circle}>${animate}</circle>`);
+        drawn.add(ref(i, side));
+      }
     } else {
       // An outline that depends on the view is not a fixed 3D shape, so
       // straight-line interpolation between keyframes can bend it out of
@@ -347,37 +524,54 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
         frames.map((g) => pathData(g, n)),
         even ? undefined : times,
       );
-      const fill = piece.fill ? color : 'none';
-      const stroke =
-        piece.stroke > 0
-          ? ` stroke="${color}" stroke-width="${n(piece.stroke)}" stroke-linecap="round" stroke-linejoin="round"`
-          : '';
-      defs.push(
-        d.animate === ''
-          ? `<path id="${PREFIX}${i}" d="${d.start}" fill="${fill}"${stroke}/>`
-          : `<path id="${PREFIX}${i}" d="${d.start}" fill="${fill}"${stroke}>${d.animate}</path>`,
-      );
+      for (const side of sides) {
+        const color = escapeXml(sideColor(piece, side));
+        const fill = piece.fill ? color : 'none';
+        const stroke =
+          piece.stroke > 0
+            ? ` stroke="${color}" stroke-width="${n(piece.stroke)}" stroke-linecap="round" stroke-linejoin="round"`
+            : '';
+        defs.push(
+          d.animate === ''
+            ? `<path id="${ref(i, side)}" d="${d.start}" fill="${fill}"${stroke}/>`
+            : `<path id="${ref(i, side)}" d="${d.start}" fill="${fill}"${stroke}>${d.animate}</path>`,
+        );
+        drawn.add(ref(i, side));
+      }
     }
-    drawn.add(i);
   });
 
   // The turn ends where it started, so a last epoch with the same order as
   // the first is the same group, shown again.
-  const groups: { intervals: [number, number][]; order: readonly number[] }[] = epochs.map((e) => ({
+  const groups: {
+    intervals: [number, number][];
+    order: readonly number[];
+    sides: readonly Side[];
+  }[] = epochs.map((e) => ({
     intervals: [[e.start, e.end]],
     order: e.order,
+    sides: e.sides,
   }));
   const head = groups[0];
   const tail = groups[groups.length - 1];
-  if (head && tail && groups.length > 1 && sameOrder(head.order, tail.order)) {
+  if (
+    head &&
+    tail &&
+    groups.length > 1 &&
+    sameOrder(head.order, tail.order) &&
+    sameSides(head.sides, tail.sides)
+  ) {
     head.intervals.push(...tail.intervals);
     groups.pop();
   }
-  const time = (step: number) => formatNumber(step / SPIN_STEPS, 5);
-  const body = groups.map(({ intervals, order }) => {
+  // Epochs that end where a shape turns edge-on end between whole steps, and
+  // their times keep one more digit (a few ten-thousandths of a degree).
+  const exact = epochs.some((e) => !Number.isInteger(e.start));
+  const time = (step: number) => formatNumber(step / SPIN_STEPS, exact ? 6 : 5);
+  const body = groups.map(({ intervals, order, sides }) => {
     const uses = order
-      .filter((i) => drawn.has(i))
-      .map((i) => `<use href="#${PREFIX}${i}"/>`)
+      .filter((i) => sides[i] !== 'hidden' && drawn.has(ref(i, sides[i] as Side)))
+      .map((i) => `<use href="#${ref(i, sides[i] as Side)}"/>`)
       .join('');
     if (groups.length === 1) return `<g>${uses}</g>`;
     const keyTimes: string[] = [];
@@ -385,7 +579,15 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
     let visible = false;
     const set = (step: number, value: boolean) => {
       if (keyTimes.length > 0 && value === visible) return;
-      keyTimes.push(time(step));
+      const t = time(step);
+      if (keyTimes.length > 0 && t === keyTimes[keyTimes.length - 1]) {
+        // Two changes that round to the same time: the later one wins.
+        keyTimes.pop();
+        values.pop();
+        visible = values.length > 0 ? values[values.length - 1] === 'visible' : false;
+        if (keyTimes.length > 0 && value === visible) return;
+      }
+      keyTimes.push(t);
       values.push(value ? 'visible' : 'hidden');
       visible = value;
     };
@@ -394,7 +596,7 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
       set(start, true);
       if (end < SPIN_STEPS) set(end, false);
     }
-    const initial = (intervals[0] as [number, number])[0] === 0 ? 'visible' : 'hidden';
+    const initial = values[0] as string;
     return (
       `<g visibility="${initial}"><animate attributeName="visibility" ${timing} calcMode="discrete" keyTimes="${keyTimes.join(';')}" values="${values.join(';')}"/>` +
       `${uses}</g>`
@@ -543,6 +745,11 @@ function pathData(g: PathGeometry, n: (value: number) => string): string {
         : `C${n(seg.c1.x)} ${n(seg.c1.y)} ${n(seg.c2.x)} ${n(seg.c2.y)} ${n(seg.to.x)} ${n(seg.to.y)}`;
   }
   return g.closed ? `${d}Z` : d;
+}
+
+/** The color a piece is drawn in when it shows `side`. */
+function sideColor(p: Piece, side: Side): string {
+  return side === 'back' && typeof p.backface === 'string' ? p.backface : p.color;
 }
 
 function sameOrder(a: readonly number[], b: readonly number[]): boolean {

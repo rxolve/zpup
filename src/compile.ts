@@ -1,7 +1,7 @@
 import { depthOrder } from './depth.ts';
 import { controlPoints, type PathGeometry, type Segment } from './geometry.ts';
 import type { Vec3 } from './math.ts';
-import { compilePieces, depthShapes, type Piece, visiblePieces } from './pieces.ts';
+import { compilePieces, depthShapes, type Piece, paintedColor, visiblePieces } from './pieces.ts';
 import type { Scene } from './types.ts';
 import { type NormalizedScene, normalizeScene } from './validate.ts';
 
@@ -131,7 +131,7 @@ export function joinPieces(pieces: readonly Piece[], order: readonly number[]): 
           x: start.x,
           y: start.y,
           radius: first.stroke / 2,
-          color: first.color,
+          color: paintedColor(first),
           depth,
           nodeId: first.nodeId,
         });
@@ -141,7 +141,7 @@ export function joinPieces(pieces: readonly Piece[], order: readonly number[]): 
     items.push({
       kind: 'path',
       commands: toCommands(geometry),
-      color: first.color,
+      color: paintedColor(first),
       stroke: first.stroke,
       fill: first.fill,
       depth,

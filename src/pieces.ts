@@ -1,12 +1,20 @@
 import { type DepthShape, depthOrder } from './depth.ts';
-import { flatten, type PathGeometry, splitPath, transformGeometry } from './geometry.ts';
+import {
+  controlPoints,
+  flatten,
+  type PathGeometry,
+  splitPath,
+  transformGeometry,
+} from './geometry.ts';
 import {
   compose,
   IDENTITY,
+  length,
   localMatrix,
   type Matrix,
   rotationMatrix,
   strokeScale,
+  transformNormal,
   type Vec3,
 } from './math.ts';
 import { type Surface, solidFaces } from './solids.ts';
@@ -32,6 +40,7 @@ export interface Piece {
   readonly closing: boolean;
   /** Whether the whole shape is closed. */
   readonly shapeClosed: boolean;
+  /** The color of the front; see {@link paintedColor} for the color drawn. */
   readonly color: string;
   /** Stroke width in pixels. */
   readonly stroke: number;
@@ -55,6 +64,46 @@ export interface Piece {
   readonly surface: Surface | undefined;
   /** Whether the outline depends on the view angle (round surfaces). */
   readonly viewDependent: boolean;
+  /**
+   * The `backface` option of a flat shape: true (drawn from both sides),
+   * false (left out while turned away) or the color of its back. Always true
+   * for faces of solids.
+   */
+  readonly backface: boolean | string;
+  /**
+   * For a flat shape: its front normal in screen space, not normalized (the
+   * node's local +z, carried through every transform as a surface normal, so
+   * that it stays perpendicular to the shape's plane). Undefined for faces of
+   * solids.
+   */
+  readonly normal: Vec3 | undefined;
+  /** Whether the front faces the viewer (see {@link facesViewer}). Always true for faces of solids. */
+  readonly front: boolean;
+  /** A flat shape with `backface: false` whose front faces away: neither painted nor depth-sorted. */
+  readonly culled: boolean;
+  /**
+   * For a shape that lies in its local x/y plane (every ellipse, rect and
+   * polygon, and a path whose points all have z = 0): that plane in screen
+   * space, through `point` with normal `normal`.
+   */
+  readonly plane: { readonly point: Vec3; readonly normal: Vec3 } | undefined;
+}
+
+/**
+ * Whether a front normal in screen space faces the viewer. Exactly edge-on
+ * counts as facing away (the shape has no area then), as does a shape
+ * flattened to a line by a zero scale, which has no front.
+ */
+export function facesViewer(normal: Vec3): boolean {
+  return normal.z > FACING_EPSILON * length(normal);
+}
+
+/** Below this share of its length, a normal's depth component counts as zero. */
+export const FACING_EPSILON = 1e-9;
+
+/** The color a piece is painted in: its back color when it shows its back. */
+export function paintedColor(p: Piece): string {
+  return !p.front && typeof p.backface === 'string' ? p.backface : p.color;
 }
 
 /**
@@ -85,9 +134,18 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
     const model = compose(parentModel, local);
     const base = { nodeId: node.id, location: node.location };
     if (node.shape) {
-      const { color, fill } = node.shape;
+      const { color, fill, backface } = node.shape;
       const stroke = node.shape.stroke * strokeScale(world);
       const geometry = transformGeometry(world, node.shape.geometry);
+      // The front is the side the local +z axis points to. As a normal, it
+      // stays perpendicular to the plane under any scale, so it turns
+      // edge-on exactly when the shape does; a mirroring scale keeps its sign
+      // (only a negative z scale moves the front to the other side).
+      const normal = transformNormal(world, LOCAL_Z);
+      const front = facesViewer(normal);
+      const plane = controlPoints(node.shape.geometry).every((q) => q.z === 0)
+        ? { point: { x: world[9], y: world[10], z: world[11] }, normal }
+        : undefined;
       if (stroke > 0 || fill) {
         const shape = shapeCount++;
         // A filled shape is one flat sheet. An outline can pass in front of
@@ -112,6 +170,11 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
             backfacing: false,
             surface: undefined,
             viewDependent: false,
+            backface,
+            normal,
+            front,
+            culled: backface === false && !front,
+            plane,
           });
         });
       }
@@ -137,6 +200,11 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
           backfacing: face.backfacing,
           surface: face.surface,
           viewDependent: face.viewDependent,
+          backface: true,
+          normal: undefined,
+          front: true,
+          culled: false,
+          plane: undefined,
         });
       }
     }
@@ -147,9 +215,14 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
   return pieces;
 }
 
-/** The pieces the still renderer paints: everything except faces turned away. */
+const LOCAL_Z: Vec3 = { x: 0, y: 0, z: 1 };
+
+/**
+ * The pieces the still renderer paints: everything except faces of solids
+ * turned away and flat shapes with `backface: false` turned away.
+ */
 export function visiblePieces(pieces: readonly Piece[]): Piece[] {
-  return pieces.filter((p) => !p.backfacing);
+  return pieces.filter((p) => !p.backfacing && !p.culled);
 }
 
 /** The input the depth sorter needs for each piece, in the same order. */
@@ -162,6 +235,7 @@ export function depthShapes(pieces: readonly Piece[]): DepthShape[] {
     ...(p.piece > 0 ? { follows: i - 1 } : {}),
     ...(p.solid === undefined ? {} : { solid: p.solid, layer: p.layer }),
     ...(p.surface === undefined ? {} : { surface: p.surface }),
+    ...(p.plane === undefined ? {} : { plane: p.plane }),
   }));
 }
 
@@ -175,11 +249,13 @@ export function paintConstraints(pieces: readonly Piece[]): {
   constraints: [number, number][];
 } {
   // Faces turned away go first. Their own solid always covers them, so they
-  // only need to stay behind that solid's other faces.
+  // only need to stay behind that solid's other faces. Culled pieces are not
+  // drawn at all; they go first only so that the order lists every piece.
   const front: number[] = [];
   const back: number[] = [];
+  const culled: number[] = [];
   pieces.forEach((p, i) => {
-    (p.backfacing ? back : front).push(i);
+    (p.culled ? culled : p.backfacing ? back : front).push(i);
   });
   const bounds = pieces.map(pieceBounds);
   const outlines = pieces.map(outline);
@@ -205,13 +281,14 @@ export function paintConstraints(pieces: readonly Piece[]): {
   const frontOrder = depthOrder(depthShapes(front.map((i) => pieces[i] as Piece)), (i, j) =>
     overlap(front[i] as number, front[j] as number),
   ).map((k) => front[k] as number);
-  const order = [...back, ...frontOrder];
+  const order = [...culled, ...back, ...frontOrder];
   const position = positions(order);
   const constraints: [number, number][] = [];
   for (let a = 0; a < pieces.length; a++) {
     for (let b = a + 1; b < pieces.length; b++) {
       const pa = pieces[a] as Piece;
       const pb = pieces[b] as Piece;
+      if (pa.culled || pb.culled) continue;
       const sameSolid = pa.solid !== undefined && pa.solid === pb.solid;
       if (pa.backfacing || pb.backfacing) {
         if (!sameSolid || (pa.backfacing && pb.backfacing)) continue;

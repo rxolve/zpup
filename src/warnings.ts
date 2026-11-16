@@ -106,6 +106,10 @@ function nothingDrawn(c: Checker, s: NormalizedScene): boolean {
   } else if (hidden + invisibleStroke === shapes) {
     received = 'shapes with "stroke": 0 and no fill';
     hint = 'A shape needs a "stroke" above 0 or "fill": true to show.';
+  } else if (compilePieces(s).some((p) => p.culled)) {
+    received = 'only shapes turned away with "backface": false';
+    hint =
+      'They show only while their front (local +z) faces the viewer. Turn them or the view, or remove "backface": false.';
   } else {
     received = 'shapes that are too small to draw';
     hint = 'Check "scale" and the sizes of the shapes.';

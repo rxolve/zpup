@@ -43,6 +43,8 @@ export interface NormalizedShape {
   readonly color: string;
   readonly stroke: number;
   readonly fill: boolean;
+  /** `true` (both sides), `false` (front only) or the color of the back. */
+  readonly backface: boolean | string;
 }
 
 export interface NormalizedScene {
@@ -204,12 +206,15 @@ const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
 const NODE_KEYS = ['type', 'id', 'translate', 'rotate', 'scale', 'visible', 'children'] as const;
 const SHAPE_KEYS = ['color', 'stroke', 'fill'] as const;
 const SOLID_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'shade'];
+// Flat shapes take `backface` as Zdog does. Solids are not flat: on the ones
+// that have it, `backface` is the color of a face (see FACE_KEYS).
+const FLAT_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'backface'];
 const KEYS_BY_TYPE: Readonly<Record<NodeType, readonly string[]>> = {
   group: NODE_KEYS,
-  path: [...NODE_KEYS, ...SHAPE_KEYS, 'path', 'closed'],
-  ellipse: [...NODE_KEYS, ...SHAPE_KEYS, 'diameter', 'width', 'height'],
-  rect: [...NODE_KEYS, ...SHAPE_KEYS, 'width', 'height'],
-  polygon: [...NODE_KEYS, ...SHAPE_KEYS, 'sides', 'radius'],
+  path: [...FLAT_KEYS, 'path', 'closed'],
+  ellipse: [...FLAT_KEYS, 'diameter', 'width', 'height'],
+  rect: [...FLAT_KEYS, 'width', 'height'],
+  polygon: [...FLAT_KEYS, 'sides', 'radius'],
   box: [...SOLID_KEYS, 'width', 'height', 'depth', ...FACE_KEYS.box],
   cylinder: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cylinder],
   cone: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cone],
@@ -474,6 +479,35 @@ function readFill(
   return false;
 }
 
+/**
+ * Reads `backface` on a flat shape: true (the default), false, or the color
+ * of the shape's back.
+ */
+function readBackface(
+  c: Checker,
+  obj: Record<string, unknown>,
+  path: Path,
+  nodeId: string | undefined,
+): boolean | string {
+  const value = obj.backface;
+  if (value === undefined) return true;
+  if (typeof value === 'boolean') return value;
+  if (isColor(value)) return value.trim();
+  let hint: string | undefined;
+  if (value === 'true' || value === 'false') hint = `Remove the quotes: ${value}.`;
+  else if (typeof value === 'string' && /^(none|hidden|hide|cull|off|no)$/i.test(value.trim()))
+    hint = 'Use false to leave the shape out while its front faces away.';
+  else hint = colorNameHint(value);
+  c.report(
+    [...path, 'backface'],
+    nodeId,
+    'true, false or a CSS color string such as "#e62"',
+    value,
+    hint,
+  );
+  return true;
+}
+
 /** Hint for a `stroke` that is not a number: it is a width, and its color is `color`. */
 function strokeHint(value: unknown): string | undefined {
   if (value === 'none' || value === false) return 'Use 0 for no outline.';
@@ -500,7 +534,7 @@ function checkKeys(
     const guess = alias && allowed.includes(alias) ? alias : closest(key, allowed);
     const otherTypes = NODE_TYPES.filter((t) => KEYS_BY_TYPE[t].includes(key));
     const special = type === undefined ? undefined : keyHint(type, key);
-    if (type === 'group' && (SHAPE_KEYS as readonly string[]).includes(key)) {
+    if (type === 'group' && [...SHAPE_KEYS, 'backface'].includes(key)) {
       hint = `Groups draw nothing; set "${key}" on the shapes inside the group.`;
     } else if (special) {
       hint = special;
@@ -532,6 +566,9 @@ function keyHint(type: NodeType, key: string): string | undefined {
   }
   if (type === 'hemisphere' && (key === 'height' || key === 'length')) {
     return 'A hemisphere is as tall as its radius; set only "diameter".';
+  }
+  if (type === 'box' && key === 'backface') {
+    return 'A box\'s face toward -z is "rearFace". Faces of solids cannot be left out.';
   }
   if (type === 'box' && (key === 'size' || key === 'diameter' || key === 'length')) {
     return 'Use "width", "height" and "depth".';
@@ -779,6 +816,8 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
             hint: strokeHint,
           }) ?? 1);
     const fill = readFill(c, input, path, nodeId, shapeType !== undefined && isSolid(shapeType));
+    const backface =
+      shapeType !== undefined && !isSolid(shapeType) ? readBackface(c, input, path, nodeId) : true;
     const size = { min: 0, example: '20' };
     const dimension = (key: string) =>
       present(key) ? readNumber(c, input, key, path, nodeId, size) : undefined;
@@ -815,7 +854,9 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
             value,
             value
               ? 'Leave the option out to shade this face from "color".'
-              : 'Faces cannot be left out. Leave the option out to shade this face from "color".',
+              : key === 'backface'
+                ? `On ${article(shapeType)} ${shapeType}, "backface" is the color of a face, and faces cannot be left out (only flat shapes take "backface": false). Leave the option out to shade this face from "color".`
+                : 'Faces cannot be left out. Leave the option out to shade this face from "color".',
           );
           continue;
         }
@@ -843,7 +884,7 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
       }
       if (ok) solid = { kind: shapeType, ...dims, color, stroke, shade, faces };
     }
-    if (geometry) shape = { geometry, color, stroke, fill };
+    if (geometry) shape = { geometry, color, stroke, fill, backface };
   }
   if (lenient || type === undefined) return undefined;
   return {

@@ -29,6 +29,12 @@ export interface DepthShape {
   readonly layer?: number;
   /** For a filled area that is not flat: its exact front surface. */
   readonly surface?: Surface;
+  /**
+   * The plane the shape lies in, when it is known to be flat: a point on it
+   * and its normal (either way). An outline segment is a line, so its plane
+   * cannot be found from its points; it comes from the shape it is part of.
+   */
+  readonly plane?: { readonly point: Vec3; readonly normal: Vec3 };
 }
 
 interface Plane {
@@ -46,6 +52,8 @@ interface Analyzed {
   /** Present for filled shapes that are flat and not seen edge-on. */
   readonly plane: Plane | undefined;
   readonly surface: Surface | undefined;
+  /** The plane the shape lies in, when known, with its normal turned toward the viewer and of unit length. */
+  readonly carrier: Plane | undefined;
   /** Whether the inside has a known depth (a plane or a surface). */
   readonly area: boolean;
   readonly solid: number | undefined;
@@ -120,6 +128,7 @@ function analyze(shape: DepthShape, index: number): Analyzed {
     fill: shape.fill,
     plane,
     surface,
+    carrier: shape.plane && towardViewer(shape.plane.point, shape.plane.normal),
     area: plane !== undefined || surface !== undefined,
     solid: shape.solid,
     layer: shape.layer ?? 0,
@@ -129,6 +138,36 @@ function analyze(shape: DepthShape, index: number): Analyzed {
     maxY: maxY + radius,
     meanDepth: points.length > 0 ? depthSum / points.length : 0,
   };
+}
+
+/** A plane with its normal of unit length and toward the viewer; undefined when seen edge-on. */
+function towardViewer(center: Vec3, normal: Vec3): Plane | undefined {
+  const size = Math.hypot(normal.x, normal.y, normal.z);
+  if (!(Math.abs(normal.z) > size * 1e-9)) return undefined;
+  const k = (normal.z > 0 ? 1 : -1) / size;
+  return { center, normal: { x: normal.x * k, y: normal.y * k, z: normal.z * k } };
+}
+
+/**
+ * Whether all of `b`, stroke included, lies behind the plane of `a` by at
+ * least `a`'s stroke radius. Then a plane parallel to `a`'s separates the two,
+ * so `a` is in front of `b` wherever they overlap on screen, and no sampling
+ * is needed: a detail lying outside a sphere on a plane that faces the viewer
+ * stays in front of the sphere right up to the sphere's outline, where depth
+ * samples change steeply. A round surface bulges past its outline points, so
+ * it is never `b` here.
+ */
+function behindPlane(a: Analyzed, b: Analyzed): boolean {
+  const plane = a.carrier;
+  if (!plane || b.surface || b.points.length === 0) return false;
+  const { center, normal } = plane;
+  const limit = -a.radius - b.radius + EPSILON;
+  for (const q of b.points) {
+    const d =
+      normal.x * (q.x - center.x) + normal.y * (q.y - center.y) + normal.z * (q.z - center.z);
+    if (d > limit) return false;
+  }
+  return true;
 }
 
 /** Best-fit plane by Newell's method; undefined when degenerate or edge-on. */
@@ -432,6 +471,8 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
 function compare(a: Analyzed, b: Analyzed): number {
   if (a.maxX < b.minX || b.maxX < a.minX || a.maxY < b.minY || b.maxY < a.minY) return 0;
   if (a.solid !== undefined && a.solid === b.solid) return Math.sign(a.layer - b.layer);
+  if (behindPlane(a, b)) return 1;
+  if (behindPlane(b, a)) return -1;
   if (a.surface || b.surface) {
     depthWork.roundComparisons++;
     return compareRound(a, b);

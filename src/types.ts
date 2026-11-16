@@ -68,6 +68,18 @@ export interface ShapeBase extends NodeBase {
   stroke?: number;
   /** Fill the inside of the shape with `color`. Default false. */
   fill?: boolean;
+  /**
+   * What the shape shows from behind, as in Zdog. Its front is the side its
+   * local +z axis points to after every transform (local +z for a shape in
+   * the local x/y plane). `true` draws it from both sides; `false` leaves it
+   * out whenever its front faces away from the viewer, including when it is
+   * seen exactly edge-on; a color draws it in that color from behind.
+   * Default true.
+   *
+   * On a sphere's surface, a flat detail with `backface: false` disappears
+   * exactly when it turns edge-on, so it never pops in a turning animation.
+   */
+  backface?: boolean | string;
 }
 
 /** An invisible container used to move, rotate and scale its children together. */
