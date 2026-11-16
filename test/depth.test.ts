@@ -218,8 +218,8 @@ describe('depth sorting while the view turns', () => {
 
   it('keeps the legs and paws in front of the shadow they stand on', () => {
     const shadow = names.indexOf('shadow');
-    const standing = ['left-leg', 'right-leg', 'left-paw', 'right-paw'].map((id) =>
-      names.indexOf(id),
+    const standing = ['left-front-leg', 'right-front-leg', 'left-hind-paw', 'right-hind-paw'].map(
+      (id) => names.indexOf(id),
     );
     expect(Math.min(shadow, ...standing)).toBeGreaterThanOrEqual(0);
     let overlapping = 0;

@@ -248,9 +248,9 @@ describe('renderSpinSvg', () => {
   });
 
   it('keeps the output size of the pup in check', () => {
-    // Measured at 54,308 bytes and 10,882 gzipped; fail on a clear regression.
-    expect(svg.length).toBeLessThan(60_000);
-    expect(gzipSync(svg, { level: 9 }).length).toBeLessThan(12_000);
+    // Measured at 42,900 bytes and 5,920 gzipped; fail on a clear regression.
+    expect(svg.length).toBeLessThan(50_000);
+    expect(gzipSync(svg, { level: 9 }).length).toBeLessThan(7_500);
   });
 
   it('turns the same scene into the same frames as the still renderer at keyframe angles', () => {
@@ -264,10 +264,12 @@ describe('renderSpinSvg', () => {
     const tenth = defs
       .filter((e) => e.name === 'circle')
       .map((e) => {
+        // A piece on the turn axis does not move and has no animation.
         const values = (name: string) =>
-          (e.children.find((a) => a.attributes.attributeName === name)?.attributes.values ?? '')
-            .split(';')
-            .at(9);
+          e.children
+            .find((a) => a.attributes.attributeName === name)
+            ?.attributes.values?.split(';')
+            .at(9) ?? e.attributes[name];
         return `${values('cx')};${values('cy')}`;
       });
     expect(new Set(tenth)).toEqual(new Set(circles));
