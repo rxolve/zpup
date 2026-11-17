@@ -12,22 +12,17 @@ The pup above is a single SVG file with no JavaScript. It was rendered by `rende
 
 ## Status
 
-Early work in progress. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested, but the API may still change. The npm package is `@zpup/core`. Its `0.0.0` release only reserves the name; nothing usable is published yet.
+Early, and the API may still change before 1.0. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested.
 
 Not built yet: a canvas renderer, general animation, and framework bindings. The one animation available is a constant turn about one axis (see [Turning in place](#turning-in-place)).
 
 ## Install
 
-Until the first release, install from GitHub (this needs a build step, so clone and build):
-
 ```bash
-git clone https://github.com/rxolve/zpup.git
-cd zpup
-pnpm install
-pnpm build
+npm install @zpup/core
 ```
 
-Once published it will be `npm install @zpup/core`. zpup is ESM-only and has no runtime dependencies.
+zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers.
 
 ## Usage
 

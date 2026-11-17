@@ -1,6 +1,6 @@
 {
   "name": "@zpup/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A modern, AI-friendly pseudo-3D engine for the web, inspired by Zdog.",
   "license": "MIT",
   "author": "rxolve",
