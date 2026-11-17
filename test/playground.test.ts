@@ -158,7 +158,7 @@ describe('playground: JSON', () => {
     expect(node && text.slice(node.start, node.end)).toBe('{ "type": "path", "colour": "red" }');
   });
 
-  it('locates every issue zpup reports for a broken scene', () => {
+  it('locates every issue Zpup reports for a broken scene', () => {
     const text = formatJson({
       width: 100,
       height: 100,

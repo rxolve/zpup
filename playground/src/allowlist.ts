@@ -2,7 +2,7 @@
  * The elements and attributes that `renderSvg` writes. The page parses each
  * picture and refuses any element or attribute not listed here before it
  * goes into the document, so even a bug in the library could not put a
- * script, an event handler or a link on the page. (zpup already validates
+ * script, an event handler or a link on the page. (Zpup already validates
  * colors and escapes all text, so this is a second, independent check.)
  */
 const ALLOWED: Readonly<Record<string, readonly string[]>> = {

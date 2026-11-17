@@ -248,7 +248,7 @@ describe('validation', () => {
       const e = error as ZpupValidationError;
       expect(e.issues).toHaveLength(1);
       expect(e.issues[0]).toMatchObject({ path: 'scene.children[0].width', received: '-1' });
-      expect(e.message).toMatch(/^Invalid zpup scene \(1 problem\):/);
+      expect(e.message).toMatch(/^Invalid Zpup scene \(1 problem\):/);
     }
   });
 });

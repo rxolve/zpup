@@ -329,7 +329,7 @@ describe('renderSpinSvg options', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZpupValidationError);
       expect((error as ZpupValidationError).message).toMatch(
-        /^Invalid zpup scene and spin options \(2 problems\)/,
+        /^Invalid Zpup scene and spin options \(2 problems\)/,
       );
     }
   });

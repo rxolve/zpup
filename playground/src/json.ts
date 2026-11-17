@@ -80,7 +80,7 @@ function inline(value: unknown): string | undefined {
 /**
  * Walks JSON text, recording where each value and property is, and stops at
  * the first syntax error. Paths start with `"scene"`, as in the
- * `pathSegments` of zpup's issues.
+ * `pathSegments` of Zpup's issues.
  */
 export function scanJson(text: string): JsonScan {
   const values = new Map<string, Span>();

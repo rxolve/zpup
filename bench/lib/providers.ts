@@ -66,7 +66,7 @@ const PALETTE = ['#e62', '#2a9d8f', '#e9c46a', '#6a4c93', '#f07a8a', '#1d3557'];
 /**
  * The default canned replies for `--provider mock`. Some first tries are broken
  * on purpose so the repair path runs, a few stay broken after the repair, and a
- * few zpup replies are cut off at the token limit. They are reported as free,
+ * few Zpup replies are cut off at the token limit. They are reported as free,
  * so a mock run never hits the cost cap (the cap has its own tests).
  */
 export function defaultMockReply(request: CompletionRequest): MockReply {

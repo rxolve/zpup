@@ -7,7 +7,7 @@ export interface PromptTemplates {
   system: Record<Condition, string>;
   user: string;
   repair: string;
-  /** The reference each format's system prompt includes: llms.txt for zpup, a summary of the API for Zdog, none for SVG. */
+  /** The reference each format's system prompt includes: llms.txt for Zpup, a summary of the API for Zdog, none for SVG. */
   reference: Record<Condition, string>;
 }
 
@@ -15,7 +15,7 @@ export interface PromptTemplates {
 export const FORMAT_NAME: Record<Condition, string> = {
   svg: 'SVG document',
   zdog: 'Zdog script',
-  zpup: 'zpup scene in JSON',
+  zpup: 'Zpup scene in JSON',
 };
 
 const read = (name: string) => readFileSync(new URL(`prompts/${name}`, BENCH_DIR), 'utf8');

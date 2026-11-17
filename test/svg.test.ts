@@ -105,7 +105,7 @@ describe('renderSvg', () => {
     const both = thrown(() =>
       renderSvg({ width: 10, children: [] } as unknown as Scene, { precision: -1 }),
     ) as ZpupValidationError;
-    expect(both.message).toMatch(/^Invalid zpup scene and SVG options \(2 problems\)/);
+    expect(both.message).toMatch(/^Invalid Zpup scene and SVG options \(2 problems\)/);
     const frame = compileScene(scene);
     expect(thrown(() => frameToSvg(frame, { precision: 11 }))).toBeInstanceOf(ZpupValidationError);
   });

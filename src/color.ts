@@ -59,7 +59,7 @@ function named(name: string): string | undefined {
 /** Color keywords that are not in the table above, since they have no fixed RGB value. */
 const KEYWORDS = ['transparent', 'currentColor'];
 
-/** Every CSS color name zpup accepts, for "did you mean" suggestions. */
+/** Every CSS color name Zpup accepts, for "did you mean" suggestions. */
 export function colorNames(): string[] {
   return [...namedTable().keys(), ...KEYWORDS];
 }
@@ -73,7 +73,7 @@ export function isColorName(name: string): boolean {
 /**
  * Parses hex, `rgb()`/`rgba()`, `hsl()`/`hsla()` and named colors. Returns
  * undefined for anything else (`currentColor`, `oklch()` and so on), which
- * zpup draws but cannot shade.
+ * Zpup draws but cannot shade.
  */
 export function parseColor(input: string): Rgba | undefined {
   const text = input.trim().toLowerCase();

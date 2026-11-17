@@ -199,9 +199,9 @@ const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
   },
   text: {
     direct: false,
-    hint: 'zpup draws no text; build letters from "path" nodes or leave them out.',
+    hint: 'Zpup draws no text; build letters from "path" nodes or leave them out.',
   },
-  image: { direct: false, hint: 'zpup draws no images; build the picture from shapes.' },
+  image: { direct: false, hint: 'Zpup draws no images; build the picture from shapes.' },
 };
 
 const NODE_KEYS = ['type', 'id', 'translate', 'rotate', 'scale', 'visible', 'children'] as const;

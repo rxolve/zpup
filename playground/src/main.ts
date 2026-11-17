@@ -1,5 +1,5 @@
 /**
- * The zpup playground: a JSON editor on one side, the picture on the other.
+ * The Zpup playground: a JSON editor on one side, the picture on the other.
  * Everything runs in the browser; the library is loaded as plain ES modules
  * through the import map in index.html.
  */
@@ -652,7 +652,7 @@ const actions: Record<string, (s: Scene) => Promise<void> | void> = {
     if (svg) await copy(svg, 'the turning SVG');
   },
   'copy-markdown': (s) => {
-    const alt = (s.title ?? 'A zpup illustration').replace(/[[\]\\]/g, '');
+    const alt = (s.title ?? 'A Zpup illustration').replace(/[[\]\\]/g, '');
     return copy(`![${alt}](${fileBase()}-spin.svg)`, 'the Markdown line');
   },
   'copy-link': async () => {

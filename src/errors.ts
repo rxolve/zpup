@@ -75,7 +75,7 @@ export class ZpupValidationError extends Error {
   /**
    * @param subject What was being checked, for the first line of the message.
    */
-  constructor(issues: readonly ValidationIssue[], subject = 'zpup scene') {
+  constructor(issues: readonly ValidationIssue[], subject = 'Zpup scene') {
     const count = issues.length === 1 ? '1 problem' : `${issues.length} problems`;
     super(`Invalid ${subject} (${count}):\n${issues.map((i) => `  - ${i.message}`).join('\n')}`);
     this.issues = issues;
