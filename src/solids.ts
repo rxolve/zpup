@@ -11,7 +11,16 @@
  */
 import { shadeColor } from './color.ts';
 import { ellipseGeometry, type PathGeometry, type Segment, transformGeometry } from './geometry.ts';
-import { cross, dot, invert, length, type Matrix, transformNormal, type Vec3 } from './math.ts';
+import {
+  cross,
+  dot,
+  invert,
+  length,
+  type Matrix,
+  transformNormal,
+  transformPoint,
+  type Vec3,
+} from './math.ts';
 import { type SoftKind, sideKind } from './shading.ts';
 
 export type SolidKind = 'box' | 'cylinder' | 'cone' | 'hemisphere';
@@ -55,7 +64,20 @@ export interface Surface {
   readonly inverse: Matrix;
 }
 
+/**
+ * A solid as a whole, in screen space: enough to tell whether the plane of
+ * one of its flat faces has another shape entirely on its outer side.
+ */
+export interface SolidBody {
+  /** The plane of each flat face: a point on it and its outward normal (any length). */
+  readonly planes: readonly { readonly point: Vec3; readonly normal: Vec3 }[];
+  /** The smallest value of `dot(n, p)` over every point `p` of the solid. */
+  readonly support: (n: Vec3) => number;
+}
+
 export interface SolidFace {
+  /** The solid this face belongs to; the same object for all of its faces. */
+  readonly body: SolidBody;
   /** In screen space. */
   readonly geometry: PathGeometry;
   readonly color: string;
@@ -86,7 +108,9 @@ const HALF_PI = Math.PI / 2;
 export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): SolidFace[] {
   const view = localView(world);
   const inverse = invert(world);
+  const body = solidBody(s, world);
   const flat = (name: string, geometry: PathGeometry, normal: Vec3): SolidFace => ({
+    body,
     geometry: transformGeometry(world, geometry),
     color: faceColor(s, name, sceneNormal(model, normal)),
     layer: 1,
@@ -96,6 +120,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
     soft: undefined,
   });
   const round = (geometry: PathGeometry, axis: Vec3): SolidFace => ({
+    body,
     geometry: transformGeometry(world, geometry),
     color: faceColor(s, '', roundNormal(model, axis)),
     layer: 0,
@@ -199,6 +224,74 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
       return [round(coneSide(r, s.length, view), Z), flat('backface', disc(r, 0), minusZ)];
     case 'hemisphere':
       return [round(dome(r, view), Z), flat('backface', disc(r, 0), minusZ)];
+  }
+}
+
+/** The solid's extent and the planes of its flat faces, in screen space. */
+function solidBody(s: NormalizedSolid, world: Matrix): SolidBody {
+  // The local axes and origin as they appear on screen.
+  const ex: Vec3 = { x: world[0], y: world[3], z: world[6] };
+  const ey: Vec3 = { x: world[1], y: world[4], z: world[7] };
+  const ez: Vec3 = { x: world[2], y: world[5], z: world[8] };
+  const center: Vec3 = { x: world[9], y: world[10], z: world[11] };
+  const plane = (at: Vec3, normal: Vec3) => ({
+    point: transformPoint(world, at),
+    normal: transformNormal(world, normal),
+  });
+  const r = s.diameter / 2;
+  const origin: Vec3 = { x: 0, y: 0, z: 0 };
+  const down: Vec3 = { x: 0, y: 0, z: -1 };
+  switch (s.kind) {
+    case 'box': {
+      const x = s.width / 2;
+      const y = s.height / 2;
+      const z = s.depth / 2;
+      return {
+        planes: [
+          plane({ x, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }),
+          plane({ x: -x, y: 0, z: 0 }, { x: -1, y: 0, z: 0 }),
+          plane({ x: 0, y, z: 0 }, { x: 0, y: 1, z: 0 }),
+          plane({ x: 0, y: -y, z: 0 }, { x: 0, y: -1, z: 0 }),
+          plane({ x: 0, y: 0, z }, { x: 0, y: 0, z: 1 }),
+          plane({ x: 0, y: 0, z: -z }, down),
+        ],
+        support: (n) =>
+          dot(n, center) -
+          x * Math.abs(dot(n, ex)) -
+          y * Math.abs(dot(n, ey)) -
+          z * Math.abs(dot(n, ez)),
+      };
+    }
+    case 'cylinder': {
+      const h = s.length / 2;
+      return {
+        planes: [
+          plane({ x: 0, y: 0, z: h }, { x: 0, y: 0, z: 1 }),
+          plane({ x: 0, y: 0, z: -h }, down),
+        ],
+        support: (n) =>
+          dot(n, center) - r * Math.hypot(dot(n, ex), dot(n, ey)) - h * Math.abs(dot(n, ez)),
+      };
+    }
+    case 'cone':
+      // The lowest point is on the rim of the base or at the tip.
+      return {
+        planes: [plane(origin, down)],
+        support: (n) =>
+          dot(n, center) + Math.min(-r * Math.hypot(dot(n, ex), dot(n, ey)), s.length * dot(n, ez)),
+      };
+    case 'hemisphere':
+      // Half a ball above the base: the lowest point is on the dome when the
+      // direction leans below the base, and on the rim of the base otherwise.
+      return {
+        planes: [plane(origin, down)],
+        support: (n) => {
+          const gx = dot(n, ex);
+          const gy = dot(n, ey);
+          const gz = dot(n, ez);
+          return dot(n, center) - r * (gz <= 0 ? Math.hypot(gx, gy, gz) : Math.hypot(gx, gy));
+        },
+      };
   }
 }
 
@@ -320,23 +413,22 @@ function disc(r: number, z: number): PathGeometry {
 
 /**
  * The outline of a cylinder's side: the two contour lines where the side
- * turns away from the viewer, joined by half of each end's rim. At the end
- * that faces the viewer this is the far half of the rim, since the end itself
- * is drawn on top; at the other end it is the near half. The result covers
- * the whole silhouette. When the ends are seen edge-on the two choices of
- * half project to the same line, so the outline changes smoothly.
+ * turns away from the viewer, joined at each end by the half of the rim that
+ * is nearer to the viewer. That is exactly the part of the side that can be
+ * seen. The end that faces the viewer lies beyond its near rim and is not
+ * covered, so a post standing inside a ring is not painted over by the
+ * ring's side where only the ring's lid would be in front of it.
  *
  * Commands: M L C C L C C Z.
  */
 function cylinderSide(r: number, h: number, view: Vec3): PathGeometry {
   const t1 = viewAngle(view) + HALF_PI;
-  const sigma = view.z >= 0 ? Math.PI : -Math.PI;
   const start = rim(r, -h, t1);
   return closeAt(start, [
     { kind: 'line', to: rim(r, h, t1) },
-    ...arc({ x: 0, y: 0, z: h }, X, Y, r, t1, sigma, 2),
-    { kind: 'line', to: rim(r, -h, t1 + sigma) },
-    ...arc({ x: 0, y: 0, z: -h }, X, Y, r, t1 + sigma, sigma, 2),
+    ...arc({ x: 0, y: 0, z: h }, X, Y, r, t1, -Math.PI, 2),
+    { kind: 'line', to: rim(r, -h, t1 - Math.PI) },
+    ...arc({ x: 0, y: 0, z: -h }, X, Y, r, t1 - Math.PI, Math.PI, 2),
   ]);
 }
 

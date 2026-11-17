@@ -1,5 +1,5 @@
 import type { Vec3 } from './math.ts';
-import { type Surface, surfaceDepth } from './solids.ts';
+import { type SolidBody, type Surface, surfaceDepth } from './solids.ts';
 
 /**
  * A projected shape as seen by the depth sorter. Points are in screen space:
@@ -27,6 +27,8 @@ export interface DepthShape {
    */
   readonly solid?: number;
   readonly layer?: number;
+  /** For a face of a solid: the solid as a whole, shared by all of its faces. */
+  readonly body?: SolidBody;
   /** For a filled area that is not flat: its exact front surface. */
   readonly surface?: Surface;
   /**
@@ -57,6 +59,7 @@ interface Analyzed {
   /** Whether the inside has a known depth (a plane or a surface). */
   readonly area: boolean;
   readonly solid: number | undefined;
+  readonly body: SolidBody | undefined;
   readonly layer: number;
   readonly minX: number;
   readonly maxX: number;
@@ -90,11 +93,12 @@ const EPSILON = 1e-6;
 
 /**
  * How much work the sorter has done since the counters were last reset:
- * calls to {@link depthOrder}, pairs compared, and of those the pairs that
- * needed the area grid of a round surface. Not part of the public API; tests
+ * calls to {@link depthOrder}, pairs compared, of those the pairs that
+ * needed the area grid of a round surface, and pairs measured to break a
+ * cycle. Not part of the public API; tests
  * use it to catch performance regressions without timing anything.
  */
-export const depthWork = { sorts: 0, comparisons: 0, roundComparisons: 0 };
+export const depthWork = { sorts: 0, comparisons: 0, roundComparisons: 0, cycleComparisons: 0 };
 
 function analyze(shape: DepthShape, index: number): Analyzed {
   const { points, radius } = shape;
@@ -131,6 +135,7 @@ function analyze(shape: DepthShape, index: number): Analyzed {
     carrier: shape.plane && towardViewer(shape.plane.point, shape.plane.normal),
     area: plane !== undefined || surface !== undefined,
     solid: shape.solid,
+    body: shape.body,
     layer: shape.layer ?? 0,
     minX: minX - radius,
     maxX: maxX + radius,
@@ -215,6 +220,44 @@ function splitByFacePlane(a: Analyzed, b: Analyzed): number {
   const aInFront = sideOfFace(b, a) > 0 || sideOfFace(a, b) < 0;
   if (aInFront === bInFront) return 0;
   return aInFront ? 1 : -1;
+}
+
+/**
+ * Whether a flat face of the solid that `a` belongs to has all of `b` on its
+ * outer side: 1 when that puts `b` in front of the solid, -1 when behind, 0
+ * when no face does (or only faces seen edge-on, which leave nothing of the
+ * two overlapping on screen).
+ *
+ * A solid lies wholly on the inner side of each of its flat faces. So when
+ * `b` lies wholly on the outer side of one, that plane separates the two,
+ * and whichever is on the viewer's side of it is in front everywhere, for
+ * every face of the solid at once. This settles solids that stand on each
+ * other and details that rest on a face, which meet along an edge or a
+ * plane where depth samples differ by rounding only. Two cylinders of one
+ * width stacked end to end are the plainest case: their sides share half a
+ * rim. A stroke counts as part of `b`, except the rounded edges of another
+ * solid, which reach into touching solids on purpose.
+ */
+function outsideFace(a: Analyzed, b: Analyzed): number {
+  if (!a.body) return 0;
+  for (const { point, normal } of a.body.planes) {
+    const size = Math.hypot(normal.x, normal.y, normal.z);
+    if (!(Math.abs(normal.z) > size * 1e-9)) continue;
+    const level = normal.x * point.x + normal.y * point.y + normal.z * point.z;
+    let least: number;
+    if (b.body) {
+      least = b.body.support(normal);
+    } else {
+      if (b.surface || b.points.length === 0) continue;
+      least = Number.POSITIVE_INFINITY;
+      for (const q of b.points) {
+        least = Math.min(least, normal.x * q.x + normal.y * q.y + normal.z * q.z);
+      }
+      least -= b.radius * size;
+    }
+    if (least - level >= -ON_PLANE * size) return normal.z > 0 ? 1 : -1;
+  }
+  return 0;
 }
 
 /** Best-fit plane by Newell's method; undefined when degenerate or edge-on. */
@@ -518,6 +561,10 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
 function compare(a: Analyzed, b: Analyzed): number {
   if (a.maxX < b.minX || b.maxX < a.minX || a.maxY < b.minY || b.maxY < a.minY) return 0;
   if (a.solid !== undefined && a.solid === b.solid) return Math.sign(a.layer - b.layer);
+  const outsideA = outsideFace(a, b);
+  if (outsideA !== 0) return -outsideA;
+  const outsideB = outsideFace(b, a);
+  if (outsideB !== 0) return outsideB;
   if (behindPlane(a, b)) return 1;
   if (behindPlane(b, a)) return -1;
   const split = splitByFacePlane(a, b);
@@ -600,6 +647,143 @@ function compareRound(a: Analyzed, b: Analyzed): number {
 }
 
 /**
+ * The area, in square pixels, where `a` is closer to the viewer than `b`:
+ * what is lost of `a` when it is painted before `b`. Estimated on a grid
+ * over their common bounds.
+ */
+function frontArea(a: Analyzed, b: Analyzed): number {
+  const minX = Math.max(a.minX, b.minX);
+  const maxX = Math.min(a.maxX, b.maxX);
+  const minY = Math.max(a.minY, b.minY);
+  const maxY = Math.min(a.maxY, b.maxY);
+  if (!(maxX > minX) || !(maxY > minY)) return 0;
+  depthWork.cycleComparisons++;
+  const xs = gridXs;
+  for (let i = 0; i < AREA_GRID; i++) xs[i] = minX + ((maxX - minX) * (i + 0.5)) / AREA_GRID;
+  let front = 0;
+  for (let j = 0; j < AREA_GRID; j++) {
+    const y = minY + ((maxY - minY) * (j + 0.5)) / AREA_GRID;
+    rowDepths(a, y, xs, gridA);
+    rowDepths(b, y, xs, gridB, gridA);
+    for (let i = 0; i < AREA_GRID; i++) {
+      if ((gridA[i] as number) - (gridB[i] as number) > EPSILON) front++;
+    }
+  }
+  return (front * (maxX - minX) * (maxY - minY)) / (AREA_GRID * AREA_GRID);
+}
+
+/**
+ * The shape to paint next when every shape left waits for another one, which
+ * means some of them form a cycle. Whichever shape of a cycle goes first is
+ * painted over, wrongly, by the shapes that should have gone before it; the
+ * shape that loses the least area that way is chosen. A ring around a post
+ * shows why: the post is in front of the ring's lid nearly everywhere, the
+ * ring's side is in front of the post, and the lid goes over the side of its
+ * own solid. Painting the lid first loses only the edge it shares with the
+ * side; any other choice loses the whole front of the ring, or the post
+ * where the lid crosses it.
+ *
+ * Only shapes in a cycle that waits for nothing outside itself are
+ * candidates. Shapes further on, which wait for a cycle without being part
+ * of one, would otherwise go first whenever they lose little, and be painted
+ * over for no reason. Ties go to the lower mean depth.
+ */
+function cheapestBreak(
+  items: readonly Analyzed[],
+  placed: readonly boolean[],
+  before: readonly (readonly number[])[],
+  after: readonly (readonly number[])[],
+  lost: (first: number, second: number) => number,
+  precedes: (a: Analyzed, b: Analyzed) => boolean,
+): Analyzed | undefined {
+  let best: Analyzed | undefined;
+  let bestCost = Number.POSITIVE_INFINITY;
+  for (const v of sourceCycles(placed, before, after)) {
+    let cost = 0;
+    for (const w of before[v] as readonly number[]) if (!placed[w]) cost += lost(v, w);
+    const item = items[v] as Analyzed;
+    if (cost < bestCost - EPSILON || (cost <= bestCost + EPSILON && best && precedes(item, best))) {
+      best = item;
+      bestCost = Math.min(cost, bestCost);
+    }
+  }
+  return best;
+}
+
+/**
+ * The shapes not yet placed that belong to a group of shapes all waiting for
+ * each other (a strongly connected component of the "paint before" graph)
+ * which waits for nothing outside itself. Tarjan's algorithm, with its own
+ * stack instead of recursion so that a long chain of shapes cannot overflow.
+ */
+function sourceCycles(
+  placed: readonly boolean[],
+  before: readonly (readonly number[])[],
+  after: readonly (readonly number[])[],
+): number[] {
+  const n = placed.length;
+  const index = new Int32Array(n).fill(-1);
+  const low = new Int32Array(n);
+  const group = new Int32Array(n).fill(-1);
+  const onStack = new Uint8Array(n);
+  const stack: number[] = [];
+  const path: number[] = [];
+  const edge = new Int32Array(n);
+  let counter = 0;
+  let groups = 0;
+  for (let root = 0; root < n; root++) {
+    if (placed[root] || index[root] !== -1) continue;
+    path.push(root);
+    while (path.length > 0) {
+      const v = path[path.length - 1] as number;
+      if (index[v] === -1) {
+        index[v] = low[v] = counter++;
+        stack.push(v);
+        onStack[v] = 1;
+      }
+      const next = after[v] as readonly number[];
+      let descended = false;
+      while ((edge[v] as number) < next.length) {
+        const w = next[edge[v] as number] as number;
+        edge[v] = (edge[v] as number) + 1;
+        if (placed[w]) continue;
+        if (index[w] === -1) {
+          path.push(w);
+          descended = true;
+          break;
+        }
+        if (onStack[w]) low[v] = Math.min(low[v] as number, index[w] as number);
+      }
+      if (descended) continue;
+      path.pop();
+      const parent = path[path.length - 1];
+      if (parent !== undefined) low[parent] = Math.min(low[parent] as number, low[v] as number);
+      if (low[v] === index[v]) {
+        let w: number;
+        do {
+          w = stack.pop() as number;
+          onStack[w] = 0;
+          group[w] = groups;
+        } while (w !== v);
+        groups++;
+      }
+    }
+  }
+  const waitsOutside = new Uint8Array(groups);
+  for (let v = 0; v < n; v++) {
+    if (placed[v]) continue;
+    for (const w of before[v] as readonly number[]) {
+      if (!placed[w] && group[w] !== group[v]) waitsOutside[group[v] as number] = 1;
+    }
+  }
+  const result: number[] = [];
+  for (let v = 0; v < n; v++) {
+    if (!placed[v] && !waitsOutside[group[v] as number]) result.push(v);
+  }
+  return result;
+}
+
+/**
  * Returns the order in which to paint shapes, back to front, as indices into
  * `shapes`.
  *
@@ -607,10 +791,12 @@ function compareRound(a: Analyzed, b: Analyzed): number {
  * actually overlap, and the resulting "paint before" constraints are
  * topologically sorted. Shapes that do not overlap, or whose order is unclear,
  * fall back to mean depth and then to input order. Cycles (for example three
- * sticks woven over and under each other) are broken at the shape with the
- * lowest mean depth. When several shapes are free to go next, the one that
- * continues the previous shape (see {@link DepthShape.follows}) wins. The
- * result is fully deterministic.
+ * sticks woven over and under each other, or a ring around a post) have no
+ * right order, so they are broken where it shows least: at the shape that
+ * loses the smallest area to the shapes painted over it (see
+ * {@link cheapestBreak}). When several shapes are free to go next, the one
+ * that continues the previous shape (see {@link DepthShape.follows}) wins.
+ * The result is fully deterministic.
  *
  * `mayOverlap(i, j)`, when given, says whether shapes `i < j` can cover a
  * common point at all. It must never answer false for shapes that do; a pair
@@ -627,6 +813,8 @@ export function depthOrder(
   const n = items.length;
   // after[i] lists shapes that must be painted after shape i.
   const after: number[][] = items.map(() => []);
+  // before[i] lists shapes that must be painted before shape i.
+  const before: number[][] = items.map(() => []);
   const blockers = new Array<number>(n).fill(0);
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
@@ -638,9 +826,11 @@ export function depthOrder(
       const result = compare(a, b);
       if (result > 0) {
         (after[j] as number[]).push(i);
+        (before[i] as number[]).push(j);
         blockers[i] = (blockers[i] ?? 0) + 1;
       } else if (result < 0) {
         (after[i] as number[]).push(j);
+        (before[j] as number[]).push(i);
         blockers[j] = (blockers[j] ?? 0) + 1;
       }
     }
@@ -650,6 +840,18 @@ export function depthOrder(
   const order: number[] = [];
   const precedes = (a: Analyzed, b: Analyzed) =>
     a.meanDepth < b.meanDepth || (a.meanDepth === b.meanDepth && a.index < b.index);
+  // What painting `first` before `second` costs. Only asked for shapes caught
+  // in a cycle, and kept, since a cycle is often broken one shape at a time.
+  const lostAreas = new Map<number, number>();
+  const lost = (first: number, second: number): number => {
+    const key = first * n + second;
+    let area = lostAreas.get(key);
+    if (area === undefined) {
+      area = frontArea(items[first] as Analyzed, items[second] as Analyzed);
+      lostAreas.set(key, area);
+    }
+    return area;
+  };
   let previous = -1;
   while (order.length < n) {
     let pick: Analyzed | undefined;
@@ -664,7 +866,9 @@ export function depthOrder(
       }
       if (!pick || (pick.follows !== previous && precedes(item, pick))) pick = item;
     }
-    const chosen = (pick ?? fallback) as Analyzed;
+    const chosen = (pick ??
+      cheapestBreak(items, placed, before, after, lost, precedes) ??
+      fallback) as Analyzed;
     placed[chosen.index] = true;
     order.push(chosen.index);
     previous = chosen.index;
@@ -679,6 +883,51 @@ export function depthOrder(
  */
 export function compareShapes(a: DepthShape, b: DepthShape): number {
   return compare(analyze(a, 0), analyze(b, 1));
+}
+
+/** Grid points per side used by {@link crossingAreas}. */
+const CROSSING_GRID = 20;
+const crossXs = new Float64Array(CROSSING_GRID);
+const crossA = new Float64Array(CROSSING_GRID);
+const crossB = new Float64Array(CROSSING_GRID);
+
+/**
+ * How much of the screen area two shapes both cover each one is in front of,
+ * in square pixels: `a` where `a` is closer to the viewer by more than
+ * `tolerance`, `b` likewise. When both are well above zero the shapes pass
+ * through each other, and whichever is painted last, the smaller of the two
+ * areas shows the wrong shape. The areas are estimated on a grid over the
+ * common bounds, so they are good to a few percent of those bounds.
+ */
+export function crossingAreas(
+  a: DepthShape,
+  b: DepthShape,
+  tolerance: number,
+): { a: number; b: number } {
+  const sa = analyze(a, 0);
+  const sb = analyze(b, 1);
+  const minX = Math.max(sa.minX, sb.minX);
+  const maxX = Math.min(sa.maxX, sb.maxX);
+  const minY = Math.max(sa.minY, sb.minY);
+  const maxY = Math.min(sa.maxY, sb.maxY);
+  if (!(maxX > minX) || !(maxY > minY)) return { a: 0, b: 0 };
+  let front = 0;
+  let behind = 0;
+  for (let i = 0; i < CROSSING_GRID; i++) {
+    crossXs[i] = minX + ((maxX - minX) * (i + 0.5)) / CROSSING_GRID;
+  }
+  for (let j = 0; j < CROSSING_GRID; j++) {
+    const y = minY + ((maxY - minY) * (j + 0.5)) / CROSSING_GRID;
+    rowDepths(sa, y, crossXs, crossA);
+    rowDepths(sb, y, crossXs, crossB, crossA);
+    for (let i = 0; i < CROSSING_GRID; i++) {
+      const d = (crossA[i] as number) - (crossB[i] as number);
+      if (d > tolerance) front++;
+      else if (d < -tolerance) behind++;
+    }
+  }
+  const cell = ((maxX - minX) * (maxY - minY)) / (CROSSING_GRID * CROSSING_GRID);
+  return { a: front * cell, b: behind * cell };
 }
 
 /** The ordering a classic painter's algorithm would use: mean depth only. */

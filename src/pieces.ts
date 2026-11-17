@@ -18,7 +18,7 @@ import {
   type Vec3,
 } from './math.ts';
 import type { SoftKind } from './shading.ts';
-import { type Surface, solidFaces } from './solids.ts';
+import { type SolidBody, type Surface, solidFaces } from './solids.ts';
 import type { NormalizedNode, NormalizedScene, Path } from './validate.ts';
 
 /**
@@ -53,6 +53,8 @@ export interface Piece {
   readonly points: readonly Vec3[];
   /** For a face of a solid: the index of the solid, in tree order. */
   readonly solid: number | undefined;
+  /** For a face of a solid: the solid as a whole (see {@link SolidBody}). */
+  readonly body: SolidBody | undefined;
   /** Paint order within a solid: lower first. */
   readonly layer: number;
   /**
@@ -169,6 +171,7 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
             fill,
             points: flatten(part.geometry),
             solid: undefined,
+            body: undefined,
             layer: 0,
             backfacing: false,
             surface: undefined,
@@ -200,6 +203,7 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
           fill: true,
           points: flatten(face.geometry),
           solid,
+          body: face.body,
           layer: face.layer,
           backfacing: face.backfacing,
           surface: face.surface,
@@ -239,6 +243,7 @@ export function depthShapes(pieces: readonly Piece[]): DepthShape[] {
     radius: p.stroke / 2,
     ...(p.piece > 0 ? { follows: i - 1 } : {}),
     ...(p.solid === undefined ? {} : { solid: p.solid, layer: p.layer }),
+    ...(p.body === undefined ? {} : { body: p.body }),
     ...(p.surface === undefined ? {} : { surface: p.surface }),
     ...(p.plane === undefined ? {} : { plane: p.plane }),
   }));

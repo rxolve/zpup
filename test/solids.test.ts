@@ -13,7 +13,7 @@ import {
   renderSvg,
   type Scene,
 } from '../src/index.ts';
-import { compilePieces } from '../src/pieces.ts';
+import { compilePieces, visiblePieces } from '../src/pieces.ts';
 import { surfaceDepth } from '../src/solids.ts';
 import { lerpGeometry, outlineDistance, refineTimes, SPIN_TOLERANCE } from '../src/spin.ts';
 import { normalizeScene } from '../src/validate.ts';
@@ -128,28 +128,33 @@ describe('solids', () => {
 
   it('has the silhouette the solid should have', () => {
     // An upright cylinder seen from 20 degrees above: as wide as its diameter,
-    // as tall as its side seen at a slant plus one end seen at a slant.
-    const frame = compileScene(
-      one(cylinder({ diameter: 60, length: 100, rotate: { x: 90 }, stroke: 0 }), { x: -20, y: 37 }),
+    // as tall as its side seen at a slant plus one end seen at a slant. The
+    // side stops at the near rim of the end that faces the viewer, so the two
+    // together make the silhouette.
+    const pieces = visiblePieces(
+      compilePieces(
+        normalizeScene(
+          one(cylinder({ diameter: 60, length: 100, rotate: { x: 90 }, stroke: 0 }), {
+            x: -20,
+            y: 37,
+          }),
+        ),
+      ),
     );
-    const xs: number[] = [];
-    const ys: number[] = [];
-    for (const item of frame.items) {
-      if (item.kind !== 'path') continue;
-      for (const c of item.commands) {
-        if (c.op === 'Z') continue;
-        // Bezier control points stay inside the curve's hull, so endpoints
-        // and controls bound it from outside; endpoints alone from inside.
-        xs.push(c.x);
-        ys.push(c.y);
-      }
-    }
+    expect(pieces).toHaveLength(2);
+    const xs = pieces.flatMap((p) => p.points.map((q) => q.x));
+    const ys = pieces.flatMap((p) => p.points.map((q) => q.y));
     const rad = (20 * Math.PI) / 180;
-    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(60, 1);
-    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(
-      100 * Math.cos(rad) + 60 * Math.sin(rad),
-      1,
-    );
+    // The outlines are flattened to short lines, which fall a little inside the curves.
+    expect(Math.abs(Math.max(...xs) - Math.min(...xs) - 60)).toBeLessThan(0.2);
+    const height = 100 * Math.cos(rad) + 60 * Math.sin(rad);
+    expect(Math.abs(Math.max(...ys) - Math.min(...ys) - height)).toBeLessThan(0.2);
+    // The side alone is one end's near half shorter than the silhouette.
+    const side = pieces.find((p) => p.surface) as (typeof pieces)[number];
+    const sideYs = side.points.map((q) => q.y);
+    expect(
+      Math.abs(Math.max(...sideYs) - Math.min(...sideYs) - (height - 30 * Math.sin(rad))),
+    ).toBeLessThan(0.2);
   });
 
   it('knows the depth of its round surfaces', () => {

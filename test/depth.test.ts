@@ -404,6 +404,32 @@ describe('depth sorting of solids while the view turns', () => {
     expect(front(120)).toBe(false); // handle behind the mug
   });
 
+  it('paints a ring around a post in the one order that loses almost nothing', () => {
+    // A band around a tower: the tower is in front of the band's lid, the
+    // band's side is in front of the tower, and the lid goes over the side of
+    // its own solid. No order is right; lid, tower, side loses only the thin
+    // rim of the lid. Any other order loses the front of the band or of the tower.
+    const ring: Scene = {
+      width: 300,
+      height: 300,
+      children: [
+        cylinder({ id: 'tower', diameter: 60, length: 200, rotate: { x: 90 }, color: '#eee' }),
+        cylinder({ id: 'band', diameter: 80, length: 40, rotate: { x: 90 }, color: '#d43' }),
+      ],
+    };
+    const wrong: string[] = [];
+    for (const x of [-40, -18, -6]) {
+      for (let y = 0; y < 360; y += 15) {
+        const ids = compileScene({ ...ring, rotate: { x, y } }).items.map((i) => i.nodeId);
+        const lid = ids.indexOf('band');
+        const side = ids.lastIndexOf('band');
+        const tower = ids.indexOf('tower');
+        if (!(lid < tower && tower < side)) wrong.push(`${x}, ${y}: ${ids.join(' ')}`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
   it(
     'keeps the walls of the hut in front of the base of its roof when seen from below',
     () => {
@@ -414,8 +440,14 @@ describe('depth sorting of solids while the view turns', () => {
       for (const x of [2, 3.3, 6, 12]) {
         for (let step = 0; step < 720; step++) {
           const y = step / 2;
-          const ids = compileScene({ ...lighthouse, rotate: { x, y } }).items.map((i) => i.nodeId);
-          if (ids.lastIndexOf('hut-roof') > ids.indexOf('hut-walls')) wrong.push(`${x}, ${y}`);
+          // Only faces that overlap on screen have an order; the hut's floor,
+          // which shows from below, never meets the roof.
+          const pieces = compilePieces(normalizeScene({ ...lighthouse, rotate: { x, y } }));
+          const roofOverWall = paintConstraints(pieces).constraints.some(
+            ([first, second]) =>
+              pieces[first]?.nodeId === 'hut-walls' && pieces[second]?.nodeId === 'hut-roof',
+          );
+          if (roofOverWall) wrong.push(`${x}, ${y}`);
         }
       }
       expect(wrong).toEqual([]);
