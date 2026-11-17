@@ -6,7 +6,7 @@ import {
   type ValidationIssue,
   ZpupValidationError,
 } from './errors.ts';
-import { Gradients } from './shading.ts';
+import { Gradients, tubeLayers } from './shading.ts';
 import type { Scene } from './types.ts';
 import { checkScene } from './validate.ts';
 
@@ -31,7 +31,7 @@ export function renderSvg(scene: Scene, options: SvgOptions = {}): string {
     const sceneIssues = checkScene(scene);
     throw new ZpupValidationError(
       [...sceneIssues, ...issues],
-      sceneIssues.length === 0 ? 'SVG options' : 'zpup scene and SVG options',
+      sceneIssues.length === 0 ? 'SVG options' : 'Zpup scene and SVG options',
     );
   }
   return frameToSvg(compileScene(scene), options);
@@ -141,6 +141,19 @@ function itemToSvg(
     return `<circle cx="${n(item.x)}" cy="${n(item.y)}" r="${n(item.radius)}" fill="${color}"/>`;
   }
   const d = item.commands.map((c) => commandToSvg(c, n)).join('');
+  // A thick line with nothing filled is a tube.
+  const layers =
+    gradients && !item.fill && item.stroke > 0 && item.soft === undefined
+      ? tubeLayers(item.color)
+      : undefined;
+  if (layers) {
+    const strokes = layers.map((layer) => {
+      const by = (-layer.shift * item.stroke) / Math.SQRT2;
+      const move = layer.shift === 0 ? '' : ` transform="translate(${n(by)} ${n(by)})"`;
+      return `<path d="${d}" stroke="${escapeXml(layer.color)}" stroke-width="${n(layer.width * item.stroke)}"${move}/>`;
+    });
+    return `<g fill="none" stroke-linecap="round" stroke-linejoin="round">${strokes.join('')}</g>`;
+  }
   const fill = item.fill ? color : 'none';
   const stroke =
     item.stroke > 0

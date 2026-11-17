@@ -14,7 +14,7 @@ import {
   paintConstraints,
   positions,
 } from './pieces.ts';
-import { Gradients, type SoftKind } from './shading.ts';
+import { Gradients, type SoftKind, tubeLayers } from './shading.ts';
 import { escapeXml, formatNumber } from './svg.ts';
 import type { Scene } from './types.ts';
 import { checkScene, type NormalizedScene, normalizeScene } from './validate.ts';
@@ -91,8 +91,8 @@ export function renderSpinSvg(scene: Scene, options: SpinOptions = {}): string {
       sceneIssues.length === 0
         ? 'spin options'
         : issues.length === 0
-          ? 'zpup scene'
-          : 'zpup scene and spin options';
+          ? 'Zpup scene'
+          : 'Zpup scene and spin options';
     throw new ZpupValidationError([...sceneIssues, ...issues], subject);
   }
   const s = normalizeScene(scene);
@@ -489,12 +489,25 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
   const drawn = new Set<string>();
   const defs: string[] = [];
   const gradients = s.shading === 'soft' ? new Gradients() : undefined;
-  // A round side keeps its gradient only if it runs the same way at every
-  // keyframe (an upright cylinder turning about the vertical axis does).
-  const softOf = (i: number, piece: Piece) =>
-    keyframes.every((f) => (f[i] as Piece).soft === piece.soft) ? piece.soft : undefined;
   const paint = (color: string, soft: SoftKind | undefined) =>
     escapeXml(gradients ? gradients.paint(color, soft) : color);
+  /**
+   * The paints a piece goes through in one turn, each with the fraction of
+   * the turn at which it starts. The gradient of a round side runs across the
+   * side on screen, so it turns with a side that is not upright; each one is
+   * held from halfway before its keyframe to halfway after. One entry when
+   * the paint never changes.
+   */
+  const paintSteps = (values: string[]): { time: string; paint: string }[] => {
+    const count = values.length;
+    const steps = [{ time: '0', paint: values[0] as string }];
+    for (let k = 1; k <= count; k++) {
+      const paint = values[k % count] as string;
+      if (paint === steps[steps.length - 1]?.paint) continue;
+      steps.push({ time: formatNumber((k - 0.5) / count, KEY_TIME_DIGITS), paint });
+    }
+    return steps;
+  };
   first.forEach((piece, i) => {
     const sides = (['front', 'back'] as const).filter((side) => shown[i]?.has(side));
     if (sides.length === 0) return;
@@ -532,18 +545,67 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
         frames.map((g) => pathData(g, n)),
         even ? undefined : times,
       );
+      // A thick line with nothing filled is a tube: its geometry is defined
+      // once, unpainted, and painted as several strokes (see `tubeLayers`).
+      const tube = gradients !== undefined && !piece.fill && piece.stroke > 0 && !piece.soft;
+      const line = `${PREFIX}${i}t`;
+      let lineDefined = false;
       for (const side of sides) {
-        const color = paint(sideColor(piece, side), softOf(i, piece));
-        const fill = piece.fill ? color : 'none';
-        const stroke =
-          piece.stroke > 0
-            ? ` stroke="${color}" stroke-width="${n(piece.stroke)}" stroke-linecap="round" stroke-linejoin="round"`
-            : '';
-        defs.push(
-          d.animate === ''
-            ? `<path id="${ref(i, side)}" d="${d.start}" fill="${fill}"${stroke}/>`
-            : `<path id="${ref(i, side)}" d="${d.start}" fill="${fill}"${stroke}>${d.animate}</path>`,
+        const layers = tube ? tubeLayers(sideColor(piece, side)) : undefined;
+        if (layers) {
+          if (!lineDefined) {
+            defs.push(
+              d.animate === ''
+                ? `<path id="${line}" d="${d.start}"/>`
+                : `<path id="${line}" d="${d.start}">${d.animate}</path>`,
+            );
+            lineDefined = true;
+          }
+          const strokes = layers.map((layer) => {
+            const by = (-layer.shift * piece.stroke) / Math.SQRT2;
+            const move = layer.shift === 0 ? '' : ` transform="translate(${n(by)} ${n(by)})"`;
+            return `<use href="#${line}" stroke="${escapeXml(layer.color)}" stroke-width="${n(layer.width * piece.stroke)}"${move}/>`;
+          });
+          defs.push(
+            `<g id="${ref(i, side)}" fill="none" stroke-linecap="round" stroke-linejoin="round">${strokes.join('')}</g>`,
+          );
+          drawn.add(ref(i, side));
+          continue;
+        }
+        const steps = paintSteps(
+          keyframes.map((f) => paint(sideColor(piece, side), (f[i] as Piece).soft)),
         );
+        const outline =
+          piece.stroke > 0
+            ? ` stroke-width="${n(piece.stroke)}" stroke-linecap="round" stroke-linejoin="round"`
+            : '';
+        const painted = (color: string) =>
+          ` fill="${piece.fill ? color : 'none'}"${piece.stroke > 0 ? ` stroke="${color}"` : ''}`;
+        if (steps.length === 1) {
+          const attributes = `${painted((steps[0] as { paint: string }).paint)}${outline}`;
+          defs.push(
+            d.animate === ''
+              ? `<path id="${ref(i, side)}" d="${d.start}"${attributes}/>`
+              : `<path id="${ref(i, side)}" d="${d.start}"${attributes}>${d.animate}</path>`,
+          );
+        } else {
+          // A paint that points to a gradient cannot be animated, so the
+          // outline is defined once, unpainted, and shown once per gradient,
+          // one at a time.
+          if (!lineDefined) {
+            defs.push(
+              d.animate === ''
+                ? `<path id="${line}" d="${d.start}"/>`
+                : `<path id="${line}" d="${d.start}">${d.animate}</path>`,
+            );
+            lineDefined = true;
+          }
+          const shows = [...new Set(steps.map((step) => step.paint))].map((color) => {
+            const values = steps.map((step) => (step.paint === color ? 'visible' : 'hidden'));
+            return `<use href="#${line}"${painted(color)} visibility="${values[0]}"><animate attributeName="visibility" ${timing} calcMode="discrete" keyTimes="${steps.map((step) => step.time).join(';')}" values="${values.join(';')}"/></use>`;
+          });
+          defs.push(`<g id="${ref(i, side)}"${outline}>${shows.join('')}</g>`);
+        }
         drawn.add(ref(i, side));
       }
     }

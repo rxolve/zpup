@@ -272,9 +272,8 @@ export interface Scene {
   title?: string;
   /**
    * How round things are painted. `"flat"` (default) gives each one a single
-   * color. `"soft"` shades dots and the round surfaces of solids with a
-   * gradient, as if lit from the upper left; flat shapes and lines stay as
-   * they are.
+   * color. `"soft"` shades dots, thick lines and the round surfaces of
+   * solids, as if lit from the upper left; flat shapes stay as they are.
    */
   shading?: 'flat' | 'soft';
   /**

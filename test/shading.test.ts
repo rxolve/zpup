@@ -59,7 +59,7 @@ describe('soft shading', () => {
       }),
     );
     expect(svg.match(/<linearGradient /g)).toHaveLength(1);
-    expect(svg).toContain('x1="0" y1="0" x2="1" y2="0"');
+    expect(svg).toContain('x1="0" y1="0.5" x2="1" y2="0.5"');
     // The side (fill and rounded edge) uses the gradient; the visible end does not.
     expect(svg.match(/fill="url\(#zs-l0-/g)).toHaveLength(1);
     expect(svg.match(/fill="#/g)?.length).toBeGreaterThanOrEqual(1);
@@ -70,16 +70,43 @@ describe('soft shading', () => {
     expect(sideKind({ x: 0, y: 1, z: 0 })).toBe('side:0');
     expect(sideKind({ x: 1, y: 0, z: 0 })).toBe('side:90'); // lying: top to bottom
     expect(sideKind({ x: 1, y: -1, z: 0 })).toBe('side:45');
+    // In steps of 15 degrees; straight toward the upper right and straight
+    // toward the lower left are the same line, and get one name.
+    expect(sideKind({ x: 1, y: -0.3, z: 0 })).toBe('side:75');
+    expect(sideKind({ x: 1, y: 1, z: 0 })).toBe('side:135');
+    expect(sideKind({ x: -1, y: -1, z: 0 })).toBe('side:135');
     expect(sideKind({ x: 0, y: 0, z: 1 })).toBe('side:0'); // seen end-on
   });
 
-  it('leaves flat shapes, lines and colors it cannot read as they are', () => {
+  it('leaves flat shapes and colors it cannot read as they are', () => {
     const children = [
       ellipse({ diameter: 40, fill: true, color: '#c33' }),
-      path({ path: [{ x: -30 }, { x: 30 }], stroke: 12, color: '#36c' }),
       dot({ translate: { y: 50 }, stroke: 20, color: 'currentColor' }),
+      path({ path: [{ x: -30 }, { x: 30 }], stroke: 12, color: 'currentColor' }),
     ];
     expect(renderSvg(scene(children, { shading: 'soft' }))).toBe(renderSvg(scene(children)));
+  });
+
+  it('shades a thick line as a tube: the same line stroked from dark and wide to light and narrow', () => {
+    const line = path({ path: [{ x: -30 }, { x: 30 }], stroke: 20, color: '#3366cc' });
+    const flat = renderSvg(scene([line]));
+    const soft = renderSvg(scene([line], { shading: 'soft' }));
+    const d = flat.match(/ d="([^"]+)"/)?.[1];
+    const strokes = [
+      ...soft.matchAll(/<path d="([^"]+)" stroke="(#[0-9a-f]{6})" stroke-width="([\d.]+)"/g),
+    ];
+    expect(strokes.length).toBeGreaterThanOrEqual(5);
+    expect(strokes.every((m) => m[1] === d)).toBe(true);
+    const widths = strokes.map((m) => Number(m[3]));
+    expect(widths[0]).toBe(20);
+    expect(widths).toEqual([...widths].sort((x, y) => y - x));
+    const blue = strokes.map((m) => Number.parseInt((m[2] as string).slice(5), 16));
+    expect(blue).toEqual([...blue].sort((x, y) => x - y));
+    // The full width is not moved; the rest move up and to the left, toward the light.
+    expect(soft.match(/transform="translate\(-[\d.]+ -[\d.]+\)"/g)).toHaveLength(
+      strokes.length - 1,
+    );
+    expect(soft).not.toContain('Gradient');
   });
 
   it('rejects other values with a hint', () => {
@@ -89,16 +116,44 @@ describe('soft shading', () => {
     );
   });
 
-  it('shades a turning picture, keeping a round side flat when its direction changes', () => {
+  it('shades a turning picture, stepping the gradient of a round side as its direction changes', () => {
     const upright = cylinder({ diameter: 40, length: 60, rotate: { x: 90 }, color: '#4a7bd0' });
     const lying = cylinder({ translate: { y: -60 }, diameter: 20, length: 60, color: '#2a9d8f' });
-    const flat = renderSpinSvg(scene([ball, upright, lying]));
-    const soft = renderSpinSvg(scene([ball, upright, lying], { shading: 'soft' }));
+    const flat = renderSpinSvg(scene([ball, upright]));
+    const soft = renderSpinSvg(scene([ball, upright], { shading: 'soft' }));
     expect(flat).not.toContain('Gradient');
     expect(soft).toContain('<radialGradient id="zs-b-e8a865"');
-    // The upright cylinder's side runs the same way all the way round.
+    // The upright cylinder's side runs the same way all the way round: one
+    // gradient, and the same animation as the flat picture.
     expect(soft.match(/<linearGradient /g)).toHaveLength(1);
-    // Same shapes and animation, only the paint differs.
     expect(soft.match(/<animate /g)?.length).toBe(flat.match(/<animate /g)?.length);
+
+    // A cylinder lying down points every way on screen as it turns. Its side
+    // steps through the gradients, fill and rounded edge alike.
+    const turning = renderSpinSvg(scene([lying], { shading: 'soft' }));
+    const plain = renderSpinSvg(scene([lying]));
+    const gradients = turning.match(/<linearGradient /g)?.length ?? 0;
+    expect(gradients).toBeGreaterThan(2);
+    // A paint that points to a gradient cannot be animated (browsers paint it
+    // black), so the side is shown once per gradient, one at a time.
+    expect(turning).not.toMatch(/attributeName="(fill|stroke)"/);
+    const shows = turning.match(
+      /<use href="#[^"]+" fill="url\(#zs-lm?\d+-[0-9a-f]+\)" stroke="url\(#zs-lm?\d+-[0-9a-f]+\)" visibility="(visible|hidden)"><animate attributeName="visibility"[^>]*calcMode="discrete"/g,
+    );
+    expect(shows).toHaveLength(gradients);
+    expect(shows?.filter((x) => x.includes('visibility="visible"'))).toHaveLength(1);
+    expect(
+      (turning.match(/<animate /g)?.length ?? 0) - (plain.match(/<animate /g)?.length ?? 0),
+    ).toBe(gradients);
+  });
+
+  it('paints a tube in a turning picture from one animated line', () => {
+    const line = path({ path: [{ x: -30, z: 10 }, { x: 30 }], stroke: 20, color: '#3366cc' });
+    const flat = renderSpinSvg(scene([line]));
+    const soft = renderSpinSvg(scene([line], { shading: 'soft' }));
+    expect(soft.match(/<animate /g)?.length).toBe(flat.match(/<animate /g)?.length);
+    expect(
+      soft.match(/<use href="#[^"]+" stroke="#[0-9a-f]{6}" stroke-width=/g)?.length,
+    ).toBeGreaterThanOrEqual(5);
   });
 });
