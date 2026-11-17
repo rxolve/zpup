@@ -1,7 +1,15 @@
 import { parseColor } from './color.ts';
 import { compileNormalized } from './compile.ts';
+import { crossingAreas } from './depth.ts';
 import { formatPath, type ValidationIssue } from './errors.ts';
-import { compilePieces } from './pieces.ts';
+import {
+  compilePieces,
+  depthShapes,
+  type Piece,
+  paintedColor,
+  piecesOverlap,
+  visiblePieces,
+} from './pieces.ts';
 import { formatNumber } from './svg.ts';
 import {
   Checker,
@@ -14,8 +22,9 @@ import {
 /**
  * Looks for things in a valid scene that are allowed but probably not what
  * was meant: angles that look like radians, shapes that lie entirely outside
- * the image, a scene that draws nothing, and solids whose color cannot be
- * shaded. Warnings never stop a scene from rendering.
+ * the image, a scene that draws nothing, solids whose color cannot be shaded,
+ * and shapes that pass through each other. Warnings never stop a scene from
+ * rendering.
  *
  * Returns an empty array for an invalid scene; use {@link checkScene} for
  * errors. Each warning has the same fields as a validation issue.
@@ -27,6 +36,7 @@ export function checkSceneWarnings(input: unknown): ValidationIssue[] {
   radians(c, scene);
   if (!nothingDrawn(c, scene)) offScreen(c, scene);
   unshadedSolids(c, scene);
+  passingThrough(c, scene);
   return c.issues;
 }
 
@@ -73,7 +83,7 @@ function radians(c: Checker, s: NormalizedScene): void {
     first.nodeId,
     'an angle in degrees',
     `${formatNumber(first.value, 4)}${more}`,
-    `Every rotation in this scene is a small fraction, which looks like radians. zpup angles are in degrees: multiply radians by 57.2958 (${examples}).`,
+    `Every rotation in this scene is a small fraction, which looks like radians. Zpup angles are in degrees: multiply radians by 57.2958 (${examples}).`,
   );
 }
 
@@ -182,7 +192,7 @@ function offScreen(c: Checker, s: NormalizedScene): void {
   });
 }
 
-/** Solids whose color zpup cannot lighten or darken, so every face would look the same. */
+/** Solids whose color Zpup cannot lighten or darken, so every face would look the same. */
 function unshadedSolids(c: Checker, s: NormalizedScene): void {
   walk(s.children, (node) => {
     const solid = node.solid;
@@ -194,6 +204,93 @@ function unshadedSolids(c: Checker, s: NormalizedScene): void {
       'a color that can be shaded: hex, rgb(), hsl() or a color name',
       JSON.stringify(solid.color),
       'Every face gets this one color, so the solid looks flat. Use a hex color, give faces their own colors (such as "frontFace"), or set "shade": false.',
+    );
+  });
+}
+
+/** A pair of nodes whose shapes pass through each other, at the view where it shows most. */
+export interface Crossing {
+  readonly a: { readonly location: Path; readonly nodeId: string | undefined };
+  readonly b: { readonly location: Path; readonly nodeId: string | undefined };
+  /** Screen area, in square pixels, that shows the wrong shape whichever is painted last. */
+  readonly area: number;
+  /** How far the view is turned about the vertical axis from the scene's own, in degrees. */
+  readonly turnDeg: number;
+}
+
+/** The turns checked: the scene's own view and seven more around the vertical axis. */
+const CROSSING_TURNS_DEG = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/** A depth difference below this many pixels is not seen as a wrong order. */
+const CROSSING_TOLERANCE = 1.5;
+
+/**
+ * Every pair of nodes of different colors whose shapes pass through each
+ * other, largest wrong area first. For each pair of pieces, the wrong area is
+ * the smaller of the areas where one is in front and where the other is; a
+ * pair of nodes gets the sum over its pieces, at the turn where it is largest.
+ */
+export function findCrossings(s: NormalizedScene): Crossing[] {
+  const found = new Map<string, Crossing>();
+  for (const turnDeg of CROSSING_TURNS_DEG) {
+    const pieces = visiblePieces(compilePieces(s, { ...s.rotate, y: s.rotate.y + turnDeg }));
+    // Touching solids overlap by their rounded edges on purpose: leave the edges out.
+    const shapes = depthShapes(pieces).map((d) =>
+      d.solid === undefined ? d : { ...d, radius: 0 },
+    );
+    const keys = pieces.map((p) => formatPath(p.location));
+    const colors = pieces.map((p) => paintedColor(p).toLowerCase());
+    const areas = new Map<string, { a: Piece; b: Piece; area: number }>();
+    for (let i = 0; i < pieces.length; i++) {
+      for (let j = i + 1; j < pieces.length; j++) {
+        if (keys[i] === keys[j] || colors[i] === colors[j]) continue;
+        const a = pieces[i] as Piece;
+        const b = pieces[j] as Piece;
+        if (!piecesOverlap(a, b)) continue;
+        const front = crossingAreas(shapes[i] as never, shapes[j] as never, CROSSING_TOLERANCE);
+        const wrong = Math.min(front.a, front.b);
+        if (wrong <= 0) continue;
+        const key = `${keys[i]}|${keys[j]}`;
+        const sum = areas.get(key);
+        if (sum) sum.area += wrong;
+        else areas.set(key, { a, b, area: wrong });
+      }
+    }
+    for (const [key, { a, b, area }] of areas) {
+      const best = found.get(key);
+      if (best && best.area >= area) continue;
+      found.set(key, {
+        a: { location: a.location, nodeId: a.nodeId },
+        b: { location: b.location, nodeId: b.nodeId },
+        area,
+        turnDeg,
+      });
+    }
+  }
+  return [...found.values()].sort((x, y) => y.area - x.area);
+}
+
+const MAX_CROSSINGS = 3;
+
+/** A wrong area below this share of the image is too small to mention. */
+const CROSSING_SHARE = 0.001;
+
+/** Shapes of different colors that pass through each other, so that no paint order is right. */
+function passingThrough(c: Checker, s: NormalizedScene): void {
+  const crossings = findCrossings(s).filter((x) => x.area >= CROSSING_SHARE * s.width * s.height);
+  crossings.slice(0, MAX_CROSSINGS).forEach((x, i) => {
+    const other = x.b.nodeId === undefined ? formatPath(x.b.location) : `"${x.b.nodeId}"`;
+    const turned = x.turnDeg === 0 ? '' : ` with the view turned by ${x.turnDeg} degrees`;
+    const rest =
+      i === MAX_CROSSINGS - 1 && crossings.length > MAX_CROSSINGS
+        ? ` ${crossings.length - MAX_CROSSINGS} more pairs of shapes do the same.`
+        : '';
+    c.note(
+      x.a.location,
+      x.a.nodeId,
+      'shapes that do not pass through each other',
+      `a shape that passes through ${other}`,
+      `Each is partly in front of the other, so neither can be painted on top: about ${formatNumber(x.area, 0)} square pixels show the wrong one${turned}, and the picture flickers there as it turns. Move one clear of the other, or let a detail rest on a surface instead of sitting half inside it. Shapes of the same color can overlap freely.${rest}`,
     );
   });
 }
