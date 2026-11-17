@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "cat",
+  "taskPrompt": "a cat sitting down",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a cat sitting down."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<radialGradient id=\"fur\" cx=\"0.35\" cy=\"0.3\" r=\"0.8\">\n<stop offset=\"0\" stop-color=\"#e8c9a4\"/>\n<stop offset=\"0.55\" stop-color=\"#b98a5e\"/>\n<stop offset=\"1\" stop-color=\"#5e4030\"/>\n</radialGradient>\n<radialGradient id=\"eye\" cx=\"0.4\" cy=\"0.35\" r=\"0.7\">\n<stop offset=\"0\" stop-color=\"#d9f5a0\"/>\n<stop offset=\"1\" stop-color=\"#4a8a2a\"/>\n</radialGradient>\n<radialGradient id=\"shade\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\">\n<stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.35\"/>\n<stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/>\n</radialGradient>\n</defs>\n<ellipse cx=\"200\" cy=\"370\" rx=\"120\" ry=\"18\" fill=\"url(#shade)\"/>\n<path d=\"M270 330 C330 330 345 280 330 230 C322 205 300 200 296 218 C300 250 292 300 262 312 Z\" fill=\"url(#fur)\" stroke=\"#5e4030\" stroke-width=\"2\"/>\n<ellipse cx=\"200\" cy=\"265\" rx=\"90\" ry=\"103\" fill=\"url(#fur)\"/>\n<ellipse cx=\"150\" cy=\"300\" rx=\"50\" ry=\"60\" fill=\"#000\" opacity=\"0.12\"/>\n<path d=\"M135 150 L140 40 L190 98 Z\" fill=\"url(#fur)\"/>\n<path d=\"M265 150 L260 40 L210 98 Z\" fill=\"url(#fur)\"/>\n<path d=\"M146 130 L146 62 L176 100 Z\" fill=\"#e8a0a0\"/>\n<path d=\"M254 130 L254 62 L224 100 Z\" fill=\"#e8a0a0\"/>\n<circle cx=\"200\" cy=\"140\" r=\"66\" fill=\"url(#fur)\"/>\n<ellipse cx=\"200\" cy=\"230\" rx=\"60\" ry=\"32\" fill=\"#f5e6d0\" opacity=\"0.8\"/>\n<ellipse cx=\"172\" cy=\"345\" rx=\"26\" ry=\"14\" fill=\"url(#fur)\" stroke=\"#5e4030\" stroke-width=\"1.5\"/>\n<ellipse cx=\"228\" cy=\"345\" rx=\"26\" ry=\"14\" fill=\"url(#fur)\" stroke=\"#5e4030\" stroke-width=\"1.5\"/>\n<path d=\"M160 350 v-6 M168 352 v-6 M176 352 v-6 M224 352 v-6 M232 352 v-6 M240 350 v-6\" stroke=\"#5e4030\" stroke-width=\"1.5\"/>\n<ellipse cx=\"176\" cy=\"130\" rx=\"12\" ry=\"14\" fill=\"#fff\"/>\n<ellipse cx=\"224\" cy=\"130\" rx=\"12\" ry=\"14\" fill=\"#fff\"/>\n<ellipse cx=\"177\" cy=\"131\" rx=\"9\" ry=\"12\" fill=\"url(#eye)\"/>\n<ellipse cx=\"223\" cy=\"131\" rx=\"9\" ry=\"12\" fill=\"url(#eye)\"/>\n<ellipse cx=\"177\" cy=\"131\" rx=\"3\" ry=\"10\" fill=\"#111\"/>\n<ellipse cx=\"223\" cy=\"131\" rx=\"3\" ry=\"10\" fill=\"#111\"/>\n<circle cx=\"180\" cy=\"126\" r=\"2.5\" fill=\"#fff\"/>\n<circle cx=\"226\" cy=\"126\" r=\"2.5\" fill=\"#fff\"/>\n<path d=\"M194 153 L206 153 L200 161 Z\" fill=\"#d9707a\"/>\n<path d=\"M200 161 Q194 169 186 166 M200 161 Q206 169 214 166\" stroke=\"#5e4030\" stroke-width=\"2\" fill=\"none\"/>\n<g stroke=\"#3a2a20\" stroke-width=\"1.2\" opacity=\"0.7\">\n<path d=\"M170 156 L130 150 M170 162 L132 166 M230 156 L270 150 M230 162 L268 166\"/>\n</g>\n</svg>",
+        "usage": {
+          "promptTokens": 184,
+          "completionTokens": 1924,
+          "reasoningTokens": 501,
+          "costUsd": 0.0009804
+        },
+        "latencyMs": 9130.363916999995,
+        "finishReason": "stop",
+        "generationId": "gen-1794884942-SxWwqWwWatIHtDtsNvsn"
+      },
+      "costUsd": 0.0009804
+    }
+  ],
+  "startedAt": "2026-11-17T03:08:58.678Z"
+}

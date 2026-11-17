@@ -20,7 +20,7 @@ import {
 import { loadPrompts } from './lib/prompts.ts';
 import { MockProvider, OpenRouterProvider, readOpenRouterKey } from './lib/providers.ts';
 import { runBenchmark } from './lib/runner.ts';
-import type { Provider } from './lib/types.ts';
+import { ALL_CONDITIONS, type Condition, conditionsOf, type Provider } from './lib/types.ts';
 
 const { values } = parseArgs({
   options: {
@@ -28,6 +28,7 @@ const { values } = parseArgs({
     config: { type: 'string' },
     tasks: { type: 'string' },
     models: { type: 'string' },
+    formats: { type: 'string' },
     reps: { type: 'string' },
     'max-cost': { type: 'string' },
     concurrency: { type: 'string' },
@@ -49,6 +50,7 @@ if (values.help) {
   --config <file>              default bench/config.json
   --tasks a,b                  task ids to run (default: all in bench/tasks.json)
   --models a,b                 model ids to run (default: all in the config)
+  --formats svg,zdog,zpup      formats to compare (config: formats; default svg,zpup)
   --reps <n>                   samples per model, format and task (config: repetitions)
   --max-cost <usd>             stop before spending more than this (config: maxCostUsd)
   --concurrency <n>            calls in flight (config: concurrency)
@@ -71,6 +73,13 @@ if (values.models) {
   if (unknown.length) throw new Error(`model ids not in the config: ${unknown.join(', ')}`);
   config.models = config.models.filter((m) => wanted.includes(m.id));
 }
+if (values.formats) {
+  const wanted = values.formats.split(',');
+  const unknown = wanted.filter((f) => !ALL_CONDITIONS.includes(f as Condition));
+  if (unknown.length) throw new Error(`unknown formats: ${unknown.join(', ')}`);
+  config.formats = wanted as Condition[];
+}
+const formatCount = conditionsOf(config).length;
 const positive = (text: string, name: string) => {
   const n = Number(text);
   if (!Number.isFinite(n) || n <= 0) throw new Error(`--${name} must be a positive number`);
@@ -90,7 +99,7 @@ const rows = estimateRun(
   observedFrom ? readObservedCosts(resolve(observedFrom)) : undefined,
 );
 console.log(
-  `Plan: ${tasks.length} tasks x ${config.models.length} models x 2 formats x ${config.repetitions} samples = ${tasks.length * config.models.length * 2 * config.repetitions} samples.\n`,
+  `Plan: ${tasks.length} tasks x ${config.models.length} models x ${formatCount} formats x ${config.repetitions} samples = ${tasks.length * config.models.length * formatCount * config.repetitions} samples.\n`,
 );
 console.log(
   formatEstimate(config, rows, {

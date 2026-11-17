@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "teapot",
+  "taskPrompt": "a teapot with a spout, a handle and a lid",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a teapot with a spout, a handle and a lid."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\">\n<defs>\n<radialGradient id=\"bg\" cx=\"50%\" cy=\"40%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#f4f1ea\"/><stop offset=\"1\" stop-color=\"#c9c2b4\"/></radialGradient>\n<radialGradient id=\"body\" cx=\"36%\" cy=\"32%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#b9e3f2\"/><stop offset=\"0.45\" stop-color=\"#3f85ad\"/><stop offset=\"1\" stop-color=\"#143a52\"/></radialGradient>\n<radialGradient id=\"lid\" cx=\"40%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#d7f0fa\"/><stop offset=\"0.5\" stop-color=\"#4d92ba\"/><stop offset=\"1\" stop-color=\"#1b4a66\"/></radialGradient>\n<linearGradient id=\"spout\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#8fc7df\"/><stop offset=\"0.5\" stop-color=\"#2f6f93\"/><stop offset=\"1\" stop-color=\"#153e56\"/></linearGradient>\n<linearGradient id=\"hd\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#17405a\"/><stop offset=\"0.5\" stop-color=\"#5aa0c4\"/><stop offset=\"1\" stop-color=\"#17405a\"/></linearGradient>\n<radialGradient id=\"knob\" cx=\"35%\" cy=\"30%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#e6f7ff\"/><stop offset=\"1\" stop-color=\"#245a78\"/></radialGradient>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"url(#bg)\"/>\n<ellipse cx=\"200\" cy=\"342\" rx=\"100\" ry=\"11\" fill=\"#000\" opacity=\"0.25\"/>\n<path d=\"M268 200C345 185 350 295 264 292\" fill=\"none\" stroke=\"url(#hd)\" stroke-width=\"16\" stroke-linecap=\"round\"/>\n<path d=\"M144 250C112 240 84 218 56 186L46 196C74 230 106 262 142 286Z\" fill=\"url(#spout)\"/>\n<ellipse cx=\"50\" cy=\"191\" rx=\"8\" ry=\"6\" fill=\"#153e56\" transform=\"rotate(-45 50 191)\"/>\n<path d=\"M130 196C126 150 274 150 270 196C280 262 262 330 200 334C138 330 120 262 130 196Z\" fill=\"url(#body)\"/>\n<path d=\"M150 262C160 300 180 322 200 326\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" opacity=\"0.18\" stroke-linecap=\"round\"/>\n<ellipse cx=\"200\" cy=\"168\" rx=\"72\" ry=\"14\" fill=\"#143a52\"/>\n<ellipse cx=\"200\" cy=\"164\" rx=\"68\" ry=\"12\" fill=\"url(#lid)\"/>\n<path d=\"M190 162L184 140Q200 128 216 140L210 162Z\" fill=\"url(#lid)\"/>\n<ellipse cx=\"200\" cy=\"138\" rx=\"18\" ry=\"6\" fill=\"#2a6588\"/>\n<circle cx=\"200\" cy=\"130\" r=\"9\" fill=\"url(#knob)\"/>\n<ellipse cx=\"200\" cy=\"150\" rx=\"44\" ry=\"5\" fill=\"#ffffff\" opacity=\"0.12\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 193,
+          "completionTokens": 1950,
+          "reasoningTokens": 750,
+          "costUsd": 0.0009943
+        },
+        "latencyMs": 10597.805041999993,
+        "finishReason": "stop",
+        "generationId": "gen-1794877903-pEysd5Y2ju2ox5XV4igC"
+      },
+      "costUsd": 0.0009943
+    }
+  ],
+  "startedAt": "2026-11-17T01:11:43.556Z"
+}

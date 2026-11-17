@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "house",
+  "taskPrompt": "a small house with a pitched roof and a chimney",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a small house with a pitched roof and a chimney."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><linearGradient id=\"wall\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#e8d9b5\"/><stop offset=\"1\" stop-color=\"#c9b78e\"/></linearGradient><linearGradient id=\"roof\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a33b2b\"/><stop offset=\"1\" stop-color=\"#6e2118\"/></linearGradient><linearGradient id=\"side\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b8a577\"/><stop offset=\"1\" stop-color=\"#8f7f57\"/></linearGradient><linearGradient id=\"ground\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9fd18a\"/><stop offset=\"1\" stop-color=\"#6fae5c\"/></linearGradient></defs><rect width=\"400\" height=\"400\" fill=\"#dff0fb\"/><ellipse cx=\"200\" cy=\"332\" rx=\"165\" ry=\"18\" fill=\"#4d8a3f\" opacity=\"0.5\"/><rect x=\"0\" y=\"340\" width=\"400\" height=\"60\" fill=\"url(#ground)\"/><polygon points=\"90,200 250,200 300,170 140,170\" fill=\"#d9c9a0\"/><polygon points=\"250,200 300,170 300,290 250,320\" fill=\"url(#side)\"/><rect x=\"90\" y=\"200\" width=\"160\" height=\"120\" fill=\"url(#wall)\"/><polygon points=\"90,200 140,170 300,170 250,200\" fill=\"#f3ead2\"/><polygon points=\"250,320 90,320 140,290 300,290\" fill=\"#8f7f57\" opacity=\"0\"/><rect x=\"222\" y=\"150\" width=\"22\" height=\"50\" fill=\"#7a4a3a\"/><polygon points=\"218,150 248,150 248,142 218,142\" fill=\"#5a3327\"/><polygon points=\"50,205 200,205 200,120 125,60 50,120\" fill=\"url(#roof)\" opacity=\"0\"/><polygon points=\"80,200 200,200 200,250 80,250\" fill=\"none\"/><polygon points=\"70,200 175,200 125,100\" fill=\"none\"/><polygon points=\"80,202 130,110 180,202\" fill=\"none\"/><polygon points=\"70,205 125,115 185,205\" fill=\"none\"/><polygon points=\"60,195 200,195 110,50 20,195\" fill=\"none\"/><polygon points=\"56,200 210,200 210,190 110,60\" fill=\"none\"/><polygon points=\"40,200 120,68 230,200\" fill=\"none\"/><polygon points=\"55,198 125,82 150,198\" fill=\"none\"/><polygon points=\"72,200 128,60 200,200\" fill=\"none\"/><polygon points=\"90,200 128,140 180,200\" fill=\"none\"/><polygon points=\"20,200 200,200 110,50\" fill=\"none\"/><polygon points=\"20,200 200,200 110,50\" fill=\"none\"/><polygon points=\"60,160 200,160 200,200 60,200\" fill=\"none\"/><polygon points=\"60,200 200,200 200,160 60,160\" fill=\"none\"/><polygon points=\"40,200 130,40 220,200\" fill=\"none\"/><polygon points=\"40,200 130,40 220,200\" fill=\"none\"/><polygon points=\"50,200 135,60 220,200\" fill=\"none\"/><polygon points=\"50,200 190,200 130,80\" fill=\"none\"/><polygon points=\"45,200 215,200 130,55\" fill=\"none\"/><polygon points=\"55,200 205,200 130,70\" fill=\"none\"/></svg>",
+        "usage": {
+          "promptTokens": 192,
+          "completionTokens": 1241,
+          "reasoningTokens": 0,
+          "costUsd": 0.0006397
+        },
+        "latencyMs": 5690.3682499999995,
+        "finishReason": "stop",
+        "generationId": "gen-1794877774-GVi0VL0Oc3IPLCSBY0A8"
+      },
+      "costUsd": 0.0006397
+    }
+  ],
+  "startedAt": "2026-11-17T01:09:34.240Z"
+}

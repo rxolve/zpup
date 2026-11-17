@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "zdog",
+  "taskId": "teapot",
+  "taskPrompt": "a teapot with a spout, a handle and a lid",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes Zdog scripts by hand. The Zdog reference is below.\n\nDraw the requested subject as one Zdog script in JavaScript, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nThe page already has <svg class=\"zdog-svg\" width=\"400\" height=\"400\"></svg> and the global Zdog (version 1.1). Create one Zdog.Illustration with element: '.zdog-svg', add the shapes to it, and call its updateRenderGraph() once at the end. Do not animate it and do not make it draggable.\nUse only what Zdog itself provides. Write plain JavaScript, with no imports, no HTML and no other libraries.\nReply with the script only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need.\n\n<reference>\n# Zdog 1.1\n\nZdog is a pseudo-3D engine: shapes are flat or thin, drawn with round strokes, and sorted by depth. This summary was written for the benchmark from Zdog's source and its documentation at https://zzz.dog/api.\n\n## Setup\n\n```js\nconst illo = new Zdog.Illustration({ element: '.zdog-svg', zoom: 1, rotate: { x: -0.4, y: 0.6 } });\nnew Zdog.Ellipse({ addTo: illo, diameter: 80, stroke: 20, color: '#636' });\nillo.updateRenderGraph();\n```\n\n- The origin is the center of the element. x points right, y points down, z points toward the viewer.\n- Angles are in radians. `Zdog.TAU` is a full turn (2π), so a quarter turn is `Zdog.TAU / 4`.\n- Projection is orthographic: there is no perspective and no lighting. Shade by choosing colors.\n- `zoom` on the illustration scales everything, strokes included.\n\n## Options every item takes\n\n- `addTo`: the parent (the illustration, or any other item). Required.\n- `translate: { x, y, z }`: position relative to the parent. Missing axes are 0.\n- `rotate: { x, y, z }`: rotation in radians about each axis.\n- `scale`: a number, or `{ x, y, z }`. Scaling does not change stroke width.\n\n## Options every shape takes\n\n- `color`: a CSS color string. Default `'#333'`.\n- `stroke`: the width of the line. Default 1. `false` or 0 draws no stroke.\n- `fill`: whether the inside is filled. Default false.\n- `closed`: whether the last point joins back to the first. Default true.\n- `visible`: false hides the shape.\n- `backface`: true (default) draws the shape from behind as well, false hides it when its back faces the viewer, and a color string draws the back in that color.\n\n## Shapes\n\n- `Zdog.Shape({ path })`: a path of points. Each entry is a point `{ x, y, z }` (a straight line to it), `{ line: { x, y, z } }`, `{ move: { x, y, z } }`, `{ arc: [corner, end] }` (a quarter ellipse through the corner point) or `{ bezier: [control1, control2, end] }`. Without a `path`, the shape is a single point at the origin; with a thick stroke that is a ball: `new Zdog.Shape({ addTo: illo, stroke: 80, color: '#e62' })` is a sphere 80 across. A path of two points with a thick stroke is a capsule.\n- `Zdog.Rect({ width, height })`.\n- `Zdog.RoundedRect({ width, height, cornerRadius })`.\n- `Zdog.Ellipse({ diameter })` or `Zdog.Ellipse({ width, height })`. `quarters: 1` to `4` draws that many quarter arcs (default 4, the whole ellipse).\n- `Zdog.Polygon({ radius, sides })`: a regular polygon.\n\nThese lie in the x/y plane of the item, facing +z. Rotate them to face another way.\n\n## Solids\n\n- `Zdog.Hemisphere({ diameter, color, backface })`: the dome bulges toward +z; `backface` is the color of the flat side.\n- `Zdog.Cone({ diameter, length, color, backface })`: the base is at the origin and the tip is at z = `length`; `backface` is the color of the base.\n- `Zdog.Cylinder({ diameter, length, color, frontFace, backface })`: centered on the origin, with its axis along z. `frontFace` is the color of the end at +z, `backface` of the end at -z.\n- `Zdog.Box({ width, height, depth, color, frontFace, rearFace, leftFace, rightFace, topFace, bottomFace })`: centered on the origin. Each face option is a color, or false to leave the face out. Faces without their own color use `color`, so give faces different colors to shade the box.\n\nSet `stroke: false` on solids for sharp edges. Rotate a solid with `rotate: { x: Zdog.TAU / 4 }` to point its axis up or down.\n\n## Grouping\n\n- `Zdog.Anchor({ addTo, translate, rotate, scale })`: an invisible item. Children added to it move and turn with it.\n- `Zdog.Group({ addTo, ... })`: like an Anchor, but its children are drawn together as one layer in the order they were added, and the group is sorted against other items as a whole. Use it to keep details on top of the shape they belong to. `updateSort: true` sorts the children inside it by depth.\n- `item.copy({ ...options })` makes a copy of one item with some options changed. `item.copyGraph({ ...options })` also copies its children.\n\n## Depth sorting\n\nEach shape is sorted by the depth of a single point (the center of its path points), after rotation. A large shape and a small shape near it can therefore be drawn in the wrong order; a Group fixes the order by hand.\n</reference>"
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a teapot with a spout, a handle and a lid."
+        }
+      ],
+      "response": {
+        "text": "```js\nconst illo = new Zdog.Illustration({ element: '.zdog-svg', zoom: 1, rotate: { x: -0.25, y: 0.35 } });\nconst g = new Zdog.Group({ addTo: illo, updateSort: false });\nnew Zdog.Ellipse({ addTo: g, width: 80, height: 110, translate: { x: -100, y: -5, z: -30 }, stroke: 16, color: '#143' });\nnew Zdog.Cylinder({ addTo: g, diameter: 120, length: 14, rotate: { x: Zdog.TAU / 4 }, translate: { y: 78 }, color: '#132', frontFace: '#132', backface: '#132', stroke: false });\nnew Zdog.Shape({ addTo: g, stroke: 150, color: '#2a7', translate: { y: 0 } });\nnew Zdog.Shape({ addTo: g, path: [{ x: 55, y: 25, z: 0 }, { x: 125, y: -60, z: 0 }], stroke: 26, color: '#2a7', closed: false, fill: false });\nnew Zdog.Shape({ addTo: g, stroke: 56, color: '#185', translate: { y: -82 } });\nnew Zdog.Shape({ addTo: g, stroke: 22, color: '#0d4', translate: { y: -112 } });\nillo.updateRenderGraph();\n```",
+        "usage": {
+          "promptTokens": 2009,
+          "completionTokens": 1695,
+          "reasoningTokens": 1222,
+          "costUsd": 0.0010484
+        },
+        "latencyMs": 8719.448417000007,
+        "finishReason": "stop",
+        "generationId": "gen-1794877806-W9uN9QQxVURPfSR72WEg"
+      },
+      "costUsd": 0.0010484
+    }
+  ],
+  "startedAt": "2026-11-17T01:10:06.399Z"
+}

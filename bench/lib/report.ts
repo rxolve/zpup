@@ -7,8 +7,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { extractDocument, scoreReply } from './score.ts';
 import {
-  CONDITIONS,
   type Condition,
+  conditionsOf,
   type RunManifest,
   type SampleRecord,
   type Score,
@@ -126,7 +126,12 @@ function median(values: number[]): number | undefined {
 const fmt = (value: number | undefined, digits = 0) =>
   value === undefined ? '-' : value.toFixed(digits);
 
-const CONDITION_LABEL: Record<Condition, string> = { svg: 'raw SVG', zpup: 'zpup JSON' };
+const CONDITION_LABEL: Record<Condition, string> = {
+  svg: 'raw SVG',
+  zdog: 'Zdog script',
+  zpup: 'zpup JSON',
+};
+const SHORT_LABEL: Record<Condition, string> = { svg: 'SVG', zdog: 'Zdog', zpup: 'zpup' };
 
 interface Row {
   label: string;
@@ -183,6 +188,7 @@ function problemKind(problem: string): string {
 
 export function summaryMarkdown(run: LoadedRun): string {
   const { manifest, samples } = run;
+  const formats = conditionsOf(manifest.config);
   const lines: string[] = [];
   lines.push(`# zpup bench: run ${manifest.runId}`, '');
   lines.push(
@@ -215,7 +221,7 @@ export function summaryMarkdown(run: LoadedRun): string {
 
   lines.push('## By model and format', '', ...STATS_HEADER);
   for (const model of manifest.config.models) {
-    for (const condition of CONDITIONS) {
+    for (const condition of formats) {
       lines.push(
         `| ${statsRow({
           label: `${model.label} / ${CONDITION_LABEL[condition]}`,
@@ -227,7 +233,7 @@ export function summaryMarkdown(run: LoadedRun): string {
     }
   }
   lines.push('', '## All models pooled', '', ...STATS_HEADER);
-  for (const condition of CONDITIONS) {
+  for (const condition of formats) {
     lines.push(
       `| ${statsRow({ label: CONDITION_LABEL[condition], samples: samples.filter((x) => x.record.condition === condition) })} |`,
     );
@@ -237,8 +243,8 @@ export function summaryMarkdown(run: LoadedRun): string {
   lines.push(
     'Median characters of the valid documents (the reply that passed, after code-fence extraction), and median reasoning tokens of every first try that returned, truncated ones included. A model that reasons much longer for zpup than for SVG is spending effort on the unfamiliar format.',
     '',
-    '| Model | SVG chars | zpup chars | SVG reasoning tokens | zpup reasoning tokens |',
-    '| --- | ---: | ---: | ---: | ---: |',
+    `| Model | ${formats.map((c) => `${SHORT_LABEL[c]} chars`).join(' | ')} | ${formats.map((c) => `${SHORT_LABEL[c]} reasoning tokens`).join(' | ')} |`,
+    `| --- | ${formats.map(() => '---: | ---:').join(' | ')} |`,
   );
   const sizeRow = (label: string, pool: ScoredSample[]) => {
     const of = (c: Condition) => pool.filter((x) => x.record.condition === c);
@@ -249,7 +255,7 @@ export function summaryMarkdown(run: LoadedRun): string {
         (x) => x.firstReasoningTokens,
       );
     const cell = (v: number[]) => (v.length ? `${fmt(median(v))} (n=${v.length})` : '-');
-    return `| ${label} | ${cell(chars('svg'))} | ${cell(chars('zpup'))} | ${cell(reasoning('svg'))} | ${cell(reasoning('zpup'))} |`;
+    return `| ${label} | ${formats.map((c) => cell(chars(c))).join(' | ')} | ${formats.map((c) => cell(reasoning(c))).join(' | ')} |`;
   };
   for (const model of manifest.config.models) {
     lines.push(
@@ -269,7 +275,7 @@ export function summaryMarkdown(run: LoadedRun): string {
     '',
   );
   const columns = manifest.config.models.flatMap((m) =>
-    CONDITIONS.map((c) => ({ model: m, condition: c })),
+    formats.map((c) => ({ model: m, condition: c })),
   );
   lines.push(
     `| Task | ${columns.map((c) => `${c.model.label} ${c.condition}`).join(' | ')} |`,
@@ -293,7 +299,7 @@ export function summaryMarkdown(run: LoadedRun): string {
   }
 
   lines.push('', '## Most common problems on the first try', '');
-  for (const condition of CONDITIONS) {
+  for (const condition of formats) {
     const counts = new Map<string, { count: number; example: string }>();
     for (const x of samples) {
       if (x.record.condition !== condition || !x.first) continue;
@@ -340,7 +346,7 @@ export function summaryMarkdown(run: LoadedRun): string {
   }
 
   lines.push('## Other warnings (do not affect validity)', '');
-  for (const condition of CONDITIONS) {
+  for (const condition of formats) {
     const counts = new Map<string, number>();
     for (const x of samples) {
       if (x.record.condition !== condition || !x.final) continue;

@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "house",
+  "taskPrompt": "a small house with a pitched roof and a chimney",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a small house with a pitched roof and a chimney."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><linearGradient id=\"wall\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#e8d9b5\"/><stop offset=\"1\" stop-color=\"#cbb88e\"/></linearGradient><linearGradient id=\"roof\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#a33b2b\"/><stop offset=\"1\" stop-color=\"#6e2318\"/></linearGradient><linearGradient id=\"side\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b9a676\"/><stop offset=\"1\" stop-color=\"#9c8a5e\"/></linearGradient><linearGradient id=\"ground\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9cc97a\"/><stop offset=\"1\" stop-color=\"#6e9e52\"/></linearGradient></defs><rect width=\"400\" height=\"400\" fill=\"#dff0ff\"/><rect y=\"300\" width=\"400\" height=\"100\" fill=\"url(#ground)\"/><ellipse cx=\"200\" cy=\"312\" rx=\"150\" ry=\"12\" fill=\"#4f7a3a\" opacity=\"0.4\"/><rect x=\"250\" y=\"130\" width=\"28\" height=\"70\" fill=\"#7a3b2a\"/><rect x=\"246\" y=\"124\" width=\"36\" height=\"10\" fill=\"#5a2a1e\"/><rect x=\"262\" y=\"136\" width=\"8\" height=\"6\" fill=\"#4a2318\"/><polygon points=\"90,190 200,140 200,260 90,260\" fill=\"url(#side)\"/><rect x=\"90\" y=\"190\" width=\"110\" height=\"110\" fill=\"url(#wall)\"/><polygon points=\"200,140 310,190 310,260 200,260\" fill=\"#b09868\"/><polygon points=\"90,190 200,140 310,190 200,205\" fill=\"url(#roof)\"/><polygon points=\"200,205 310,190 310,200 200,215\" fill=\"#4d1a12\"/><polygon points=\"90,190 200,140 200,150 90,200\" fill=\"#c25a44\"/><polygon points=\"200,140 310,190 310,200 200,150\" fill=\"#8a3524\"/><rect x=\"128\" y=\"220\" width=\"36\" height=\"40\" fill=\"#5b8fb8\"/><rect x=\"128\" y=\"220\" width=\"36\" height=\"40\" fill=\"none\" stroke=\"#f5f0e0\" stroke-width=\"4\"/><line x1=\"146\" y1=\"220\" x2=\"146\" y2=\"260\" stroke=\"#f5f0e0\" stroke-width=\"3\"/><line x1=\"128\" y1=\"240\" x2=\"164\" y2=\"240\" stroke=\"#f5f0e0\" stroke-width=\"3\"/><rect x=\"220\" y=\"215\" width=\"50\" height=\"45\" fill=\"#5b8fb8\"/><rect x=\"220\" y=\"215\" width=\"50\" height=\"45\" fill=\"none\" stroke=\"#f5f0e0\" stroke-width=\"4\"/><line x1=\"245\" y1=\"215\" x2=\"245\" y2=\"260\" stroke=\"#f5f0e0\" stroke-width=\"3\"/><line x1=\"220\" y1=\"237\" x2=\"270\" y2=\"237\" stroke=\"#f5f0e0\" stroke-width=\"3\"/><rect x=\"180\" y=\"0\" width=\"0\" height=\"0\"/><rect x=\"82\" y=\"256\" width=\"236\" height=\"8\" fill=\"#8c7a50\"/><rect x=\"162\" y=\"0\" width=\"0\" height=\"0\"/><rect x=\"190\" y=\"0\" width=\"0\" height=\"0\"/><rect x=\"0\" y=\"0\" width=\"0\" height=\"0\"/><rect x=\"0\" y=\"0\" width=\"0\" height=\"0\"/><path d=\"M0 0\" fill=\"none\"/><rect x=\"0\" y=\"0\" width=\"0\" height=\"0\"/><rect x=\"0\" y=\"0\" width=\"0\" height=\"0\"/></svg>",
+        "usage": {
+          "promptTokens": 192,
+          "completionTokens": 1287,
+          "reasoningTokens": 0,
+          "costUsd": 0.0006627
+        },
+        "latencyMs": 5585.42083399999,
+        "finishReason": "stop",
+        "generationId": "gen-1794877870-1xkKXDBKRAe5KPFtyVjY"
+      },
+      "costUsd": 0.0006627
+    }
+  ],
+  "startedAt": "2026-11-17T01:11:10.345Z"
+}

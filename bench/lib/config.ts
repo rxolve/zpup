@@ -1,5 +1,12 @@
 import { readFileSync } from 'node:fs';
-import type { BenchConfig, ModelConfig, ReasoningConfig, Task } from './types.ts';
+import {
+  ALL_CONDITIONS,
+  type BenchConfig,
+  type Condition,
+  type ModelConfig,
+  type ReasoningConfig,
+  type Task,
+} from './types.ts';
 
 const REASONING_EFFORTS = ['max', 'xhigh', 'high', 'medium', 'low', 'minimal', 'none'];
 
@@ -89,6 +96,15 @@ export function parseConfig(input: unknown): BenchConfig {
     },
   };
   if (reasoning) config.reasoning = reasoning;
+  if (c.formats !== undefined) {
+    if (!Array.isArray(c.formats) || c.formats.length === 0)
+      fail('formats must be a non-empty array');
+    const formats = c.formats.map((f, i) => str(f, `formats[${i}]`));
+    const unknown = formats.filter((f) => !ALL_CONDITIONS.includes(f as Condition));
+    if (unknown.length)
+      fail(`formats must be among ${ALL_CONDITIONS.join(', ')}; got ${unknown.join(', ')}`);
+    config.formats = formats as Condition[];
+  }
   return config;
 }
 

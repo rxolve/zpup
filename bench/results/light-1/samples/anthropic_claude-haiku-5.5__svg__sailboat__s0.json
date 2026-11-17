@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "sailboat",
+  "taskPrompt": "a sailboat with one mast",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a sailboat with one mast."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9fd3f0\"/><stop offset=\"1\" stop-color=\"#e6f5fc\"/></linearGradient>\n<linearGradient id=\"w\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#4f9fcf\"/><stop offset=\"1\" stop-color=\"#17436b\"/></linearGradient>\n<linearGradient id=\"s\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"1\" stop-color=\"#cfd7e3\"/></linearGradient>\n<linearGradient id=\"j\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#f7f7f2\"/><stop offset=\"1\" stop-color=\"#aab6c6\"/></linearGradient>\n<linearGradient id=\"h\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#d9482f\"/><stop offset=\"1\" stop-color=\"#6e1b12\"/></linearGradient>\n<linearGradient id=\"m\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#a77a4c\"/><stop offset=\"0.5\" stop-color=\"#e0b583\"/><stop offset=\"1\" stop-color=\"#7a5230\"/></linearGradient>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/>\n<rect y=\"282\" width=\"400\" height=\"118\" fill=\"url(#w)\"/>\n<g fill=\"none\" stroke=\"#ffffff\" stroke-opacity=\"0.45\" stroke-width=\"2\" stroke-linecap=\"round\">\n<path d=\"M40 310 Q55 303 70 310\"/><path d=\"M300 330 Q315 323 330 330\"/><path d=\"M60 360 Q80 352 100 360\"/><path d=\"M250 370 Q270 362 290 370\"/><path d=\"M140 345 Q152 339 164 345\"/>\n</g>\n<path d=\"M200 62 L200 240 L92 240 Z\" fill=\"url(#s)\" stroke=\"#8f9aab\" stroke-width=\"1\"/>\n<path d=\"M200 62 Q168 150 200 240 L178 240 Q150 150 200 62 Z\" fill=\"#8f9aab\" fill-opacity=\"0.25\"/>\n<path d=\"M205 80 L205 240 L304 240 Z\" fill=\"url(#j)\" stroke=\"#8f9aab\" stroke-width=\"1\"/>\n<path d=\"M90 236 L204 236 L204 244 L90 244 Z\" fill=\"#5a3b22\"/>\n<path d=\"M70 252 L335 252 L300 296 Q290 306 265 306 L120 306 Q95 306 85 292 Z\" fill=\"url(#h)\"/>\n<path d=\"M70 252 L335 252 L328 262 L78 262 Z\" fill=\"#f2e2c0\"/>\n<path d=\"M78 262 L328 262 L326 266 L80 266 Z\" fill=\"#b99a6a\"/>\n<path d=\"M120 300 L265 300\" stroke=\"#ffffff\" stroke-opacity=\"0.3\" stroke-width=\"2\"/>\n<rect x=\"196\" y=\"55\" width=\"8\" height=\"200\" fill=\"url(#m)\"/>\n<path d=\"M204 55 L204 68 L222 61 Z\" fill=\"#e8413a\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 186,
+          "completionTokens": 2930,
+          "reasoningTokens": 1702,
+          "costUsd": 0.0014836
+        },
+        "latencyMs": 14654.862167,
+        "finishReason": "stop",
+        "generationId": "gen-1794877777-PRv4r9Pbkws8zOWh7Oq4"
+      },
+      "costUsd": 0.0014836
+    }
+  ],
+  "startedAt": "2026-11-17T01:09:37.146Z"
+}

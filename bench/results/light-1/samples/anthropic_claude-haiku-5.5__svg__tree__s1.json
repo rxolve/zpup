@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "tree",
+  "taskPrompt": "a tree with a round crown",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a tree with a round crown."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><radialGradient id=\"c\" cx=\"0.35\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#9be07a\"/><stop offset=\"0.6\" stop-color=\"#4fa83d\"/><stop offset=\"1\" stop-color=\"#25611c\"/></radialGradient><linearGradient id=\"t\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"#5a3a1e\"/><stop offset=\"0.5\" stop-color=\"#9a6a3a\"/><stop offset=\"1\" stop-color=\"#4a2e15\"/></linearGradient><radialGradient id=\"s\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"400\" height=\"400\" fill=\"#dff0ff\"/><ellipse cx=\"200\" cy=\"354\" rx=\"90\" ry=\"16\" fill=\"url(#s)\"/><path d=\"M186 260L214 260L222 350Q200 358 178 350Z\" fill=\"url(#t)\"/><path d=\"M196 262L204 262L206 200L196 200Z\" fill=\"#6b4726\" opacity=\"0.6\"/><path d=\"M200 300L178 260L184 256L204 290Z\" fill=\"#6b4726\"/><path d=\"M202 280L224 248L218 244L198 272Z\" fill=\"#6b4726\"/><circle cx=\"200\" cy=\"160\" r=\"104\" fill=\"#1f5a18\"/><circle cx=\"200\" cy=\"154\" r=\"100\" fill=\"url(#c)\"/><circle cx=\"160\" cy=\"112\" r=\"34\" fill=\"#b8f09a\" opacity=\"0.35\"/><circle cx=\"150\" cy=\"200\" r=\"28\" fill=\"#1d4f15\" opacity=\"0.35\"/><circle cx=\"252\" cy=\"206\" r=\"26\" fill=\"#1d4f15\" opacity=\"0.3\"/><ellipse cx=\"200\" cy=\"158\" rx=\"30\" ry=\"14\" fill=\"#cfffb8\" opacity=\"0.15\"/></svg>",
+        "usage": {
+          "promptTokens": 185,
+          "completionTokens": 756,
+          "reasoningTokens": 0,
+          "costUsd": 0.0003965
+        },
+        "latencyMs": 3889.596917000017,
+        "finishReason": "stop",
+        "generationId": "gen-1794877859-ezB4dT6Ri7XyeGbT455B"
+      },
+      "costUsd": 0.0003965
+    }
+  ],
+  "startedAt": "2026-11-17T01:10:59.416Z"
+}

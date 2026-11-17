@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "rocket",
+  "taskPrompt": "a rocket standing on its fins",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a rocket standing on its fins."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<linearGradient id=\"b\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#7a8594\"/><stop offset=\"0.35\" stop-color=\"#e8eef5\"/><stop offset=\"0.42\" stop-color=\"#ffffff\"/><stop offset=\"0.7\" stop-color=\"#aab4c0\"/><stop offset=\"1\" stop-color=\"#4f5762\"/></linearGradient>\n<linearGradient id=\"n\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#8e2418\"/><stop offset=\"0.4\" stop-color=\"#e0584a\"/><stop offset=\"1\" stop-color=\"#6e1a12\"/></linearGradient>\n<linearGradient id=\"f\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#e05a4a\"/><stop offset=\"1\" stop-color=\"#7b1e14\"/></linearGradient>\n<linearGradient id=\"d\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#5c1710\"/><stop offset=\"1\" stop-color=\"#a03227\"/></linearGradient>\n<linearGradient id=\"e\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#3b3f46\"/><stop offset=\"0.4\" stop-color=\"#9aa3ad\"/><stop offset=\"1\" stop-color=\"#30343a\"/></linearGradient>\n<radialGradient id=\"w\" cx=\"0.38\" cy=\"0.35\" r=\"0.7\"><stop offset=\"0\" stop-color=\"#e6f7ff\"/><stop offset=\"0.5\" stop-color=\"#5fa6d6\"/><stop offset=\"1\" stop-color=\"#1d4f78\"/></radialGradient>\n<radialGradient id=\"s\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.45\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/></radialGradient>\n</defs>\n<ellipse cx=\"200\" cy=\"362\" rx=\"130\" ry=\"14\" fill=\"url(#s)\"/>\n<path d=\"M160 225 L108 330 L108 358 L160 322 Z\" fill=\"url(#d)\"/>\n<path d=\"M240 225 L292 330 L292 358 L240 322 Z\" fill=\"url(#d)\"/>\n<path d=\"M155 300 L150 338 Q200 352 250 338 L245 300 Z\" fill=\"url(#e)\"/>\n<ellipse cx=\"200\" cy=\"300\" rx=\"45\" ry=\"9\" fill=\"#2a2e34\"/>\n<rect x=\"155\" y=\"115\" width=\"90\" height=\"190\" fill=\"url(#b)\"/>\n<rect x=\"155\" y=\"250\" width=\"90\" height=\"12\" fill=\"#c0392b\"/>\n<path d=\"M155 115 Q158 52 200 22 Q242 52 245 115 Z\" fill=\"url(#n)\"/>\n<circle cx=\"200\" cy=\"180\" r=\"21\" fill=\"#3a4450\"/>\n<circle cx=\"200\" cy=\"180\" r=\"16\" fill=\"url(#w)\"/>\n<path d=\"M166 228 L124 342 L140 348 L172 262 Z\" fill=\"url(#f)\"/>\n<path d=\"M234 228 L276 342 L260 348 L228 262 Z\" fill=\"url(#f)\"/>\n<path d=\"M108 352 L140 348 L140 358 L108 358 Z M292 352 L260 348 L260 358 L292 358 Z\" fill=\"#3b1410\"/>\n<line x1=\"40\" y1=\"360\" x2=\"360\" y2=\"360\" stroke=\"#8a9199\" stroke-width=\"2\" opacity=\"0.6\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 187,
+          "completionTokens": 2190,
+          "reasoningTokens": 875,
+          "costUsd": 0.0011137
+        },
+        "latencyMs": 10911.630667000005,
+        "finishReason": "stop",
+        "generationId": "gen-1794884926-UxT72HKxzagqoOJJCzr0"
+      },
+      "costUsd": 0.0011137
+    }
+  ],
+  "startedAt": "2026-11-17T03:08:42.390Z"
+}

@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "pelican-bicycle",
+  "taskPrompt": "a pelican riding a bicycle",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a pelican riding a bicycle."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8fd3f4\"/><stop offset=\"1\" stop-color=\"#e8f8ff\"/></linearGradient>\n<radialGradient id=\"body\" cx=\"0.4\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.7\" stop-color=\"#e3e6ea\"/><stop offset=\"1\" stop-color=\"#9aa3ad\"/></radialGradient>\n<radialGradient id=\"tyre\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0.8\" stop-color=\"#2b2b2b\"/><stop offset=\"1\" stop-color=\"#111\"/></radialGradient>\n<linearGradient id=\"frame\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#e04b3a\"/><stop offset=\"1\" stop-color=\"#8e2318\"/></linearGradient>\n<radialGradient id=\"bill\" cx=\"0.5\" cy=\"0.3\" r=\"0.7\"><stop offset=\"0\" stop-color=\"#ffd36b\"/><stop offset=\"1\" stop-color=\"#e09a1a\"/></radialGradient>\n<radialGradient id=\"head\" cx=\"0.35\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"1\" stop-color=\"#b8c0c9\"/></radialGradient>\n<linearGradient id=\"wing\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9aa6b2\"/><stop offset=\"1\" stop-color=\"#4d5966\"/></linearGradient>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/>\n<ellipse cx=\"200\" cy=\"352\" rx=\"150\" ry=\"14\" fill=\"#7fb36a\" opacity=\"0.5\"/>\n<ellipse cx=\"200\" cy=\"350\" rx=\"150\" ry=\"10\" fill=\"#000\" opacity=\"0.15\"/>\n<!-- back wheel -->\n<circle cx=\"110\" cy=\"280\" r=\"65\" fill=\"none\" stroke=\"url(#tyre)\" stroke-width=\"9\"/>\n<circle cx=\"110\" cy=\"280\" r=\"58\" fill=\"none\" stroke=\"#bbb\" stroke-width=\"2\"/>\n<circle cx=\"110\" cy=\"280\" r=\"5\" fill=\"#666\"/>\n<!-- frame -->\n<g fill=\"none\" stroke=\"url(#frame)\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n<path d=\"M110 280 L185 280 L150 190 L110 280\"/>\n<path d=\"M150 190 L265 190 L185 280\"/>\n<path d=\"M265 190 L290 280\"/>\n<path d=\"M265 190 L275 172\"/>\n</g>\n<path d=\"M140 186 L165 186\" stroke=\"#333\" stroke-width=\"6\" stroke-linecap=\"round\"/>\n<path d=\"M262 170 L285 170\" stroke=\"#333\" stroke-width=\"6\" stroke-linecap=\"round\"/>\n<!-- pelican tail -->\n<path d=\"M130 190 L95 230 L120 232 L145 205 Z\" fill=\"#7d8894\"/>\n<!-- legs -->\n<path d=\"M178 230 L186 278 M192 228 L200 276\" stroke=\"#f08a1c\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n<path d=\"M180 280 L200 280\" stroke=\"#f08a1c\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n<!-- neck and body -->\n<path d=\"M200 190 Q222 150 236 122 L262 124 Q248 160 240 200 Z\" fill=\"url(#body)\"/>\n<ellipse cx=\"172\" cy=\"200\" rx=\"62\" ry=\"36\" transform=\"rotate(-12 172 200)\" fill=\"url(#body)\"/>\n<!-- wing -->\n<path d=\"M130 190 Q170 160 220 180 Q200 214 150 218 Q132 212 130 190 Z\" fill=\"url(#wing)\"/>\n<path d=\"M140 200 Q170 186 205 194\" fill=\"none\" stroke=\"#3c4650\" stroke-width=\"2\" opacity=\"0.6\"/>\n<!-- head -->\n<circle cx=\"252\" cy=\"116\" r=\"22\" fill=\"url(#head)\"/>\n<!-- bill with pouch -->\n<path d=\"M268 112 L348 138 Q340 150 326 148 Q300 150 272 132 Z\" fill=\"url(#bill)\"/>\n<path d=\"M270 128 Q300 150 334 146 Q310 170 280 146 Z\" fill=\"#f2b33a\" opacity=\"0.95\"/>\n<path d=\"M270 118 L326 136\" stroke=\"#b77a10\" stroke-width=\"2\"/>\n<circle cx=\"258\" cy=\"110\" r=\"4.5\" fill=\"#222\"/>\n<circle cx=\"259\" cy=\"109\" r=\"1.5\" fill=\"#fff\"/>\n<!-- front wheel (in front) -->\n<circle cx=\"290\" cy=\"280\" r=\"65\" fill=\"none\" stroke=\"url(#tyre)\" stroke-width=\"9\"/>\n<circle cx=\"290\" cy=\"280\" r=\"58\" fill=\"none\" stroke=\"#bbb\" stroke-width=\"2\"/>\n<circle cx=\"290\" cy=\"280\" r=\"5\" fill=\"#666\"/>\n<path d=\"M290 280 L290 225 M290 280 L340 255 M290 280 L240 255\" stroke=\"#888\" stroke-width=\"1\" opacity=\"0.6\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 188,
+          "completionTokens": 2508,
+          "reasoningTokens": 569,
+          "costUsd": 0.0012728
+        },
+        "latencyMs": 11754.96966599999,
+        "finishReason": "stop",
+        "generationId": "gen-1794885011-qCAG9rlE36NhiOWfcOlu"
+      },
+      "costUsd": 0.0012728
+    }
+  ],
+  "startedAt": "2026-11-17T03:10:07.230Z"
+}

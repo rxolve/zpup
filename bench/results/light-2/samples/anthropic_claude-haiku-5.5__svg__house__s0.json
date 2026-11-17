@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "house",
+  "taskPrompt": "a small house with a pitched roof and a chimney",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a small house with a pitched roof and a chimney."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\"><defs><linearGradient id=\"s\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#cfe8ff\"/><stop offset=\"1\" stop-color=\"#f4fbff\"/></linearGradient><linearGradient id=\"w\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#f7e7c6\"/><stop offset=\"1\" stop-color=\"#e8d2a6\"/></linearGradient><linearGradient id=\"sw\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#c9ad7c\"/><stop offset=\"1\" stop-color=\"#a88a5c\"/></linearGradient><linearGradient id=\"r\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#c0453a\"/><stop offset=\"1\" stop-color=\"#8a2b25\"/></linearGradient><linearGradient id=\"rs\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#a03a31\"/><stop offset=\"1\" stop-color=\"#6e221d\"/></linearGradient><linearGradient id=\"c\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b8643f\"/><stop offset=\"1\" stop-color=\"#7d3f25\"/></linearGradient><linearGradient id=\"d\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#6b4226\"/><stop offset=\"1\" stop-color=\"#4a2c18\"/></linearGradient><radialGradient id=\"g\" cx=\".5\" cy=\".5\" r=\".5\"><stop offset=\"0\" stop-color=\"#000\" stop-opacity=\".35\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"400\" height=\"400\" fill=\"url(#s)\"/><ellipse cx=\"220\" cy=\"342\" rx=\"150\" ry=\"16\" fill=\"url(#g)\"/><polygon points=\"250,70 270,70 290,50 270,50\" fill=\"#5a2a1a\"/><polygon points=\"270,70 290,50 290,125 270,150\" fill=\"url(#c)\"/><rect x=\"250\" y=\"70\" width=\"20\" height=\"80\" fill=\"url(#c)\"/><polygon points=\"200,120 240,100 330,180 290,200\" fill=\"url(#rs)\"/><polygon points=\"290,200 330,180 330,320 290,340\" fill=\"url(#sw)\"/><rect x=\"110\" y=\"200\" width=\"180\" height=\"140\" fill=\"url(#w)\"/><polygon points=\"110,200 200,120 290,200\" fill=\"url(#r)\"/><polygon points=\"200,120 240,100 290,200 200,120\" fill=\"#b5503f\" opacity=\".5\"/><rect x=\"180\" y=\"262\" width=\"40\" height=\"78\" fill=\"url(#d)\"/><circle cx=\"210\" cy=\"304\" r=\"2.5\" fill=\"#f2c94c\"/><rect x=\"130\" y=\"225\" width=\"40\" height=\"36\" fill=\"#7fb8e0\" stroke=\"#fff\" stroke-width=\"5\"/><path d=\"M150 225v36M130 243h40\" stroke=\"#fff\" stroke-width=\"3\"/><rect x=\"235\" y=\"225\" width=\"36\" height=\"36\" fill=\"#7fb8e0\" stroke=\"#fff\" stroke-width=\"5\"/><path d=\"M253 225v36M235 243h36\" stroke=\"#fff\" stroke-width=\"3\"/><rect x=\"110\" y=\"200\" width=\"180\" height=\"6\" fill=\"#000\" opacity=\".12\"/></svg>",
+        "usage": {
+          "promptTokens": 192,
+          "completionTokens": 2347,
+          "reasoningTokens": 1091,
+          "costUsd": 0.0011927
+        },
+        "latencyMs": 11547.483540999994,
+        "finishReason": "stop",
+        "generationId": "gen-1794884880-d1R7jb8HTJ2bQSJYnWNi"
+      },
+      "costUsd": 0.0011927
+    }
+  ],
+  "startedAt": "2026-11-17T03:07:56.704Z"
+}

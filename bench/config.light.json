@@ -1,0 +1,31 @@
+{
+  "$comment": "Settings for a cheap trial with one light model and all three formats. The model id and prices were checked against https://openrouter.ai/api/v1/models on 2026-11-17. Prices are USD per million tokens.",
+  "models": [
+    {
+      "id": "anthropic/claude-haiku-5.5",
+      "label": "Claude Haiku 5.5",
+      "promptPricePerM": 0.1,
+      "completionPricePerM": 0.5,
+      "why": "The cheapest current model from the labs in the main config; a light model is where a format's difficulty shows first."
+    }
+  ],
+  "repetitions": 2,
+  "maxCostUsd": 1,
+  "maxTokens": 32000,
+  "reasoning": null,
+  "$reasoning": "OpenRouter's reasoning parameter (https://openrouter.ai/docs/use-cases/reasoning-tokens), sent the same to both formats. null sends nothing, so each model reasons as it does by default. Otherwise { \"effort\": \"high\" } (max, xhigh, high, medium, low, minimal, none) or { \"maxTokens\": 8000 }, not both. Reasoning counts against maxTokens and is billed as output.",
+  "reserveMargin": 1.5,
+  "$reserveMargin": "Before each call the run reserves that call's worst case (all maxTokens, at the listed prices) times this factor, or times the highest billed-to-listed price ratio seen for the model if that is larger. In the first real run one provider billed up to 1.23 times the listed price.",
+  "concurrency": 4,
+  "canvas": {
+    "width": 400,
+    "height": 400
+  },
+  "rotationOffsetsDeg": [0, 60, -60],
+  "estimate": {
+    "$comment": "Assumptions used only for the cost estimate printed before a run, when no earlier run is given with --estimate-from. Output tokens include hidden reasoning tokens, which these models bill as output. 10000 is the mean of the first tries in the first real run (pilot-1: 9,762; medians by model and format 6,645 to 16,000).",
+    "outputTokensPerCall": 10000,
+    "repairRate": 0.25
+  },
+  "formats": ["svg", "zdog", "zpup"]
+}

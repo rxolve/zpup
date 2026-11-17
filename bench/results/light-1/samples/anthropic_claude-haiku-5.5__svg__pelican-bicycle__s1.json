@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "pelican-bicycle",
+  "taskPrompt": "a pelican riding a bicycle",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a pelican riding a bicycle."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9fd8f5\"/><stop offset=\"1\" stop-color=\"#eaf8ff\"/></linearGradient>\n<linearGradient id=\"gnd\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8fca6a\"/><stop offset=\"1\" stop-color=\"#5a9a3e\"/></linearGradient>\n<radialGradient id=\"body\" cx=\"0.35\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"0.6\" stop-color=\"#e4e2da\"/><stop offset=\"1\" stop-color=\"#8f8d86\"/></radialGradient>\n<radialGradient id=\"bill\" cx=\"0.4\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#ffd36b\"/><stop offset=\"1\" stop-color=\"#c76f0c\"/></radialGradient>\n<linearGradient id=\"wing\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8d9aa6\"/><stop offset=\"1\" stop-color=\"#3b4450\"/></linearGradient>\n<radialGradient id=\"hub\" cx=\"0.35\" cy=\"0.35\" r=\"0.7\"><stop offset=\"0\" stop-color=\"#ddd\"/><stop offset=\"1\" stop-color=\"#555\"/></radialGradient>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/>\n<rect y=\"330\" width=\"400\" height=\"70\" fill=\"url(#gnd)\"/>\n<ellipse cx=\"200\" cy=\"362\" rx=\"160\" ry=\"13\" fill=\"#000\" opacity=\"0.25\"/>\n<g fill=\"none\" stroke=\"#1d1d1d\" stroke-width=\"9\">\n<circle cx=\"110\" cy=\"290\" r=\"58\"/>\n<circle cx=\"290\" cy=\"290\" r=\"58\"/>\n</g>\n<g fill=\"none\" stroke=\"#9a9a9a\" stroke-width=\"2\">\n<circle cx=\"110\" cy=\"290\" r=\"50\"/>\n<circle cx=\"290\" cy=\"290\" r=\"50\"/>\n<path d=\"M110 290L190 285M110 290L150 200M190 285L150 200M190 285L258 200M150 200L258 200M258 200L290 290M190 285L290 290M110 290L190 240M290 290L258 200M290 290L190 240\" stroke=\"#9a9a9a\" stroke-width=\"0\"/>\n</g>\n<g stroke=\"#c0392b\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\">\n<path d=\"M110 290L190 285L150 200L258 200L290 290\"/>\n<path d=\"M190 285L258 200\"/>\n</g>\n<path d=\"M140 205L132 170L160 178Z\" fill=\"#7a7f86\"/>\n<path d=\"M120 170Q100 160 112 150Q128 150 150 168Z\" fill=\"url(#wing)\"/>\n<path d=\"M162 196L176 250L192 270\" stroke=\"#e8772e\" stroke-width=\"7\" fill=\"none\" stroke-linecap=\"round\"/>\n<path d=\"M180 270L200 268\" stroke=\"#e8772e\" stroke-width=\"7\" stroke-linecap=\"round\"/>\n<ellipse cx=\"180\" cy=\"160\" rx=\"62\" ry=\"42\" transform=\"rotate(-15 180 160)\" fill=\"url(#body)\"/>\n<path d=\"M150 150Q175 120 215 135Q200 175 150 180Z\" fill=\"url(#wing)\" opacity=\"0.9\"/>\n<path d=\"M140 150Q170 125 205 140\" stroke=\"#555\" stroke-width=\"2\" fill=\"none\" opacity=\"0.4\"/>\n<path d=\"M225 150Q230 120 236 102L252 106Q248 132 245 160Z\" fill=\"url(#body)\"/>\n<circle cx=\"240\" cy=\"98\" r=\"22\" fill=\"url(#body)\"/>\n<path d=\"M256 92Q300 98 336 124Q300 118 258 112Z\" fill=\"url(#bill)\"/>\n<path d=\"M258 104Q290 124 300 146Q282 134 256 124Z\" fill=\"#e0a030\"/>\n<path d=\"M270 105Q290 110 298 124\" stroke=\"#a85a08\" stroke-width=\"2\" fill=\"none\" opacity=\"0.6\"/>\n<circle cx=\"246\" cy=\"93\" r=\"4.5\" fill=\"#fff\"/>\n<circle cx=\"247\" cy=\"93\" r=\"2.5\" fill=\"#111\"/>\n<path d=\"M258 200L270 176L282 184\" stroke=\"#222\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"110\" cy=\"290\" r=\"6\" fill=\"url(#hub)\"/>\n<circle cx=\"290\" cy=\"290\" r=\"6\" fill=\"url(#hub)\"/>\n<circle cx=\"190\" cy=\"285\" r=\"8\" fill=\"#444\"/>\n<path d=\"M175 268L205 290\" stroke=\"#333\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n<path d=\"M150 200Q150 190 165 190L172 196\" stroke=\"#222\" stroke-width=\"6\" fill=\"none\"/>\n<ellipse cx=\"150\" cy=\"190\" rx=\"20\" ry=\"6\" fill=\"#222\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 188,
+          "completionTokens": 3078,
+          "reasoningTokens": 1237,
+          "costUsd": 0.0015578
+        },
+        "latencyMs": 14432.15737500001,
+        "finishReason": "stop",
+        "generationId": "gen-1794877908-G7sSMaBa7bUf7D2DK4aY"
+      },
+      "costUsd": 0.0015578
+    }
+  ],
+  "startedAt": "2026-11-17T01:11:48.632Z"
+}

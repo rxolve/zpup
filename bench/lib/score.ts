@@ -14,6 +14,7 @@ import {
   type ValidationIssue,
 } from '../../src/index.ts';
 import type { Condition, Score } from './types.ts';
+import { runZdog } from './zdog.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -74,7 +75,12 @@ export function scoreReply(
   options: { canvas: { width: number; height: number }; rotationOffsetsDeg: number[] },
 ): Score {
   const { text, fenced } = extractDocument(reply);
-  const score = condition === 'svg' ? scoreSvg(text, options.canvas) : scoreZpup(text, options);
+  const score =
+    condition === 'svg'
+      ? scoreSvg(text, options.canvas)
+      : condition === 'zdog'
+        ? scoreZdog(text, options)
+        : scoreZpup(text, options);
   if (fenced) score.warnings.unshift('The reply was wrapped in a Markdown code fence.');
   return score;
 }
@@ -164,6 +170,36 @@ function svgSize(
     return { width: box[2] as number, height: box[3] as number };
   }
   return undefined;
+}
+
+/**
+ * A Zdog script is valid when it runs to the end without an error, attaches an
+ * illustration to the page's SVG element, and that illustration draws at least
+ * one path (the counterpart of the "draws nothing" rule of the other formats).
+ */
+export function scoreZdog(
+  text: string,
+  options: { canvas: { width: number; height: number }; rotationOffsetsDeg: number[] },
+): Score {
+  const warnings: string[] = [];
+  if (text === '') return { valid: false, problems: ['The reply is empty.'], warnings };
+  const run = runZdog(text, {
+    width: options.canvas.width,
+    height: options.canvas.height,
+    offsetsDeg: options.rotationOffsetsDeg,
+  });
+  if (!run.ok || run.svg === undefined) {
+    return { valid: false, problems: [run.error ?? 'The script failed.'], warnings };
+  }
+  if (!run.paths) {
+    return {
+      valid: false,
+      problems: ['The script draws nothing: the illustration has no visible shape.'],
+      warnings,
+    };
+  }
+  if (!run.rendered) warnings.push('The script never called updateRenderGraph().');
+  return { valid: true, problems: [], warnings, svg: run.svg, rotations: run.rotations ?? [] };
 }
 
 export function scoreZpup(

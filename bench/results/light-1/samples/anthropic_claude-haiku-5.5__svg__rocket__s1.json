@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "rocket",
+  "taskPrompt": "a rocket standing on its fins",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a rocket standing on its fins."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1b2a4a\"/><stop offset=\"1\" stop-color=\"#6d8fb8\"/></linearGradient><linearGradient id=\"body\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#6b7380\"/><stop offset=\"0.3\" stop-color=\"#eef2f7\"/><stop offset=\"0.6\" stop-color=\"#c2cad5\"/><stop offset=\"1\" stop-color=\"#434b58\"/></linearGradient><linearGradient id=\"fin\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b53a3a\"/><stop offset=\"1\" stop-color=\"#5a1414\"/></linearGradient><linearGradient id=\"nose\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#8a1f1f\"/><stop offset=\"0.35\" stop-color=\"#e05a4a\"/><stop offset=\"1\" stop-color=\"#5a1414\"/></linearGradient><radialGradient id=\"win\" cx=\"0.4\" cy=\"0.35\" r=\"0.7\"><stop offset=\"0\" stop-color=\"#e0f6ff\"/><stop offset=\"1\" stop-color=\"#2a6aa8\"/></radialGradient><radialGradient id=\"gnd\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/><rect y=\"310\" width=\"400\" height=\"90\" fill=\"#3b4a36\"/><ellipse cx=\"200\" cy=\"308\" rx=\"115\" ry=\"12\" fill=\"url(#gnd)\"/><polygon points=\"165,200 135,290 135,310 170,310 170,255\" fill=\"url(#fin)\"/><polygon points=\"235,200 265,290 265,310 230,310 230,255\" fill=\"url(#fin)\"/><rect x=\"165\" y=\"130\" width=\"70\" height=\"160\" fill=\"url(#body)\"/><path d=\"M165,130 Q200,30 235,130 Z\" fill=\"url(#nose)\"/><rect x=\"165\" y=\"250\" width=\"70\" height=\"10\" fill=\"#c0392b\"/><path d=\"M182,290 L218,290 L226,306 L174,306 Z\" fill=\"#2e3440\"/><circle cx=\"200\" cy=\"190\" r=\"18\" fill=\"url(#win)\" stroke=\"#2b3440\" stroke-width=\"4\"/><ellipse cx=\"193\" cy=\"183\" rx=\"6\" ry=\"4\" fill=\"#fff\" opacity=\"0.7\"/><polygon points=\"168,240 152,296 160,306 178,306 178,250\" fill=\"url(#fin)\" opacity=\"0.9\"/><polygon points=\"232,240 248,296 240,306 222,306 222,250\" fill=\"url(#fin)\" opacity=\"0.9\"/></svg>",
+        "usage": {
+          "promptTokens": 187,
+          "completionTokens": 2745,
+          "reasoningTokens": 1672,
+          "costUsd": 0.0013912
+        },
+        "latencyMs": 12599.177125000002,
+        "finishReason": "stop",
+        "generationId": "gen-1794877816-Z6K6rQxjUjzhQ4i582dh"
+      },
+      "costUsd": 0.0013912
+    }
+  ],
+  "startedAt": "2026-11-17T01:10:16.629Z"
+}

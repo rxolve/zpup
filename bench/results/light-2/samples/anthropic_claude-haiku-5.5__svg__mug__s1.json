@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "mug",
+  "taskPrompt": "a coffee mug with a handle",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a coffee mug with a handle."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<linearGradient id=\"b\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n<stop offset=\"0\" stop-color=\"#5a2e15\"/>\n<stop offset=\"0.3\" stop-color=\"#c98a52\"/>\n<stop offset=\"0.5\" stop-color=\"#f0c08a\"/>\n<stop offset=\"0.75\" stop-color=\"#b8733f\"/>\n<stop offset=\"1\" stop-color=\"#4a2410\"/>\n</linearGradient>\n<linearGradient id=\"h\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#c98a52\"/>\n<stop offset=\"1\" stop-color=\"#5a2e15\"/>\n</linearGradient>\n<radialGradient id=\"s\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\">\n<stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.45\"/>\n<stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/>\n</radialGradient>\n</defs>\n<ellipse cx=\"195\" cy=\"318\" rx=\"120\" ry=\"20\" fill=\"url(#s)\"/>\n<path d=\"M262,165 C345,145 350,265 260,268\" fill=\"none\" stroke=\"url(#h)\" stroke-width=\"24\" stroke-linecap=\"round\"/>\n<path d=\"M110,130 V300 A80,18 0 0 0 270,300 V130 Z\" fill=\"url(#b)\"/>\n<ellipse cx=\"190\" cy=\"130\" rx=\"80\" ry=\"18\" fill=\"#e8c9a0\"/>\n<ellipse cx=\"190\" cy=\"132\" rx=\"70\" ry=\"12\" fill=\"#3b1e0e\"/>\n<ellipse cx=\"180\" cy=\"129\" rx=\"22\" ry=\"4\" fill=\"#8a5a36\" opacity=\"0.7\"/>\n<path d=\"M120,190 V270\" stroke=\"#fff\" stroke-width=\"6\" stroke-linecap=\"round\" opacity=\"0.25\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 187,
+          "completionTokens": 1698,
+          "reasoningTokens": 986,
+          "costUsd": 0.0008677
+        },
+        "latencyMs": 8712.403791999997,
+        "finishReason": "stop",
+        "generationId": "gen-1794884925-MHjGjrgMtxP26RJdWNUd"
+      },
+      "costUsd": 0.0008677
+    }
+  ],
+  "startedAt": "2026-11-17T03:08:41.348Z"
+}

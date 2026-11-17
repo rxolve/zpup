@@ -7,13 +7,14 @@ export interface PromptTemplates {
   system: Record<Condition, string>;
   user: string;
   repair: string;
-  /** The zpup reference given to the zpup condition (the repository's llms.txt). */
-  reference: string;
+  /** The reference each format's system prompt includes: llms.txt for zpup, a summary of the API for Zdog, none for SVG. */
+  reference: Record<Condition, string>;
 }
 
 /** What each condition is asked to produce, as used in the repair message. */
 export const FORMAT_NAME: Record<Condition, string> = {
   svg: 'SVG document',
+  zdog: 'Zdog script',
   zpup: 'zpup scene in JSON',
 };
 
@@ -21,10 +22,18 @@ const read = (name: string) => readFileSync(new URL(`prompts/${name}`, BENCH_DIR
 
 export function loadPrompts(): PromptTemplates {
   return {
-    system: { svg: read('svg.system.txt'), zpup: read('zpup.system.txt') },
+    system: {
+      svg: read('svg.system.txt'),
+      zdog: read('zdog.system.txt'),
+      zpup: read('zpup.system.txt'),
+    },
     user: read('user.txt'),
     repair: read('repair.txt'),
-    reference: readFileSync(new URL('llms.txt', REPO_DIR), 'utf8'),
+    reference: {
+      svg: '',
+      zdog: read('zdog.reference.md'),
+      zpup: readFileSync(new URL('llms.txt', REPO_DIR), 'utf8'),
+    },
   };
 }
 
@@ -49,7 +58,9 @@ export function firstMessages(
   return [
     {
       role: 'system',
-      content: fill(templates.system[condition], { reference: templates.reference.trim() }).trim(),
+      content: fill(templates.system[condition], {
+        reference: templates.reference[condition].trim(),
+      }).trim(),
     },
     { role: 'user', content: fill(templates.user, { task }).trim() },
   ];

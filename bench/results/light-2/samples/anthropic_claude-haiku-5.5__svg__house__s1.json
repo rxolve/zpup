@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "house",
+  "taskPrompt": "a small house with a pitched roof and a chimney",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a small house with a pitched roof and a chimney."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><linearGradient id=\"wall\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#e8d5b0\"/><stop offset=\"1\" stop-color=\"#c9ac7c\"/></linearGradient><linearGradient id=\"roof\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8b3a2b\"/><stop offset=\"1\" stop-color=\"#5c2118\"/></linearGradient><linearGradient id=\"side\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#b08d5b\"/><stop offset=\"1\" stop-color=\"#8a6a40\"/></linearGradient><linearGradient id=\"ground\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9fcf8a\"/><stop offset=\"1\" stop-color=\"#6fa35a\"/></linearGradient><linearGradient id=\"door\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#5a3320\"/><stop offset=\"1\" stop-color=\"#3a1f12\"/></linearGradient></defs><rect width=\"400\" height=\"400\" fill=\"#bfe3f5\"/><ellipse cx=\"200\" cy=\"350\" rx=\"170\" ry=\"26\" fill=\"url(#ground)\"/><path d=\"M200 380 L40 380 L40 0Z\" fill=\"none\"/><polygon points=\"90,190 210,190 210,320 90,320\" fill=\"url(#wall)\"/><polygon points=\"210,190 240,170 240,300 210,320\" fill=\"url(#side)\"/><polygon points=\"90,190 120,170 240,170 210,190\" fill=\"#f3e6c8\"/><polygon points=\"75,195 105,165 255,165 225,195\" fill=\"url(#roof)\"/><polygon points=\"225,195 255,165 255,160 225,190\" fill=\"#4a1a12\"/><polygon points=\"75,195 225,195 225,205 75,205\" fill=\"#3d1610\"/><polygon points=\"75,195 105,165 120,170 90,190\" fill=\"#a14a38\"/><polygon points=\"90,190 210,190 240,170 120,170\" fill=\"none\"/><polygon points=\"160,140 176,130 176,170 160,170\" fill=\"#9a8a7a\"/><polygon points=\"176,130 186,124 186,164 176,170\" fill=\"#6e6258\"/><polygon points=\"160,140 176,130 186,124 170,134\" fill=\"#b5a698\"/><rect x=\"118\" y=\"230\" width=\"46\" height=\"90\" fill=\"url(#door)\"/><circle cx=\"158\" cy=\"278\" r=\"3\" fill=\"#e8c35a\"/><rect x=\"100\" y=\"210\" width=\"22\" height=\"22\" fill=\"#7ec8ec\"/><rect x=\"100\" y=\"210\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"#f5f5f5\" stroke-width=\"3\"/><line x1=\"111\" y1=\"210\" x2=\"111\" y2=\"232\" stroke=\"#f5f5f5\" stroke-width=\"2\"/><rect x=\"180\" y=\"210\" width=\"22\" height=\"22\" fill=\"#7ec8ec\"/><rect x=\"180\" y=\"210\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"#f5f5f5\" stroke-width=\"3\"/><line x1=\"191\" y1=\"210\" x2=\"191\" y2=\"232\" stroke=\"#f5f5f5\" stroke-width=\"2\"/><polygon points=\"90,320 210,320 240,300 120,300\" fill=\"#7a5a34\" opacity=\"0.5\"/></svg>",
+        "usage": {
+          "promptTokens": 192,
+          "completionTokens": 1228,
+          "reasoningTokens": 0,
+          "costUsd": 0.0006332
+        },
+        "latencyMs": 5587.263042000006,
+        "finishReason": "stop",
+        "generationId": "gen-1794884975-cNXxyKryx85JLCl86skv"
+      },
+      "costUsd": 0.0006332
+    }
+  ],
+  "startedAt": "2026-11-17T03:09:31.253Z"
+}

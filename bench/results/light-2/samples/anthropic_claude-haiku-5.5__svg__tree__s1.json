@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "tree",
+  "taskPrompt": "a tree with a round crown",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a tree with a round crown."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><radialGradient id=\"c\" cx=\"0.35\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#9be07a\"/><stop offset=\"0.6\" stop-color=\"#4fa83d\"/><stop offset=\"1\" stop-color=\"#2a6b22\"/></radialGradient><linearGradient id=\"t\" x1=\"0\" x2=\"1\" y1=\"0\" y2=\"0\"><stop offset=\"0\" stop-color=\"#6b4226\"/><stop offset=\"0.5\" stop-color=\"#9a6436\"/><stop offset=\"1\" stop-color=\"#5a3620\"/></linearGradient><radialGradient id=\"s\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.35\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/></radialGradient></defs><rect width=\"400\" height=\"400\" fill=\"#dff1ff\"/><ellipse cx=\"200\" cy=\"362\" rx=\"110\" ry=\"18\" fill=\"url(#s)\"/><path d=\"M188 360 L170 230 Q168 215 176 205 L224 205 Q232 215 230 230 L212 360 Z\" fill=\"url(#t)\"/><path d=\"M196 212 L214 212 L210 250 L200 245 Z\" fill=\"#4a2a16\" opacity=\"0.5\"/><path d=\"M200 232 L186 210 L180 196 M200 250 L218 228 L226 214\" stroke=\"#5a3620\" stroke-width=\"7\" stroke-linecap=\"round\" fill=\"none\"/><circle cx=\"200\" cy=\"140\" r=\"98\" fill=\"#2a6b22\"/><circle cx=\"200\" cy=\"136\" r=\"94\" fill=\"url(#c)\"/><circle cx=\"162\" cy=\"106\" r=\"34\" fill=\"#b5ef94\" opacity=\"0.35\"/><circle cx=\"252\" cy=\"176\" r=\"30\" fill=\"#1f5a1a\" opacity=\"0.35\"/><circle cx=\"150\" cy=\"180\" r=\"22\" fill=\"#4fa83d\" opacity=\"0.5\"/><circle cx=\"240\" cy=\"98\" r=\"18\" fill=\"#7fd066\" opacity=\"0.5\"/></svg>",
+        "usage": {
+          "promptTokens": 185,
+          "completionTokens": 771,
+          "reasoningTokens": 0,
+          "costUsd": 0.000404
+        },
+        "latencyMs": 3837.295833000011,
+        "finishReason": "stop",
+        "generationId": "gen-1794884962-csfV4WcAQ1x0K2S7IE3l"
+      },
+      "costUsd": 0.000404
+    }
+  ],
+  "startedAt": "2026-11-17T03:09:18.521Z"
+}

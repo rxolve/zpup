@@ -1,12 +1,15 @@
 /**
  * A static HTML page for looking at the pictures. Every SVG is embedded as an
  * <img> data URI, so scripts or external references inside model output never
- * run. The page has an open view (formats labeled, zpup shown at every
- * rotation) and a blind view (formats hidden behind X and Y in a shuffled
- * order, one angle each).
+ * run. The page has an open view (formats labeled, zpup and Zdog shown at
+ * every rotation) and a blind view (formats hidden behind X, Y and Z in a
+ * shuffled order, one angle each).
  */
 import type { LoadedRun, ScoredSample } from './report.ts';
-import type { Score } from './types.ts';
+import { type Condition, conditionsOf, type Score } from './types.ts';
+
+const OPEN_LABEL: Record<Condition, string> = { svg: 'SVG', zdog: 'Zdog', zpup: 'zpup' };
+const BLIND_LABELS = ['X', 'Y', 'Z'];
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -28,9 +31,14 @@ function invalidBox(score: Score | undefined, reason: string): string {
   return `<div class="invalid"><strong>${escapeHtml(reason)}</strong><ul class="open-only">${problems.join('')}</ul></div>`;
 }
 
-function side(sample: ScoredSample | undefined, blindLabel: string, alt: string): string {
-  const condition = sample?.record.condition;
-  const openLabel = condition === 'zpup' ? 'zpup' : 'SVG';
+function side(
+  sample: ScoredSample | undefined,
+  condition: Condition,
+  blindOrder: number,
+  alt: string,
+): string {
+  const openLabel = OPEN_LABEL[condition];
+  const blindLabel = BLIND_LABELS[blindOrder] ?? '?';
   let body: string;
   if (!sample) body = invalidBox(undefined, 'no sample');
   else if (sample.status === 'api-error') body = invalidBox(undefined, 'API error');
@@ -74,11 +82,12 @@ function side(sample: ScoredSample | undefined, blindLabel: string, alt: string)
           : 'invalid',
     );
   }
-  return `<div class="side" style="--order:${blindLabel === 'X' ? 0 : 1}"><div class="label"><span class="open-label">${openLabel}</span><span class="blind-label">${blindLabel}</span></div><div class="pics">${body}</div></div>`;
+  return `<div class="side" style="--order:${blindOrder}"><div class="label"><span class="open-label">${openLabel}</span><span class="blind-label">${blindLabel}</span></div><div class="pics">${body}</div></div>`;
 }
 
 export function galleryHtml(run: LoadedRun): string {
   const { manifest, samples } = run;
+  const formats = conditionsOf(manifest.config);
   const find = (model: string, task: string, condition: string, sample: number) =>
     samples.find(
       (s) =>
@@ -92,14 +101,21 @@ export function galleryHtml(run: LoadedRun): string {
     const rows = manifest.config.models.map((model) => {
       const pairs: string[] = [];
       for (let k = 0; k < manifest.config.repetitions; k++) {
-        const svg = find(model.id, task.id, 'svg', k);
-        const zpup = find(model.id, task.id, 'zpup', k);
-        if (!svg && !zpup) continue;
-        // The blind order is fixed per pair so that a reload shows the same thing.
-        const swap = hash(`${manifest.runId}|${model.id}|${task.id}|${k}`) % 2 === 1;
+        const found = formats.map((c) => find(model.id, task.id, c, k));
+        if (found.every((s) => !s)) continue;
+        // The blind order is fixed per set so that a reload shows the same thing:
+        // a rotation of the formats, reversed for half of the sets.
+        const h = hash(`${manifest.runId}|${model.id}|${task.id}|${k}`);
+        const n = formats.length;
+        const shift = h % n;
+        const flip = Math.floor(h / n) % 2 === 1;
+        const blindOrder = (i: number) => {
+          const p = (i + shift) % n;
+          return flip ? n - 1 - p : p;
+        };
         const alt = `${task.prompt}, ${model.label}, sample ${k + 1}`;
         pairs.push(
-          `<div class="pair"><div class="pair-title">sample ${k + 1}</div><div class="sides">${side(svg, swap ? 'Y' : 'X', alt)}${side(zpup, swap ? 'X' : 'Y', alt)}</div></div>`,
+          `<div class="pair"><div class="pair-title">sample ${k + 1}</div><div class="sides">${formats.map((c, i) => side(found[i], c, blindOrder(i), alt)).join('')}</div></div>`,
         );
       }
       return `<div class="row"><h3>${escapeHtml(model.label)} <code>${escapeHtml(model.id)}</code></h3><div class="pairs">${pairs.join('')}</div></div>`;
@@ -164,12 +180,12 @@ body.blind.revealed .open-label { display: inline; }
 </div>
 </header>
 ${mockNote}
-<p>Each pair shows one model's answer to the same request in raw SVG and in zpup JSON. zpup scenes are also drawn turned by ${manifest.config.rotationOffsetsDeg
+<p>Each set shows one model's answers to the same request, one per format (${formats.map((c) => OPEN_LABEL[c]).join(', ')}). zpup and Zdog scenes are also drawn turned by ${manifest.config.rotationOffsetsDeg
     .filter((d) => d !== 0)
     .map((d) => `${d > 0 ? '+' : ''}${d}°`)
     .join(
       ' and ',
-    )}; an SVG has only the one angle it was written for. In the blind view the two formats appear as X and Y in a shuffled order, with one angle each and no error text. The drawing style can still give the format away.</p>
+    )}; an SVG has only the one angle it was written for. In the blind view the formats appear as ${BLIND_LABELS.slice(0, formats.length).join(', ')} in a shuffled order, with one angle each and no error text. The drawing style can still give the format away.</p>
 ${sections.join('\n')}
 <script>
 const body = document.body, mode = document.getElementById('mode'), reveal = document.getElementById('reveal');

@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "mug",
+  "taskPrompt": "a coffee mug with a handle",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a coffee mug with a handle."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\">\n<defs>\n<linearGradient id=\"b\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n<stop offset=\"0\" stop-color=\"#5a3015\"/>\n<stop offset=\"0.3\" stop-color=\"#d9a070\"/>\n<stop offset=\"0.6\" stop-color=\"#b56f3c\"/>\n<stop offset=\"1\" stop-color=\"#4a2510\"/>\n</linearGradient>\n<linearGradient id=\"h\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#c98a52\"/>\n<stop offset=\"1\" stop-color=\"#5a3015\"/>\n</linearGradient>\n<radialGradient id=\"s\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\">\n<stop offset=\"0\" stop-color=\"#cfc6bd\"/>\n<stop offset=\"1\" stop-color=\"#e8e0d8\" stop-opacity=\"0\"/>\n</radialGradient>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"#f4f1ec\"/>\n<ellipse cx=\"200\" cy=\"324\" rx=\"150\" ry=\"34\" fill=\"url(#s)\"/>\n<ellipse cx=\"200\" cy=\"322\" rx=\"115\" ry=\"24\" fill=\"#e8e0d8\" stroke=\"#cfc6bd\" stroke-width=\"2\"/>\n<path d=\"M270,172 C345,158 358,258 275,270\" fill=\"none\" stroke=\"url(#h)\" stroke-width=\"22\" stroke-linecap=\"round\"/>\n<path d=\"M120,150 L120,300 A80,20 0 0 0 280,300 L280,150 Z\" fill=\"url(#b)\"/>\n<ellipse cx=\"200\" cy=\"150\" rx=\"80\" ry=\"20\" fill=\"#e6d2bd\"/>\n<ellipse cx=\"200\" cy=\"151\" rx=\"72\" ry=\"15\" fill=\"#4a2712\"/>\n<ellipse cx=\"200\" cy=\"151\" rx=\"72\" ry=\"15\" fill=\"none\" stroke=\"#2a1408\" stroke-width=\"2\" opacity=\"0.6\"/>\n<ellipse cx=\"200\" cy=\"152\" rx=\"60\" ry=\"9\" fill=\"#3b1d0c\"/>\n<path d=\"M150,190 L150,270\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linecap=\"round\" opacity=\"0.25\"/>\n<path d=\"M175,90 C165,75 185,65 175,50\" fill=\"none\" stroke=\"#8a8a8a\" stroke-width=\"3\" stroke-linecap=\"round\" opacity=\"0.5\"/>\n<path d=\"M200,85 C190,70 210,60 200,45\" fill=\"none\" stroke=\"#8a8a8a\" stroke-width=\"3\" stroke-linecap=\"round\" opacity=\"0.4\"/>\n<path d=\"M225,90 C215,75 235,65 225,50\" fill=\"none\" stroke=\"#8a8a8a\" stroke-width=\"3\" stroke-linecap=\"round\" opacity=\"0.5\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 187,
+          "completionTokens": 1850,
+          "reasoningTokens": 819,
+          "costUsd": 0.0009437
+        },
+        "latencyMs": 9263.869417000009,
+        "finishReason": "stop",
+        "generationId": "gen-1794877815-hIwpiiW5peuFGJMkcsAu"
+      },
+      "costUsd": 0.0009437
+    }
+  ],
+  "startedAt": "2026-11-17T01:10:15.424Z"
+}

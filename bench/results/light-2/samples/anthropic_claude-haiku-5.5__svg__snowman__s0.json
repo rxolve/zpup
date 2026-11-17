@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "snowman",
+  "taskPrompt": "a snowman with a hat and a scarf",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a snowman with a hat and a scarf."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<radialGradient id=\"s\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0%\" stop-color=\"#ffffff\"/><stop offset=\"60%\" stop-color=\"#e4ecf5\"/><stop offset=\"100%\" stop-color=\"#9fb2c9\"/></radialGradient>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#cfe3f5\"/><stop offset=\"1\" stop-color=\"#f4f9fd\"/></linearGradient>\n<radialGradient id=\"r\" cx=\"35%\" cy=\"30%\" r=\"80%\"><stop offset=\"0%\" stop-color=\"#ff7a7a\"/><stop offset=\"60%\" stop-color=\"#d42a2a\"/><stop offset=\"100%\" stop-color=\"#7a1010\"/></radialGradient>\n<linearGradient id=\"h\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#2a2a33\"/><stop offset=\"0.4\" stop-color=\"#4a4a57\"/><stop offset=\"1\" stop-color=\"#15151b\"/></linearGradient>\n<radialGradient id=\"o\" cx=\"35%\" cy=\"30%\" r=\"80%\"><stop offset=\"0%\" stop-color=\"#6b4a2b\"/><stop offset=\"100%\" stop-color=\"#2b1a0b\"/></radialGradient>\n<filter id=\"b\"><feGaussianBlur stdDeviation=\"5\"/></filter>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/>\n<ellipse cx=\"200\" cy=\"375\" rx=\"120\" ry=\"14\" fill=\"#4a5a6a\" opacity=\"0.35\" filter=\"url(#b)\"/>\n<path d=\"M105 170L60 140M100 175L70 190M295 170L340 140M300 175L330 190\" stroke=\"#5a3a1e\" stroke-width=\"7\" stroke-linecap=\"round\" fill=\"none\"/>\n<circle cx=\"200\" cy=\"290\" r=\"85\" fill=\"url(#s)\"/>\n<circle cx=\"200\" cy=\"190\" r=\"60\" fill=\"url(#s)\"/>\n<circle cx=\"200\" cy=\"105\" r=\"43\" fill=\"url(#s)\"/>\n<ellipse cx=\"200\" cy=\"232\" rx=\"5\" ry=\"5\" fill=\"#222\"/>\n<ellipse cx=\"200\" cy=\"262\" rx=\"5\" ry=\"5\" fill=\"#222\"/>\n<ellipse cx=\"200\" cy=\"292\" rx=\"5\" ry=\"5\" fill=\"#222\"/>\n<ellipse cx=\"200\" cy=\"322\" rx=\"5\" ry=\"5\" fill=\"#222\"/>\n<ellipse cx=\"186\" cy=\"97\" rx=\"5\" ry=\"6\" fill=\"#1a1a1a\"/>\n<ellipse cx=\"214\" cy=\"97\" rx=\"5\" ry=\"6\" fill=\"#1a1a1a\"/>\n<path d=\"M183 120Q200 132 217 120\" stroke=\"#1a1a1a\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/>\n<path d=\"M195 108L225 118L195 118Z\" fill=\"#ff7a1a\"/>\n<path d=\"M200 105L226 116\" stroke=\"#c44e00\" stroke-width=\"2\"/>\n<path d=\"M142 150Q200 176 258 150L256 170Q200 196 144 170Z\" fill=\"url(#r)\"/>\n<path d=\"M200 178L224 182L228 250Q226 258 218 256L206 254Q200 256 198 250Z\" fill=\"url(#r)\"/>\n<path d=\"M212 190L224 191L226 240L216 240Z\" fill=\"#8a1414\" opacity=\"0.45\"/>\n<rect x=\"170\" y=\"30\" width=\"60\" height=\"42\" rx=\"6\" fill=\"url(#h)\"/>\n<ellipse cx=\"200\" cy=\"72\" rx=\"60\" ry=\"13\" fill=\"#1c1c24\"/>\n<ellipse cx=\"200\" cy=\"68\" rx=\"60\" ry=\"10\" fill=\"#3a3a46\"/>\n<rect x=\"170\" y=\"56\" width=\"60\" height=\"7\" fill=\"#b3282b\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 190,
+          "completionTokens": 2188,
+          "reasoningTokens": 765,
+          "costUsd": 0.001113
+        },
+        "latencyMs": 10784.646833000006,
+        "finishReason": "stop",
+        "generationId": "gen-1794884896-eEGw9x9KB0aioOUztGyK"
+      },
+      "costUsd": 0.001113
+    }
+  ],
+  "startedAt": "2026-11-17T03:08:12.428Z"
+}

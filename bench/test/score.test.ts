@@ -137,3 +137,54 @@ describe('scoreReply', () => {
     expect(zpup.warnings[0]).toMatch(/code fence/);
   });
 });
+
+describe('scoreZdog', () => {
+  const options = { canvas: { width: 400, height: 400 }, rotationOffsetsDeg: [0, 60] };
+  const sphere =
+    "const illo = new Zdog.Illustration({ element: '.zdog-svg', rotate: { y: 0.5 } });new Zdog.Shape({ addTo: illo, stroke: 80, color: '#e62' });new Zdog.Shape({ addTo: illo, translate: { x: 90 }, stroke: 20, color: '#333' });";
+
+  it('accepts a script that draws, and renders it turned as well', () => {
+    const result = scoreReply('zdog', `${sphere}illo.updateRenderGraph();`, options);
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toEqual([]);
+    expect(result.svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    expect(result.rotations?.map((r) => r.offsetDeg)).toEqual([0, 60]);
+    // Turning moves the small ball, so the two pictures differ.
+    expect(result.rotations?.[1]?.svg).not.toBe(result.rotations?.[0]?.svg);
+  });
+
+  it('draws a script that forgot to render, with a warning', () => {
+    const result = scoreReply('zdog', sphere, options);
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toEqual(['The script never called updateRenderGraph().']);
+  });
+
+  it('reports the error a script throws', () => {
+    const result = scoreReply('zdog', 'new Zdog.Sphere({ radius: 10 });', options);
+    expect(result.valid).toBe(false);
+    expect(result.problems).toEqual(['TypeError: Zdog.Sphere is not a constructor']);
+  });
+
+  it('rejects a script that draws nothing', () => {
+    const result = scoreReply('zdog', "new Zdog.Illustration({ element: '.zdog-svg' });", options);
+    expect(result.valid).toBe(false);
+    expect(result.problems[0]).toMatch(/draws nothing/);
+  });
+
+  it('keeps a script away from the file system and from other processes', () => {
+    for (const code of [
+      "process.mainModule.require('fs').readFileSync('/etc/hosts');",
+      "process.mainModule.require('child_process').execSync('ls');",
+    ]) {
+      const result = scoreReply('zdog', code, options);
+      expect(result.valid).toBe(false);
+      expect(result.problems[0]).toMatch(/restricted/);
+    }
+  });
+
+  it('stops a script that never finishes', () => {
+    const result = scoreReply('zdog', 'while (true) {}', options);
+    expect(result.valid).toBe(false);
+    expect(result.problems[0]).toMatch(/did not finish/);
+  }, 15_000);
+});

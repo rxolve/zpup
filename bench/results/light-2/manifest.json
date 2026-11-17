@@ -1,0 +1,93 @@
+{
+  "runId": "light-2",
+  "provider": "openrouter",
+  "startedAt": "2026-11-17T03:06:58.867Z",
+  "referenceSha256": "c5c6701fcdb6efa3568cc6dea8a9d5c57cf02b21d5fff2b540643f3075e7d912",
+  "config": {
+    "models": [
+      {
+        "id": "anthropic/claude-haiku-5.5",
+        "label": "Claude Haiku 5.5",
+        "promptPricePerM": 0.1,
+        "completionPricePerM": 0.5,
+        "why": "The cheapest current model from the labs in the main config; a light model is where a format's difficulty shows first."
+      }
+    ],
+    "repetitions": 2,
+    "maxCostUsd": 1,
+    "maxTokens": 32000,
+    "reserveMargin": 1.5,
+    "concurrency": 4,
+    "canvas": {
+      "width": 400,
+      "height": 400
+    },
+    "rotationOffsetsDeg": [
+      0,
+      60,
+      -60
+    ],
+    "estimate": {
+      "outputTokensPerCall": 10000,
+      "repairRate": 0.25
+    },
+    "formats": [
+      "svg",
+      "zdog",
+      "zpup"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "pelican-bicycle",
+      "prompt": "a pelican riding a bicycle"
+    },
+    {
+      "id": "mug",
+      "prompt": "a coffee mug with a handle"
+    },
+    {
+      "id": "rocket",
+      "prompt": "a rocket standing on its fins"
+    },
+    {
+      "id": "cat",
+      "prompt": "a cat sitting down"
+    },
+    {
+      "id": "lighthouse",
+      "prompt": "a lighthouse on a small rock"
+    },
+    {
+      "id": "robot",
+      "prompt": "a friendly robot standing upright"
+    },
+    {
+      "id": "tree",
+      "prompt": "a tree with a round crown"
+    },
+    {
+      "id": "house",
+      "prompt": "a small house with a pitched roof and a chimney"
+    },
+    {
+      "id": "sailboat",
+      "prompt": "a sailboat with one mast"
+    },
+    {
+      "id": "snowman",
+      "prompt": "a snowman with a hat and a scarf"
+    },
+    {
+      "id": "octopus",
+      "prompt": "an octopus with curling tentacles"
+    },
+    {
+      "id": "teapot",
+      "prompt": "a teapot with a spout, a handle and a lid"
+    }
+  ],
+  "gitCommit": "d3898d0",
+  "finishedAt": "2026-11-17T03:10:27.070Z",
+  "spentUsd": 0.10029410000000001
+}

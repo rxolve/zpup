@@ -5,8 +5,8 @@ import { firstMessages, type PromptTemplates, roughTokens } from './prompts.ts';
 import { worstCaseCost } from './runner.ts';
 import {
   type BenchConfig,
-  CONDITIONS,
   type Condition,
+  conditionsOf,
   type SampleRecord,
   type Task,
 } from './types.ts';
@@ -89,7 +89,7 @@ export function estimateRun(
   const { outputTokensPerCall, repairRate } = config.estimate;
   const rows: EstimateRow[] = [];
   for (const model of config.models) {
-    for (const condition of CONDITIONS) {
+    for (const condition of conditionsOf(config)) {
       let expected = 0;
       let max = 0;
       let promptTotal = 0;
@@ -139,7 +139,7 @@ export function largestReservation(
 ): number {
   let largest = 0;
   for (const model of config.models) {
-    for (const condition of CONDITIONS) {
+    for (const condition of conditionsOf(config)) {
       for (const task of tasks) {
         const messages = firstMessages(templates, condition, task.prompt);
         largest = Math.max(largest, worstCaseCost(model, messages, config));

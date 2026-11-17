@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "robot",
+  "taskPrompt": "a friendly robot standing upright",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a friendly robot standing upright."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><linearGradient id=\"body\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#9fb8c8\"/><stop offset=\"0.5\" stop-color=\"#d9e7f0\"/><stop offset=\"1\" stop-color=\"#7f98aa\"/></linearGradient><linearGradient id=\"head\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f4faff\"/><stop offset=\"1\" stop-color=\"#a9c0d1\"/></linearGradient><radialGradient id=\"eye\" cx=\"0.35\" cy=\"0.35\" r=\"0.7\"><stop offset=\"0\" stop-color=\"#e6fbff\"/><stop offset=\"1\" stop-color=\"#1b8fc4\"/></radialGradient><radialGradient id=\"ball\" cx=\"0.35\" cy=\"0.35\" r=\"0.7\"><stop offset=\"0\" stop-color=\"#ffd089\"/><stop offset=\"1\" stop-color=\"#d07a1a\"/></radialGradient></defs><ellipse cx=\"200\" cy=\"372\" rx=\"120\" ry=\"14\" fill=\"#000\" opacity=\"0.2\"/><rect x=\"150\" y=\"240\" width=\"22\" height=\"120\" rx=\"8\" fill=\"#6d8496\"/><rect x=\"228\" y=\"240\" width=\"22\" height=\"120\" rx=\"8\" fill=\"#6d8496\"/><ellipse cx=\"161\" cy=\"360\" rx=\"20\" ry=\"9\" fill=\"#4d5f6e\"/><ellipse cx=\"239\" cy=\"360\" rx=\"20\" ry=\"9\" fill=\"#4d5f6e\"/><rect x=\"104\" y=\"150\" width=\"28\" height=\"100\" rx=\"14\" fill=\"#7f98aa\" transform=\"rotate(8 118 150)\"/><rect x=\"268\" y=\"150\" width=\"28\" height=\"100\" rx=\"14\" fill=\"#7f98aa\" transform=\"rotate(-8 282 150)\"/><circle cx=\"110\" cy=\"256\" r=\"13\" fill=\"#e8f2f8\"/><circle cx=\"290\" cy=\"256\" r=\"13\" fill=\"#e8f2f8\"/><rect x=\"250\" y=\"34\" width=\"4\" height=\"30\" fill=\"#6d8496\"/><circle cx=\"252\" cy=\"30\" r=\"8\" fill=\"url(#ball)\"/><rect x=\"232\" y=\"30\" width=\"0\" height=\"0\"/><rect x=\"250\" y=\"34\" width=\"0\" height=\"0\"/><rect x=\"132\" y=\"128\" width=\"136\" height=\"136\" rx=\"22\" fill=\"url(#body)\"/><rect x=\"132\" y=\"128\" width=\"136\" height=\"20\" rx=\"10\" fill=\"#ffffff\" opacity=\"0.35\"/><rect x=\"132\" y=\"236\" width=\"136\" height=\"12\" rx=\"6\" fill=\"#4d5f6e\" opacity=\"0.4\"/><rect x=\"170\" y=\"176\" width=\"60\" height=\"32\" rx=\"8\" fill=\"#22313d\"/><rect x=\"176\" y=\"182\" width=\"48\" height=\"8\" rx=\"4\" fill=\"#3fd0ff\" opacity=\"0.6\"/><circle cx=\"184\" cy=\"208\" r=\"5\" fill=\"#ffcf5a\"/><circle cx=\"216\" cy=\"208\" r=\"5\" fill=\"#ffcf5a\"/><rect x=\"172\" y=\"278\" width=\"56\" height=\"8\" rx=\"4\" fill=\"#5d7283\"/><circle cx=\"200\" cy=\"262\" r=\"0\" fill=\"#000\"/><rect x=\"186\" y=\"92\" width=\"28\" height=\"22\" rx=\"6\" fill=\"#6d8496\"/><rect x=\"108\" y=\"30\" width=\"184\" height=\"104\" rx=\"36\" fill=\"url(#head)\"/><rect x=\"108\" y=\"30\" width=\"184\" height=\"30\" rx=\"20\" fill=\"#ffffff\" opacity=\"0.4\"/><path d=\"M118 110 Q200 124 282 110 L282 118 Q200 134 118 118 Z\" fill=\"#5d7283\" opacity=\"0.25\"/><ellipse cx=\"160\" cy=\"78\" rx=\"22\" ry=\"22\" fill=\"url(#eye)\"/><ellipse cx=\"240\" cy=\"78\" rx=\"22\" ry=\"22\" fill=\"url(#eye)\"/><circle cx=\"153\" cy=\"70\" r=\"6\" fill=\"#ffffff\"/><circle cx=\"233\" cy=\"70\" r=\"6\" fill=\"#ffffff\"/><circle cx=\"160\" cy=\"78\" r=\"0\" fill=\"#000\"/><path d=\"M178 106 Q200 124 222 106\" fill=\"none\" stroke=\"#2c3e4c\" stroke-width=\"5\" stroke-linecap=\"round\"/><ellipse cx=\"140\" cy=\"102\" rx=\"9\" ry=\"5\" fill=\"#ff9eb0\" opacity=\"0.6\"/><ellipse cx=\"260\" cy=\"102\" rx=\"9\" ry=\"5\" fill=\"#ff9eb0\" opacity=\"0.6\"/></svg>",
+        "usage": {
+          "promptTokens": 187,
+          "completionTokens": 1604,
+          "reasoningTokens": 0,
+          "costUsd": 0.0008207
+        },
+        "latencyMs": 6794.932458000025,
+        "finishReason": "stop",
+        "generationId": "gen-1794884962-DaYNNF0RsGg5MJjLJ8F8"
+      },
+      "costUsd": 0.0008207
+    }
+  ],
+  "startedAt": "2026-11-17T03:09:17.995Z"
+}

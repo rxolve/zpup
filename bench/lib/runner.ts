@@ -13,10 +13,10 @@ import {
   type AttemptRecord,
   type BenchConfig,
   type ChatMessage,
-  CONDITIONS,
   type CompletionRequest,
   type CompletionResult,
   type Condition,
+  conditionsOf,
   type ModelConfig,
   type Provider,
   type RunManifest,
@@ -52,7 +52,8 @@ export function planJobs(config: BenchConfig, tasks: Task[]): Job[] {
       const task = tasks[(k + Math.floor(k / lcm) + sample) % t] as Task;
       const model = config.models[k % m] as ModelConfig;
       // Alternate which format goes first, per model.
-      const order = (Math.floor(k / m) + sample) % 2 === 0 ? CONDITIONS : [...CONDITIONS].reverse();
+      const formats = conditionsOf(config);
+      const order = (Math.floor(k / m) + sample) % 2 === 0 ? formats : [...formats].reverse();
       for (const condition of order) jobs.push({ model, task, condition, sample });
     }
   }
@@ -178,7 +179,7 @@ export async function runBenchmark(options: RunOptions): Promise<RunManifest> {
     runId: options.runId,
     provider: provider.name,
     startedAt: new Date().toISOString(),
-    referenceSha256: sha256(templates.reference),
+    referenceSha256: sha256(templates.reference.zpup),
     config,
     tasks,
   };

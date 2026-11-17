@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "lighthouse",
+  "taskPrompt": "a lighthouse on a small rock",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a lighthouse on a small rock."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5b8fc7\"/><stop offset=\"1\" stop-color=\"#cfe6f5\"/></linearGradient>\n<linearGradient id=\"sea\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2f6f99\"/><stop offset=\"1\" stop-color=\"#16405e\"/></linearGradient>\n<linearGradient id=\"tower\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#8a8f96\"/><stop offset=\"0.35\" stop-color=\"#f4f4f0\"/><stop offset=\"0.7\" stop-color=\"#d4d6d8\"/><stop offset=\"1\" stop-color=\"#6d737a\"/></linearGradient>\n<radialGradient id=\"rock\" cx=\"0.4\" cy=\"0.3\" r=\"0.8\"><stop offset=\"0\" stop-color=\"#9c9284\"/><stop offset=\"0.7\" stop-color=\"#5e5649\"/><stop offset=\"1\" stop-color=\"#3a342c\"/></radialGradient>\n<linearGradient id=\"glass\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#ffe58a\"/><stop offset=\"0.5\" stop-color=\"#fff9d6\"/><stop offset=\"1\" stop-color=\"#b8a860\"/></linearGradient>\n<linearGradient id=\"beam\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#fff6c0\" stop-opacity=\"0.85\"/><stop offset=\"1\" stop-color=\"#fff6c0\" stop-opacity=\"0\"/></linearGradient>\n<linearGradient id=\"roof\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#7a1f1f\"/><stop offset=\"0.5\" stop-color=\"#c0392b\"/><stop offset=\"1\" stop-color=\"#6a1818\"/></linearGradient>\n<clipPath id=\"tc\"><path d=\"M172 312L184 140L216 140L228 312Z\"/></clipPath>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/>\n<circle cx=\"330\" cy=\"60\" r=\"22\" fill=\"#fff3c4\" opacity=\"0.9\"/>\n<path d=\"M200 102L380 40L380 170Z\" fill=\"url(#beam)\"/>\n<rect y=\"260\" width=\"400\" height=\"140\" fill=\"url(#sea)\"/>\n<g stroke=\"#8fc3e0\" stroke-width=\"2\" fill=\"none\" opacity=\"0.6\"><path d=\"M40 285h60M300 300h70M60 340h90M250 372h100M20 318h40\"/></g>\n<ellipse cx=\"200\" cy=\"366\" rx=\"130\" ry=\"12\" fill=\"#0d2a3f\" opacity=\"0.5\"/>\n<path d=\"M120 330Q138 290 180 292L225 288Q270 292 285 325Q300 345 270 362L140 365Q105 355 120 330Z\" fill=\"url(#rock)\"/>\n<path d=\"M150 340Q200 330 260 345\" stroke=\"#2b2620\" stroke-width=\"2\" fill=\"none\" opacity=\"0.5\"/>\n<path d=\"M172 312L184 140L216 140L228 312Z\" fill=\"url(#tower)\"/>\n<g clip-path=\"url(#tc)\" fill=\"#b8322a\">\n<rect x=\"160\" y=\"185\" width=\"80\" height=\"26\"/>\n<rect x=\"160\" y=\"245\" width=\"80\" height=\"26\"/>\n</g>\n<rect x=\"176\" y=\"128\" width=\"48\" height=\"12\" fill=\"#3b3f45\"/>\n<rect x=\"176\" y=\"126\" width=\"48\" height=\"4\" fill=\"#5a6068\"/>\n<g stroke=\"#2a2d32\" stroke-width=\"2\"><path d=\"M176 118h48M176 128v-10M188 128v-10M200 128v-10M212 128v-10M224 128v-10\"/></g>\n<rect x=\"186\" y=\"94\" width=\"28\" height=\"34\" fill=\"url(#glass)\"/>\n<g stroke=\"#3b3f45\" stroke-width=\"3\"><path d=\"M200 94V128M186 111H214\"/></g>\n<rect x=\"182\" y=\"90\" width=\"36\" height=\"5\" fill=\"#3b3f45\"/>\n<path d=\"M180 92L200 70L220 92Z\" fill=\"url(#roof)\"/>\n<circle cx=\"200\" cy=\"68\" r=\"3\" fill=\"#d4af37\"/>\n<path d=\"M170 312h60\" stroke=\"#3a342c\" stroke-width=\"4\" opacity=\"0.6\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 188,
+          "completionTokens": 2200,
+          "reasoningTokens": 585,
+          "costUsd": 0.0011188
+        },
+        "latencyMs": 10517.495624999981,
+        "finishReason": "stop",
+        "generationId": "gen-1794877836-0PV5IUDRdcmv7tdUsJrf"
+      },
+      "costUsd": 0.0011188
+    }
+  ],
+  "startedAt": "2026-11-17T01:10:36.757Z"
+}

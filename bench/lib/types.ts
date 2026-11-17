@@ -1,8 +1,14 @@
 /** Shared types for the benchmark. */
 
-/** The two ways a model is asked to draw. */
-export type Condition = 'svg' | 'zpup';
-export const CONDITIONS: readonly Condition[] = ['svg', 'zpup'];
+/** The ways a model can be asked to draw. */
+export type Condition = 'svg' | 'zdog' | 'zpup';
+/** Every format the harness knows, in the order tables and galleries show them. */
+export const ALL_CONDITIONS: readonly Condition[] = ['svg', 'zdog', 'zpup'];
+/** The formats a run uses when its config does not list any. */
+export const DEFAULT_CONDITIONS: readonly Condition[] = ['svg', 'zpup'];
+/** The formats of a run, in display order. */
+export const conditionsOf = (config: { formats?: readonly Condition[] }): readonly Condition[] =>
+  ALL_CONDITIONS.filter((c) => (config.formats ?? DEFAULT_CONDITIONS).includes(c));
 
 export interface Task {
   id: string;
@@ -21,6 +27,8 @@ export interface ModelConfig {
 
 export interface BenchConfig {
   models: ModelConfig[];
+  /** The formats to compare. Missing means raw SVG and zpup. */
+  formats?: Condition[];
   repetitions: number;
   maxCostUsd: number;
   /** Output token limit per call, reasoning included. */
@@ -101,11 +109,11 @@ export interface Score {
   problems: string[];
   /** Things that do not fail the check but are worth seeing (for example a missing SVG namespace). */
   warnings: string[];
-  /** For valid replies: the SVG to show. For zpup, the scene at its own view angle. */
+  /** For valid replies: the SVG to show. For zpup and Zdog, the scene at its own view angle. */
   svg?: string;
   /** zpup only, valid scenes only: what `checkSceneWarnings` reported, by kind. */
   sceneWarnings?: { kind: string; message: string }[];
-  /** zpup only: the scene rendered at each configured rotation offset. */
+  /** zpup and Zdog: the scene rendered at each configured rotation offset. */
   rotations?: { offsetDeg: number; svg?: string; error?: string }[];
 }
 

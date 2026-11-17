@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "lighthouse",
+  "taskPrompt": "a lighthouse on a small rock",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a lighthouse on a small rock."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"400\" viewBox=\"0 0 400 400\"><defs><linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1e3a5f\"/><stop offset=\"1\" stop-color=\"#7fb3d5\"/></linearGradient><linearGradient id=\"tower\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#bbb\"/><stop offset=\"0.5\" stop-color=\"#fff\"/><stop offset=\"1\" stop-color=\"#888\"/></linearGradient><linearGradient id=\"stripe\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\"><stop offset=\"0\" stop-color=\"#900\"/><stop offset=\"0.5\" stop-color=\"#e33\"/><stop offset=\"1\" stop-color=\"#700\"/></linearGradient><radialGradient id=\"glow\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\"><stop offset=\"0\" stop-color=\"#fff6c0\" stop-opacity=\"0.9\"/><stop offset=\"1\" stop-color=\"#fff6c0\" stop-opacity=\"0\"/></radialGradient><linearGradient id=\"rock\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#777\"/><stop offset=\"1\" stop-color=\"#333\"/></linearGradient></defs><rect width=\"400\" height=\"400\" fill=\"url(#sky)\"/><circle cx=\"310\" cy=\"70\" r=\"28\" fill=\"#fff8dc\" opacity=\"0.8\"/><path d=\"M0 300 Q100 280 200 295 T400 290 L400 400 L0 400Z\" fill=\"#2c5d7c\"/><path d=\"M0 320 Q120 305 220 318 T400 315 L400 400 L0 400Z\" fill=\"#1f4a66\"/><path d=\"M120 400 Q130 350 170 340 L260 338 Q300 345 300 400Z\" fill=\"url(#rock)\"/><path d=\"M170 340 L260 338 L270 348 L165 350Z\" fill=\"#999\" opacity=\"0.6\"/><path d=\"M160 262 L240 262 L252 340 L148 340Z\" fill=\"#c9c9c9\"/><path d=\"M240 262 L252 340 L148 340 L160 262Z\" fill=\"#999\" opacity=\"0\"/><path d=\"M150 280 L250 280 L251 300 L149 300Z\" fill=\"url(#stripe)\"/><path d=\"M147 340 L253 340 L254 350 L146 350Z\" fill=\"#666\"/><path d=\"M160 262 L240 262 L232 290 L168 290Z\" fill=\"url(#tower)\" opacity=\"0.0\"/><path d=\"M142 262 L258 262 L248 240 L152 240Z\" fill=\"#444\"/><path d=\"M152 240 L248 240 L240 212 L160 212Z\" fill=\"#c33\" opacity=\"0\"/><path d=\"M158 212 L242 212 L236 200 L164 200Z\" fill=\"#555\"/><path d=\"M160 200 L240 200 L225 150 L175 150Z\" fill=\"url(#tower)\"/><path d=\"M171 150 L229 150 L228 176 L172 176Z\" fill=\"#3a3a3a\"/><path d=\"M170 150 L230 150 L230 142 L170 142Z\" fill=\"#222\"/><path d=\"M150 140 L250 140 L250 130 L150 130Z\" fill=\"#555\" opacity=\"0.0\"/><circle cx=\"200\" cy=\"112\" r=\"95\" fill=\"url(#glow)\"/><rect x=\"180\" y=\"118\" width=\"40\" height=\"24\" fill=\"#ffe680\"/><rect x=\"180\" y=\"118\" width=\"40\" height=\"24\" fill=\"none\" stroke=\"#333\" stroke-width=\"2\"/><path d=\"M168 118 L200 96 L232 118Z\" fill=\"#8b0000\"/><path d=\"M200 96 L232 118 L200 118Z\" fill=\"#a52a2a\"/><rect x=\"198\" y=\"82\" width=\"4\" height=\"14\" fill=\"#333\"/><path d=\"M176 117 L224 117 L224 120 L176 120Z\" fill=\"#444\"/><path d=\"M180 80 L220 80 L220 90 L180 90Z\" fill=\"none\"/><path d=\"M178 142 L178 150 M222 142 L222 150\" stroke=\"#333\" stroke-width=\"0\"/><path d=\"M40 360 L370 360 L370 368 L40 368Z\" fill=\"#000\" opacity=\"0\"/></svg>",
+        "usage": {
+          "promptTokens": 188,
+          "completionTokens": 1513,
+          "reasoningTokens": 0,
+          "costUsd": 0.0007753
+        },
+        "latencyMs": 6669.031167000001,
+        "finishReason": "stop",
+        "generationId": "gen-1794884855-ESuxiVE5EfNLr3OIOdo1"
+      },
+      "costUsd": 0.0007753
+    }
+  ],
+  "startedAt": "2026-11-17T03:07:31.460Z"
+}

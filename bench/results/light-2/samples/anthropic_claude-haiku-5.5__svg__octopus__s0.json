@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "octopus",
+  "taskPrompt": "an octopus with curling tentacles",
+  "sample": 0,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: an octopus with curling tentacles."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<radialGradient id=\"b\" cx=\"0.4\" cy=\"0.35\" r=\"0.7\">\n<stop offset=\"0\" stop-color=\"#f3c6e8\"/>\n<stop offset=\"0.5\" stop-color=\"#b56fc4\"/>\n<stop offset=\"1\" stop-color=\"#4a1b5e\"/>\n</radialGradient>\n<radialGradient id=\"e\" cx=\"0.4\" cy=\"0.4\" r=\"0.6\">\n<stop offset=\"0\" stop-color=\"#ffffff\"/>\n<stop offset=\"1\" stop-color=\"#cfc4d8\"/>\n</radialGradient>\n<path id=\"t1\" d=\"M150,225C100,255 55,250 70,300C80,330 125,318 112,292\"/>\n<path id=\"t2\" d=\"M250,225C300,255 345,250 330,300C320,330 275,318 288,292\"/>\n<path id=\"t3\" d=\"M160,230C150,300 120,330 90,350C70,362 60,340 80,335\"/>\n<path id=\"t4\" d=\"M200,240C200,300 200,340 230,370C245,385 262,365 247,355\"/>\n<path id=\"t5\" d=\"M240,230C260,290 300,330 320,360C330,375 352,360 340,345\"/>\n</defs>\n<g fill=\"none\" stroke-linecap=\"round\">\n<use xlink:href=\"#t1\" stroke=\"#4a1b5e\" stroke-width=\"24\"/>\n<use xlink:href=\"#t2\" stroke=\"#4a1b5e\" stroke-width=\"24\"/>\n<use xlink:href=\"#t1\" stroke=\"#8e44ad\" stroke-width=\"18\"/>\n<use xlink:href=\"#t2\" stroke=\"#8e44ad\" stroke-width=\"18\"/>\n<use xlink:href=\"#t1\" stroke=\"#d9a8e6\" stroke-width=\"4\" opacity=\"0.5\" transform=\"translate(-3,-3)\"/>\n<use xlink:href=\"#t2\" stroke=\"#d9a8e6\" stroke-width=\"4\" opacity=\"0.5\" transform=\"translate(-3,-3)\"/>\n</g>\n<ellipse cx=\"200\" cy=\"215\" rx=\"62\" ry=\"40\" fill=\"url(#b)\"/>\n<ellipse cx=\"200\" cy=\"150\" rx=\"75\" ry=\"88\" fill=\"url(#b)\"/>\n<ellipse cx=\"200\" cy=\"232\" rx=\"50\" ry=\"22\" fill=\"#7a3596\" opacity=\"0.6\"/>\n<circle cx=\"150\" cy=\"120\" r=\"5\" fill=\"#f7dcf2\" opacity=\"0.6\"/>\n<circle cx=\"165\" cy=\"105\" r=\"3\" fill=\"#f7dcf2\" opacity=\"0.5\"/>\n<circle cx=\"240\" cy=\"180\" r=\"4\" fill=\"#f7dcf2\" opacity=\"0.4\"/>\n<ellipse cx=\"175\" cy=\"150\" rx=\"19\" ry=\"23\" fill=\"url(#e)\"/>\n<ellipse cx=\"225\" cy=\"150\" rx=\"19\" ry=\"23\" fill=\"url(#e)\"/>\n<circle cx=\"179\" cy=\"155\" r=\"10\" fill=\"#1a0d22\"/>\n<circle cx=\"229\" cy=\"155\" r=\"10\" fill=\"#1a0d22\"/>\n<circle cx=\"182\" cy=\"151\" r=\"3\" fill=\"#ffffff\"/>\n<circle cx=\"232\" cy=\"151\" r=\"3\" fill=\"#ffffff\"/>\n<g fill=\"none\" stroke-linecap=\"round\">\n<use xlink:href=\"#t3\" stroke=\"#5e2a6f\" stroke-width=\"26\"/>\n<use xlink:href=\"#t4\" stroke=\"#5e2a6f\" stroke-width=\"26\"/>\n<use xlink:href=\"#t5\" stroke=\"#5e2a6f\" stroke-width=\"26\"/>\n<use xlink:href=\"#t3\" stroke=\"#a963c0\" stroke-width=\"20\"/>\n<use xlink:href=\"#t4\" stroke=\"#a963c0\" stroke-width=\"20\"/>\n<use xlink:href=\"#t5\" stroke=\"#a963c0\" stroke-width=\"20\"/>\n<use xlink:href=\"#t3\" stroke=\"#e3bdf0\" stroke-width=\"4\" opacity=\"0.5\" transform=\"translate(-4,-3)\"/>\n<use xlink:href=\"#t4\" stroke=\"#e3bdf0\" stroke-width=\"4\" opacity=\"0.5\" transform=\"translate(-4,-3)\"/>\n<use xlink:href=\"#t5\" stroke=\"#e3bdf0\" stroke-width=\"4\" opacity=\"0.5\" transform=\"translate(-4,-3)\"/>\n</g>\n</svg>",
+        "usage": {
+          "promptTokens": 188,
+          "completionTokens": 2643,
+          "reasoningTokens": 1061,
+          "costUsd": 0.0013403
+        },
+        "latencyMs": 12313.856541000001,
+        "finishReason": "stop",
+        "generationId": "gen-1794884896-9qrEbbVprXffgDcJhljR"
+      },
+      "costUsd": 0.0013403
+    }
+  ],
+  "startedAt": "2026-11-17T03:08:12.800Z"
+}

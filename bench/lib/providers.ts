@@ -107,6 +107,15 @@ function cannedReply(request: CompletionRequest): string | MockReply {
     ].join('\n');
   }
 
+  if (condition === 'zdog') {
+    if (broken) {
+      return stuck
+        ? `new Zdog.Sphere({ radius: 80, color: '${color}' });`
+        : `const illo = new Zdog.Illustration({ element: '.zdog-svg' });new Zdog.Elipse({ addTo: illo, diameter: 200, color: '${color}' });illo.updateRenderGraph();`;
+    }
+    return `const illo = new Zdog.Illustration({ element: '.zdog-svg', rotate: { x: -0.35, y: 0.52 } });new Zdog.Shape({ addTo: illo, stroke: 140, color: '${color}' });new Zdog.Ellipse({ addTo: illo, diameter: 240, stroke: 12, color: '#333', rotate: { x: Zdog.TAU / 4 } });new Zdog.Shape({ addTo: illo, translate: { z: 70 }, stroke: 24, color: '#fff' });illo.updateRenderGraph();`;
+  }
+
   if (broken) {
     return stuck
       ? '{ "width": 400, "height": 400, "children": [ { "type": "path", "path": [{}], }, ] }'

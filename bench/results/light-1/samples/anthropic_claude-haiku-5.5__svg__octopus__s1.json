@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "octopus",
+  "taskPrompt": "an octopus with curling tentacles",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: an octopus with curling tentacles."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\"><defs><radialGradient id=\"bg\" cx=\"50%\" cy=\"35%\" r=\"70%\"><stop offset=\"0\" stop-color=\"#2d5b8a\"/><stop offset=\"1\" stop-color=\"#0b1a33\"/></radialGradient><radialGradient id=\"body\" cx=\"35%\" cy=\"30%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#f7b3d6\"/><stop offset=\"0.5\" stop-color=\"#c8509a\"/><stop offset=\"1\" stop-color=\"#5e1a48\"/></radialGradient><radialGradient id=\"eye\" cx=\"40%\" cy=\"35%\" r=\"65%\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\"1\" stop-color=\"#cfd8e6\"/></radialGradient></defs><rect width=\"400\" height=\"400\" fill=\"url(#bg)\"/><ellipse cx=\"200\" cy=\"372\" rx=\"130\" ry=\"14\" fill=\"#000\" opacity=\"0.35\"/><g fill=\"none\" stroke-linecap=\"round\"><path d=\"M140 240C110 300 50 290 60 340C68 370 110 350 95 325\" stroke=\"#5a1846\" stroke-width=\"22\"/><path d=\"M260 240C290 300 350 290 340 340C332 370 290 350 305 325\" stroke=\"#5a1846\" stroke-width=\"22\"/><path d=\"M175 250C170 310 150 330 170 360C185 380 215 360 200 340\" stroke=\"#6d2058\" stroke-width=\"22\"/><path d=\"M225 250C235 305 265 330 245 362C230 382 200 366 212 345\" stroke=\"#6d2058\" stroke-width=\"22\"/></g><ellipse cx=\"200\" cy=\"125\" rx=\"92\" ry=\"108\" fill=\"url(#body)\"/><ellipse cx=\"170\" cy=\"70\" rx=\"30\" ry=\"14\" fill=\"#ffffff\" opacity=\"0.25\" transform=\"rotate(-20 170 70)\"/><g fill=\"none\" stroke-linecap=\"round\"><path d=\"M120 225C90 260 120 300 135 280C148 262 125 255 118 268\" stroke=\"#a83a80\" stroke-width=\"20\"/><path d=\"M280 225C310 260 280 300 265 280C252 262 275 255 282 268\" stroke=\"#a83a80\" stroke-width=\"20\"/><path d=\"M200 235C200 280 175 300 200 335C215 355 240 340 228 320\" stroke=\"#c35a99\" stroke-width=\"18\"/></g><g fill=\"#f9d3e8\" opacity=\"0.8\"><circle cx=\"110\" cy=\"236\" r=\"3\"/><circle cx=\"96\" cy=\"252\" r=\"3\"/><circle cx=\"145\" cy=\"318\" r=\"3\"/><circle cx=\"288\" cy=\"236\" r=\"3\"/><circle cx=\"302\" cy=\"252\" r=\"3\"/><circle cx=\"195\" cy=\"262\" r=\"3\"/><circle cx=\"222\" cy=\"300\" r=\"3\"/></g><ellipse cx=\"164\" cy=\"150\" rx=\"17\" ry=\"20\" fill=\"url(#eye)\" stroke=\"#3a0f2b\" stroke-width=\"2\"/><ellipse cx=\"236\" cy=\"150\" rx=\"17\" ry=\"20\" fill=\"url(#eye)\" stroke=\"#3a0f2b\" stroke-width=\"2\"/><circle cx=\"168\" cy=\"153\" r=\"8\" fill=\"#140616\"/><circle cx=\"240\" cy=\"153\" r=\"8\" fill=\"#140616\"/><circle cx=\"171\" cy=\"149\" r=\"3\" fill=\"#ffffff\"/><circle cx=\"243\" cy=\"149\" r=\"3\" fill=\"#ffffff\"/><path d=\"M175 190Q200 200 225 190\" fill=\"none\" stroke=\"#5a1846\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+        "usage": {
+          "promptTokens": 188,
+          "completionTokens": 2401,
+          "reasoningTokens": 1120,
+          "costUsd": 0.0012193
+        },
+        "latencyMs": 12071.616041000001,
+        "finishReason": "stop",
+        "generationId": "gen-1794877884-oK2VsdsERQkCl3y8j6hZ"
+      },
+      "costUsd": 0.0012193
+    }
+  ],
+  "startedAt": "2026-11-17T01:11:24.268Z"
+}

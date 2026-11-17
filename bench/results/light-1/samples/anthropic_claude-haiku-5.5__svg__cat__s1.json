@@ -1,0 +1,36 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "condition": "svg",
+  "taskId": "cat",
+  "taskPrompt": "a cat sitting down",
+  "sample": 1,
+  "attempts": [
+    {
+      "attempt": 0,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are an illustrator who writes SVG by hand.\n\nDraw the requested subject as one standalone SVG document, 400 by 400 pixels.\nMake it look three-dimensional: give the parts volume and depth, and make it clear which parts are in front of others.\nUse only what SVG itself provides. Do not use scripts, external images, external fonts or links.\nReply with the SVG document only: no explanation and no Markdown code fence.\nWrite it compactly, without indentation or line breaks you do not need."
+        },
+        {
+          "role": "user",
+          "content": "Draw this: a cat sitting down."
+        }
+      ],
+      "response": {
+        "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\" width=\"400\" height=\"400\">\n<defs>\n<radialGradient id=\"f\" cx=\"35%\" cy=\"30%\" r=\"75%\">\n<stop offset=\"0\" stop-color=\"#ffd08a\"/>\n<stop offset=\"0.55\" stop-color=\"#e8903e\"/>\n<stop offset=\"1\" stop-color=\"#9a4a14\"/>\n</radialGradient>\n<radialGradient id=\"l\" cx=\"35%\" cy=\"30%\" r=\"75%\">\n<stop offset=\"0\" stop-color=\"#fff6e6\"/>\n<stop offset=\"0.6\" stop-color=\"#f3d2a8\"/>\n<stop offset=\"1\" stop-color=\"#c49464\"/>\n</radialGradient>\n<radialGradient id=\"s\" cx=\"50%\" cy=\"50%\" r=\"50%\">\n<stop offset=\"0\" stop-color=\"#000\" stop-opacity=\"0.45\"/>\n<stop offset=\"1\" stop-color=\"#000\" stop-opacity=\"0\"/>\n</radialGradient>\n<radialGradient id=\"e\" cx=\"35%\" cy=\"35%\" r=\"70%\">\n<stop offset=\"0\" stop-color=\"#8ad0a0\"/>\n<stop offset=\"0.5\" stop-color=\"#2a7a4a\"/>\n<stop offset=\"1\" stop-color=\"#0c2a18\"/>\n</radialGradient>\n</defs>\n<rect width=\"400\" height=\"400\" fill=\"#f4efe6\"/>\n<ellipse cx=\"200\" cy=\"352\" rx=\"130\" ry=\"22\" fill=\"url(#s)\"/>\n<path d=\"M262 330 Q370 345 368 262 Q366 214 338 232 Q352 282 300 300 Z\" fill=\"#b65f1e\"/>\n<path d=\"M262 330 Q370 345 368 262 Q366 214 338 232\" fill=\"none\" stroke=\"#e8903e\" stroke-width=\"18\" stroke-linecap=\"round\"/>\n<path d=\"M120 342 Q96 230 150 186 Q200 152 252 186 Q304 230 280 342 Q200 362 120 342 Z\" fill=\"url(#f)\"/>\n<ellipse cx=\"200\" cy=\"290\" rx=\"48\" ry=\"46\" fill=\"url(#l)\" opacity=\"0.8\"/>\n<path d=\"M146 96 L156 34 L196 80 Z\" fill=\"#c4742e\"/>\n<path d=\"M254 96 L244 34 L204 80 Z\" fill=\"#c4742e\"/>\n<path d=\"M152 88 L158 50 L184 80 Z\" fill=\"#f2a8a0\"/>\n<path d=\"M248 88 L242 50 L216 80 Z\" fill=\"#f2a8a0\"/>\n<circle cx=\"200\" cy=\"132\" r=\"60\" fill=\"url(#f)\"/>\n<path d=\"M178 170 Q200 182 222 170 Q200 176 178 170 Z\" fill=\"#fff6e6\" opacity=\"0.6\"/>\n<ellipse cx=\"200\" cy=\"168\" rx=\"26\" ry=\"16\" fill=\"url(#l)\" opacity=\"0.9\"/>\n<ellipse cx=\"178\" cy=\"126\" rx=\"8\" ry=\"10\" fill=\"url(#e)\"/>\n<ellipse cx=\"222\" cy=\"126\" rx=\"8\" ry=\"10\" fill=\"url(#e)\"/>\n<ellipse cx=\"176\" cy=\"122\" rx=\"3\" ry=\"3\" fill=\"#fff\"/>\n<ellipse cx=\"220\" cy=\"122\" rx=\"3\" ry=\"3\" fill=\"#fff\"/>\n<path d=\"M194 148 L206 148 L200 156 Z\" fill=\"#d9607a\"/>\n<path d=\"M200 156 Q194 166 186 162 M200 156 Q206 166 214 162\" fill=\"none\" stroke=\"#6b3412\" stroke-width=\"2.5\" stroke-linecap=\"round\"/>\n<g stroke=\"#6b3412\" stroke-width=\"1.6\" stroke-linecap=\"round\" opacity=\"0.8\">\n<line x1=\"150\" y1=\"150\" x2=\"112\" y2=\"142\"/>\n<line x1=\"150\" y1=\"158\" x2=\"114\" y2=\"160\"/>\n<line x1=\"250\" y1=\"150\" x2=\"288\" y2=\"142\"/>\n<line x1=\"250\" y1=\"158\" x2=\"286\" y2=\"160\"/>\n</g>\n<rect x=\"158\" y=\"262\" width=\"34\" height=\"84\" rx=\"17\" fill=\"url(#l)\"/>\n<rect x=\"208\" y=\"262\" width=\"34\" height=\"84\" rx=\"17\" fill=\"url(#l)\"/>\n<ellipse cx=\"175\" cy=\"344\" rx=\"21\" ry=\"11\" fill=\"#fff6e6\"/>\n<ellipse cx=\"225\" cy=\"344\" rx=\"21\" ry=\"11\" fill=\"#fff6e6\"/>\n<line x1=\"170\" y1=\"340\" x2=\"170\" y2=\"348\" stroke=\"#c49464\" stroke-width=\"1.5\"/>\n<line x1=\"180\" y1=\"340\" x2=\"180\" y2=\"348\" stroke=\"#c49464\" stroke-width=\"1.5\"/>\n<line x1=\"220\" y1=\"340\" x2=\"220\" y2=\"348\" stroke=\"#c49464\" stroke-width=\"1.5\"/>\n<line x1=\"230\" y1=\"340\" x2=\"230\" y2=\"348\" stroke=\"#c49464\" stroke-width=\"1.5\"/>\n</svg>",
+        "usage": {
+          "promptTokens": 184,
+          "completionTokens": 2361,
+          "reasoningTokens": 609,
+          "costUsd": 0.0011989
+        },
+        "latencyMs": 10746.60370799998,
+        "finishReason": "stop",
+        "generationId": "gen-1794877836-E98haB75uBJtdRNfTBCX"
+      },
+      "costUsd": 0.0011989
+    }
+  ],
+  "startedAt": "2026-11-17T01:10:36.373Z"
+}
