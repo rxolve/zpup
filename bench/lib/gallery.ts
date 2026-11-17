@@ -1,14 +1,14 @@
 /**
  * A static HTML page for looking at the pictures. Every SVG is embedded as an
  * <img> data URI, so scripts or external references inside model output never
- * run. The page has an open view (formats labeled, zpup and Zdog shown at
+ * run. The page has an open view (formats labeled, Zpup and Zdog shown at
  * every rotation) and a blind view (formats hidden behind X, Y and Z in a
  * shuffled order, one angle each).
  */
 import type { LoadedRun, ScoredSample } from './report.ts';
 import { type Condition, conditionsOf, type Score } from './types.ts';
 
-const OPEN_LABEL: Record<Condition, string> = { svg: 'SVG', zdog: 'Zdog', zpup: 'zpup' };
+const OPEN_LABEL: Record<Condition, string> = { svg: 'SVG', zdog: 'Zdog', zpup: 'Zpup' };
 const BLIND_LABELS = ['X', 'Y', 'Z'];
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -20,6 +20,8 @@ function hash(text: string): number {
   for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619) >>> 0;
   return h;
 }
+
+const share = (value: number) => `${(100 * value).toFixed(value < 0.1 ? 2 : 1)}%`;
 
 function picture(svg: string, alt: string): string {
   return `<img src="${dataUri(svg)}" alt="${escapeHtml(alt)}" loading="lazy">`;
@@ -71,7 +73,11 @@ function side(
           .map((w) => `<li>${escapeHtml(w.message.slice(0, 300))}</li>`)
           .join('')}</ul></details>`
       : '';
-    body = `<figure>${picture(sample.final.svg, alt)}<figcaption>${sample.repaired ? 'after repair' : 'first try'}</figcaption></figure>${extra}${single}${warningList}`;
+    const turns = sample.final.turnErrors;
+    const turnNote = turns
+      ? `<p class="open-only turn-errors">Turn errors: ${share(turns.mean)} of painted pixels on average over ${turns.views} views, worst ${share(turns.worst)} at +${turns.worstOffsetDeg}°${turns.excluded ? ` (${turns.excluded} elements not modeled)` : ''}</p>`
+      : '';
+    body = `<figure>${picture(sample.final.svg, alt)}<figcaption>${sample.repaired ? 'after repair' : 'first try'}</figcaption></figure>${extra}${single}${turnNote}${warningList}`;
   } else {
     body = invalidBox(
       sample.final,
@@ -132,7 +138,7 @@ export function galleryHtml(run: LoadedRun): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>zpup bench gallery</title>
+<title>Zpup bench gallery</title>
 <style>
 :root { --bg: #fafaf7; --fg: #222; --muted: #666; --card: #fff; --line: #ddd; --bad: #b3261e; }
 @media (prefers-color-scheme: dark) { :root { --bg: #18181a; --fg: #eee; --muted: #aaa; --card: #232326; --line: #3a3a3e; --bad: #ff8a80; } }
@@ -157,6 +163,7 @@ img, .invalid, .placeholder > div { width: 160px; height: 160px; display: block;
 .invalid ul { padding-left: 14px; margin: 4px 0; }
 .invalid p { margin: 4px 0; }
 .truncated { color: var(--muted); border-style: dashed; }
+.turn-errors { flex-basis: 100%; max-width: 520px; margin: 0; font-size: 11px; color: var(--muted); }
 .scene-warnings { flex-basis: 100%; max-width: 520px; font-size: 11px; color: var(--muted); }
 .scene-warnings ul { padding-left: 14px; margin: 4px 0; }
 .placeholder > div { display: flex; align-items: center; justify-content: center; color: var(--muted); background: transparent; border-style: dashed; font-size: 12px; }
@@ -172,7 +179,7 @@ body.blind.revealed .open-label { display: inline; }
 </head>
 <body>
 <header>
-<strong>zpup bench</strong> run <code>${escapeHtml(manifest.runId)}</code> (${escapeHtml(manifest.provider)})
+<strong>Zpup bench</strong> run <code>${escapeHtml(manifest.runId)}</code> (${escapeHtml(manifest.provider)})
 <div>
 <button type="button" id="mode">Blind view</button>
 <button type="button" id="reveal" hidden>Reveal formats</button>
@@ -180,7 +187,7 @@ body.blind.revealed .open-label { display: inline; }
 </div>
 </header>
 ${mockNote}
-<p>Each set shows one model's answers to the same request, one per format (${formats.map((c) => OPEN_LABEL[c]).join(', ')}). zpup and Zdog scenes are also drawn turned by ${manifest.config.rotationOffsetsDeg
+<p>Each set shows one model's answers to the same request, one per format (${formats.map((c) => OPEN_LABEL[c]).join(', ')}). Zpup and Zdog scenes are also drawn turned by ${manifest.config.rotationOffsetsDeg
     .filter((d) => d !== 0)
     .map((d) => `${d > 0 ? '+' : ''}${d}°`)
     .join(

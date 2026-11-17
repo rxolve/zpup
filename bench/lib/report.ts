@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { extractDocument, scoreReply } from './score.ts';
+import { DEPTH_TOLERANCE, GRID_STEP, TURN_OFFSETS_DEG, type TurnErrors } from './turns.ts';
 import {
   type Condition,
   conditionsOf,
@@ -129,9 +130,9 @@ const fmt = (value: number | undefined, digits = 0) =>
 const CONDITION_LABEL: Record<Condition, string> = {
   svg: 'raw SVG',
   zdog: 'Zdog script',
-  zpup: 'zpup JSON',
+  zpup: 'Zpup JSON',
 };
-const SHORT_LABEL: Record<Condition, string> = { svg: 'SVG', zdog: 'Zdog', zpup: 'zpup' };
+const SHORT_LABEL: Record<Condition, string> = { svg: 'SVG', zdog: 'Zdog', zpup: 'Zpup' };
 
 interface Row {
   label: string;
@@ -186,11 +187,83 @@ function problemKind(problem: string): string {
     .slice(0, 160);
 }
 
+const percent = (share: number) => `${(100 * share).toFixed(2)}%`;
+
+/** The turn-error table and the worst samples; see bench/README.md. */
+function turnErrorLines(manifest: RunManifest, samples: ScoredSample[]): string[] {
+  const formats = conditionsOf(manifest.config).filter((c) => c !== 'svg');
+  if (formats.length === 0) return [];
+  const lines = [
+    '',
+    '## Turn errors',
+    '',
+    `Each valid Zpup and Zdog scene is turned about the vertical axis to ${TURN_OFFSETS_DEG.length} views (its own view and every ${TURN_OFFSETS_DEG[1]}°), and each view is checked against a depth buffer on a grid of ${GRID_STEP === 1 ? 'one point per pixel' : `one point per ${GRID_STEP} by ${GRID_STEP} pixels`}. A point is wrong when the shape painted last there is more than ${DEPTH_TOLERANCE} px behind the shape that is really in front and the two have different colors. A sample's value is the share of covered points that are wrong, averaged over its views; "worst view" is its highest single view. SVG has one angle only and is not measured. See bench/README.md for what this does and does not catch.`,
+    '',
+    '| Model / format | Measured | Median | Mean | Above 1% | Median worst view |',
+    '| --- | ---: | ---: | ---: | ---: | ---: |',
+  ];
+  const row = (label: string, pool: ScoredSample[]) => {
+    const valid = pool.filter((x) => x.finalValid);
+    const measured = valid.flatMap((x) => (x.final?.turnErrors ? [x.final.turnErrors] : []));
+    const means = measured.map((t) => t.mean);
+    const worst = measured.map((t) => t.worst);
+    const mean = means.length ? means.reduce((a, b) => a + b, 0) / means.length : undefined;
+    const cell = (v: number | undefined) => (v === undefined ? '-' : percent(v));
+    const unmeasured = valid.length - measured.length;
+    return `| ${label} | ${measured.length}${unmeasured ? ` (+${unmeasured} not measured)` : ''} | ${cell(median(means))} | ${cell(mean)} | ${pct(
+      means.filter((v) => v > 0.01).length,
+      means.length,
+    )} | ${cell(median(worst))} |`;
+  };
+  const models = manifest.config.models;
+  for (const model of models) {
+    for (const condition of formats) {
+      lines.push(
+        row(
+          `${model.label} / ${CONDITION_LABEL[condition]}`,
+          samples.filter((x) => x.record.model === model.id && x.record.condition === condition),
+        ),
+      );
+    }
+  }
+  if (models.length > 1) {
+    for (const condition of formats) {
+      lines.push(
+        row(
+          `All models / ${CONDITION_LABEL[condition]}`,
+          samples.filter((x) => x.record.condition === condition),
+        ),
+      );
+    }
+  }
+  lines.push('', 'The three samples with the highest mean in each format:', '');
+  for (const condition of formats) {
+    const worst = samples
+      .filter((x) => x.record.condition === condition && x.finalValid && x.final?.turnErrors)
+      .sort((a, b) => (b.final?.turnErrors?.mean ?? 0) - (a.final?.turnErrors?.mean ?? 0))
+      .slice(0, 3);
+    const list = worst.map((x) => {
+      const t = x.final?.turnErrors as TurnErrors;
+      const model = models.find((m) => m.id === x.record.model)?.label ?? x.record.model;
+      return `${x.record.taskId} (${model}, sample ${x.record.sample + 1}): ${percent(t.mean)}, worst ${percent(t.worst)} at +${t.worstOffsetDeg}°`;
+    });
+    lines.push(`- ${CONDITION_LABEL[condition]}: ${list.length ? list.join('; ') : 'none'}`);
+  }
+  const excluded = samples.reduce((n, x) => n + (x.final?.turnErrors?.excluded ?? 0), 0);
+  if (excluded > 0) {
+    lines.push(
+      '',
+      `${excluded} painted elements (summed over all views) could not be modeled and were left out; see bench/README.md.`,
+    );
+  }
+  return lines;
+}
+
 export function summaryMarkdown(run: LoadedRun): string {
   const { manifest, samples } = run;
   const formats = conditionsOf(manifest.config);
   const lines: string[] = [];
-  lines.push(`# zpup bench: run ${manifest.runId}`, '');
+  lines.push(`# Zpup bench: run ${manifest.runId}`, '');
   lines.push(
     `Provider: ${manifest.provider}. Started ${manifest.startedAt}${manifest.finishedAt ? `, finished ${manifest.finishedAt}` : ''}.`,
   );
@@ -241,7 +314,7 @@ export function summaryMarkdown(run: LoadedRun): string {
 
   lines.push('', '## Output size and reasoning', '');
   lines.push(
-    'Median characters of the valid documents (the reply that passed, after code-fence extraction), and median reasoning tokens of every first try that returned, truncated ones included. A model that reasons much longer for zpup than for SVG is spending effort on the unfamiliar format.',
+    'Median characters of the valid documents (the reply that passed, after code-fence extraction), and median reasoning tokens of every first try that returned, truncated ones included. A model that reasons much longer for Zpup than for SVG is spending effort on the unfamiliar format.',
     '',
     `| Model | ${formats.map((c) => `${SHORT_LABEL[c]} chars`).join(' | ')} | ${formats.map((c) => `${SHORT_LABEL[c]} reasoning tokens`).join(' | ')} |`,
     `| --- | ${formats.map(() => '---: | ---:').join(' | ')} |`,
@@ -266,6 +339,8 @@ export function summaryMarkdown(run: LoadedRun): string {
     );
   }
   lines.push(sizeRow('All models', samples));
+
+  lines.push(...turnErrorLines(manifest, samples));
 
   lines.push(
     '',
@@ -318,13 +393,13 @@ export function summaryMarkdown(run: LoadedRun): string {
     lines.push('');
   }
 
-  lines.push('## Scene warnings (zpup only, do not affect validity)', '');
+  lines.push('## Scene warnings (Zpup only, do not affect validity)', '');
   const zpupValid = samples.filter((x) => x.record.condition === 'zpup' && x.finalValid);
   const kinds = [
     ...new Set(zpupValid.flatMap((x) => (x.final?.sceneWarnings ?? []).map((w) => w.kind))),
   ].sort();
   lines.push(
-    `What \`checkSceneWarnings\` reports for each valid zpup scene: angles that look like radians, shapes entirely outside the image, and solids whose color cannot be shaded. Each cell counts scenes with at least one warning of that kind, out of the valid scenes.`,
+    `What \`checkSceneWarnings\` reports for each valid Zpup scene: angles that look like radians, shapes entirely outside the image, solids whose color cannot be shaded, and shapes of different colors that pass through each other. Each cell counts scenes with at least one warning of that kind, out of the valid scenes.`,
     '',
   );
   if (kinds.length === 0) {

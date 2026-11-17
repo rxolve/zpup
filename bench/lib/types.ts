@@ -1,4 +1,5 @@
 /** Shared types for the benchmark. */
+import type { TurnErrors } from './turns.ts';
 
 /** The ways a model can be asked to draw. */
 export type Condition = 'svg' | 'zdog' | 'zpup';
@@ -27,7 +28,7 @@ export interface ModelConfig {
 
 export interface BenchConfig {
   models: ModelConfig[];
-  /** The formats to compare. Missing means raw SVG and zpup. */
+  /** The formats to compare. Missing means raw SVG and Zpup. */
   formats?: Condition[];
   repetitions: number;
   maxCostUsd: number;
@@ -109,12 +110,18 @@ export interface Score {
   problems: string[];
   /** Things that do not fail the check but are worth seeing (for example a missing SVG namespace). */
   warnings: string[];
-  /** For valid replies: the SVG to show. For zpup and Zdog, the scene at its own view angle. */
+  /** For valid replies: the SVG to show. For Zpup and Zdog, the scene at its own view angle. */
   svg?: string;
-  /** zpup only, valid scenes only: what `checkSceneWarnings` reported, by kind. */
+  /** Zpup only, valid scenes only: what `checkSceneWarnings` reported, by kind. */
   sceneWarnings?: { kind: string; message: string }[];
-  /** zpup and Zdog: the scene rendered at each configured rotation offset. */
+  /** Zpup and Zdog: the scene rendered at each configured rotation offset. */
   rotations?: { offsetDeg: number; svg?: string; error?: string }[];
+  /**
+   * Zpup and Zdog, valid replies only: how much of the picture is painted in
+   * the wrong front-to-back order when the scene is turned (see turns.ts).
+   * Missing when it could not be measured.
+   */
+  turnErrors?: TurnErrors;
 }
 
 /** One model call as stored on disk. */

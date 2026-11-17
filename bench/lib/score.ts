@@ -13,8 +13,11 @@ import {
   type Scene,
   type ValidationIssue,
 } from '../../src/index.ts';
+import { normalizeScene } from '../../src/validate.ts';
+import { checkView, GRID_STEP, summarizeViews, TURN_OFFSETS_DEG } from './turns.ts';
+import { zpupTurnErrors } from './turns-zpup.ts';
 import type { Condition, Score } from './types.ts';
-import { runZdog } from './zdog.ts';
+import { runZdog, type ZdogRun } from './zdog.ts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -187,6 +190,7 @@ export function scoreZdog(
     width: options.canvas.width,
     height: options.canvas.height,
     offsetsDeg: options.rotationOffsetsDeg,
+    turnsDeg: TURN_OFFSETS_DEG,
   });
   if (!run.ok || run.svg === undefined) {
     return { valid: false, problems: [run.error ?? 'The script failed.'], warnings };
@@ -199,7 +203,31 @@ export function scoreZdog(
     };
   }
   if (!run.rendered) warnings.push('The script never called updateRenderGraph().');
-  return { valid: true, problems: [], warnings, svg: run.svg, rotations: run.rotations ?? [] };
+  const turnErrors = zdogTurnErrors(run, options.canvas);
+  return {
+    valid: true,
+    problems: [],
+    warnings,
+    svg: run.svg,
+    rotations: run.rotations ?? [],
+    ...(turnErrors ? { turnErrors } : {}),
+  };
+}
+
+/** Turn errors of a Zdog run; undefined when any view could not be read. */
+function zdogTurnErrors(run: ZdogRun, canvas: { width: number; height: number }) {
+  const turns = run.turns ?? [];
+  if (turns.length !== TURN_OFFSETS_DEG.length) return undefined;
+  const views = [];
+  for (const turn of turns) {
+    if (!turn.primitives) return undefined;
+    views.push({
+      offsetDeg: turn.offsetDeg,
+      count: checkView(turn.primitives, canvas, GRID_STEP),
+      excluded: turn.excluded,
+    });
+  }
+  return summarizeViews(views);
 }
 
 export function scoreZpup(
@@ -258,7 +286,21 @@ export function scoreZpup(
     kind: warningKind(issue),
     message: issue.message,
   }));
-  return { valid: true, problems: [], warnings, sceneWarnings, svg, rotations };
+  let turnErrors: Score['turnErrors'];
+  try {
+    turnErrors = zpupTurnErrors(normalizeScene(valid));
+  } catch {
+    turnErrors = undefined;
+  }
+  return {
+    valid: true,
+    problems: [],
+    warnings,
+    sceneWarnings,
+    svg,
+    rotations,
+    ...(turnErrors ? { turnErrors } : {}),
+  };
 }
 
 /** A short name for each kind of warning `checkSceneWarnings` gives, for counting. */
@@ -267,5 +309,8 @@ export function warningKind(issue: ValidationIssue): string {
   if (issue.expected.startsWith('a shape at least partly inside')) return 'shape off screen';
   if (issue.expected.startsWith('at least one visible shape')) return 'nothing drawn';
   if (issue.expected.startsWith('a color that can be shaded')) return 'solid cannot be shaded';
+  if (issue.expected.startsWith('shapes that do not pass through')) {
+    return 'shapes pass through each other';
+  }
   return issue.expected.replace(/\d+(\.\d+)?/g, 'N').slice(0, 80);
 }
