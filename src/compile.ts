@@ -2,6 +2,7 @@ import { depthOrder } from './depth.ts';
 import { controlPoints, type PathGeometry, type Segment } from './geometry.ts';
 import type { Vec3 } from './math.ts';
 import { compilePieces, depthShapes, type Piece, paintedColor, visiblePieces } from './pieces.ts';
+import type { SoftKind } from './shading.ts';
 import type { Scene } from './types.ts';
 import { type NormalizedScene, normalizeScene } from './validate.ts';
 
@@ -27,6 +28,8 @@ export interface DotItem {
   readonly y: number;
   readonly radius: number;
   readonly color: string;
+  /** How soft shading paints it; renderers use it only when the frame's `shading` is `"soft"`. */
+  readonly soft: SoftKind | undefined;
   /** Depth of the dot's center; larger is closer. */
   readonly depth: number;
   readonly nodeId: string | undefined;
@@ -40,6 +43,8 @@ export interface PathItem {
   /** Stroke width in pixels; 0 means no outline. Strokes have round caps and joins. */
   readonly stroke: number;
   readonly fill: boolean;
+  /** How soft shading paints it; renderers use it only when the frame's `shading` is `"soft"`. */
+  readonly soft: SoftKind | undefined;
   /** Mean depth of the outline; larger is closer. */
   readonly depth: number;
   readonly nodeId: string | undefined;
@@ -57,6 +62,8 @@ export interface Frame {
   readonly height: number;
   readonly background: string | undefined;
   readonly title: string | undefined;
+  /** Whether round things are painted flat or with a gradient. */
+  readonly shading: 'flat' | 'soft';
   readonly items: readonly DrawItem[];
 }
 
@@ -78,6 +85,7 @@ export function compileNormalized(s: NormalizedScene, rotate: Vec3 = s.rotate): 
     height: s.height,
     background: s.background,
     title: s.title,
+    shading: s.shading,
     items: joinPieces(pieces, order),
   };
 }
@@ -132,6 +140,7 @@ export function joinPieces(pieces: readonly Piece[], order: readonly number[]): 
           y: start.y,
           radius: first.stroke / 2,
           color: paintedColor(first),
+          soft: 'ball',
           depth,
           nodeId: first.nodeId,
         });
@@ -144,6 +153,7 @@ export function joinPieces(pieces: readonly Piece[], order: readonly number[]): 
       color: paintedColor(first),
       stroke: first.stroke,
       fill: first.fill,
+      soft: first.soft,
       depth,
       nodeId: first.nodeId,
     });

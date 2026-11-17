@@ -53,6 +53,7 @@ export interface NormalizedScene {
   readonly zoom: number;
   readonly background: string | undefined;
   readonly title: string | undefined;
+  readonly shading: 'flat' | 'soft';
   readonly rotate: Vec3;
   readonly children: readonly NormalizedNode[];
 }
@@ -222,7 +223,16 @@ const KEYS_BY_TYPE: Readonly<Record<NodeType, readonly string[]>> = {
   hemisphere: [...SOLID_KEYS, 'diameter', ...FACE_KEYS.hemisphere],
 };
 const ALL_NODE_KEYS = [...new Set(NODE_TYPES.flatMap((t) => KEYS_BY_TYPE[t]))];
-const SCENE_KEYS = ['width', 'height', 'zoom', 'background', 'title', 'rotate', 'children'];
+const SCENE_KEYS = [
+  'width',
+  'height',
+  'zoom',
+  'background',
+  'title',
+  'shading',
+  'rotate',
+  'children',
+];
 
 /** Well-known aliases for option names. */
 const KEY_ALIASES: Readonly<Record<string, string>> = {
@@ -952,6 +962,19 @@ export function normalize(input: unknown): { scene?: NormalizedScene; issues: Va
     if (typeof input.title === 'string') title = input.title;
     else c.report([...path, 'title'], undefined, 'a string', input.title);
   }
+  let shading: 'flat' | 'soft' = 'flat';
+  if (input.shading !== undefined) {
+    if (input.shading === 'flat' || input.shading === 'soft') shading = input.shading;
+    else {
+      c.report(
+        [...path, 'shading'],
+        undefined,
+        '"flat" or "soft"',
+        input.shading,
+        'Use "soft" to shade round things with a gradient, or leave the option out.',
+      );
+    }
+  }
   const rotate =
     input.rotate === undefined
       ? ZERO
@@ -971,7 +994,7 @@ export function normalize(input: unknown): { scene?: NormalizedScene; issues: Va
     return { issues: c.issues };
   }
   return {
-    scene: { width, height, zoom, background, title, rotate, children },
+    scene: { width, height, zoom, background, title, shading, rotate, children },
     issues: c.issues,
   };
 }

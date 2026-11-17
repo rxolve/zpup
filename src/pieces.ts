@@ -17,6 +17,7 @@ import {
   transformNormal,
   type Vec3,
 } from './math.ts';
+import type { SoftKind } from './shading.ts';
 import { type Surface, solidFaces } from './solids.ts';
 import type { NormalizedNode, NormalizedScene, Path } from './validate.ts';
 
@@ -64,6 +65,8 @@ export interface Piece {
   readonly surface: Surface | undefined;
   /** Whether the outline depends on the view angle (round surfaces). */
   readonly viewDependent: boolean;
+  /** For a round surface of a solid: how soft shading paints it. Dots are recognized by their shape. */
+  readonly soft: SoftKind | undefined;
   /**
    * The `backface` option of a flat shape: true (drawn from both sides),
    * false (left out while turned away) or the color of its back. Always true
@@ -170,6 +173,7 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
             backfacing: false,
             surface: undefined,
             viewDependent: false,
+            soft: undefined,
             backface,
             normal,
             front,
@@ -200,6 +204,7 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
           backfacing: face.backfacing,
           surface: face.surface,
           viewDependent: face.viewDependent,
+          soft: face.soft,
           backface: true,
           normal: undefined,
           front: true,

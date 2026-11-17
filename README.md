@@ -85,6 +85,23 @@ cone({ diameter: 44, length: 18, rotate: up, color: '#d8463c' }); // the hut's r
 
 Solids are depth-sorted like everything else, against each other and against flat shapes. Rest one solid on a flat face of another; solids that cut into each other cannot be drawn correctly.
 
+### Soft shading
+
+By default every shape has one flat color. `shading: "soft"` on the scene paints dots and the round surfaces of solids (the side of a cylinder or cone, the dome of a hemisphere) with a gradient made from their color, as if lit from the upper left. Flat shapes and lines stay as they are.
+
+```ts
+renderSvg({
+  width: 120,
+  height: 120,
+  shading: 'soft',
+  children: [dot({ stroke: 80, color: '#e62' })],
+});
+```
+
+The light belongs to the picture, not to the scene: it stays in the upper left when the view changes. In a turning picture, a ball keeps its shading all the way round; the side of a cylinder or cone keeps it only when it runs the same way on screen throughout the turn (an upright cylinder turning about the vertical axis), and is flat otherwise.
+
+Shapes of the same color that cut into each other look like one shape when flat. With soft shading each has its own highlight, so the seam shows, and in a turning picture the moment one passes in front of the other shows too. Keep such shapes just touching, or leave the shading flat.
+
 ### Faces that turn away
 
 A flat shape takes `backface`, as in Zdog: `true` (the default) draws it from both sides, `false` leaves it out while its front (its local +z side) faces away, and a color paints its back in that color.
@@ -144,7 +161,7 @@ Limits:
 
 See [docs/decisions.md](docs/decisions.md#turning-animation) for how it works.
 
-There is no lighting and no perspective, by design. See [docs/decisions.md](docs/decisions.md) for the reasoning behind these and other choices, and [llms.txt](llms.txt) for a compact reference written for AI coding tools.
+There is no perspective and no light to place, by design; soft shading is a fixed look, not a lighting model. See [docs/decisions.md](docs/decisions.md) for the reasoning behind these and other choices, and [llms.txt](llms.txt) for a compact reference written for AI coding tools.
 
 ## Goals
 

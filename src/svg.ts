@@ -6,6 +6,7 @@ import {
   type ValidationIssue,
   ZpupValidationError,
 } from './errors.ts';
+import { Gradients } from './shading.ts';
 import type { Scene } from './types.ts';
 import { checkScene } from './validate.ts';
 
@@ -57,8 +58,11 @@ export function frameToSvg(frame: Frame, options: SvgOptions = {}): string {
   if (frame.background !== undefined) {
     lines.push(`<rect width="100%" height="100%" fill="${escapeXml(frame.background)}"/>`);
   }
-  for (const item of frame.items) lines.push(itemToSvg(item, n));
-  lines.push('</svg>');
+  const gradients = frame.shading === 'soft' ? new Gradients() : undefined;
+  const items = frame.items.map((item) => itemToSvg(item, n, gradients));
+  const defs = gradients?.defs() ?? [];
+  if (defs.length > 0) lines.push('<defs>', ...defs, '</defs>');
+  lines.push(...items, '</svg>');
   return `${lines.join('\n')}\n`;
 }
 
@@ -127,8 +131,12 @@ function svgOptionIssues(options: unknown): ValidationIssue[] {
   return issues;
 }
 
-function itemToSvg(item: DrawItem, n: (value: number) => string): string {
-  const color = escapeXml(item.color);
+function itemToSvg(
+  item: DrawItem,
+  n: (value: number) => string,
+  gradients: Gradients | undefined,
+): string {
+  const color = escapeXml(gradients ? gradients.paint(item.color, item.soft) : item.color);
   if (item.kind === 'dot') {
     return `<circle cx="${n(item.x)}" cy="${n(item.y)}" r="${n(item.radius)}" fill="${color}"/>`;
   }

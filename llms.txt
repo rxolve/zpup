@@ -29,7 +29,7 @@ renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene foreve
   - `rotate.x > 0`: the bottom (+y) side moves toward the viewer. `scene.rotate = { x: -15 }` looks down from above.
 - Vectors are objects with optional keys: `{ x: 10 }`, `{ y: -5, z: 2 }`, `{}`. Arrays such as `[1, 2, 3]` are rejected.
 - Node transform order: scale, then rotate, then translate. Children inherit the parent's transform.
-- Projection is orthographic. There is no perspective and no lighting.
+- Projection is orthographic. There is no perspective and no light you can move; `shading: "soft"` on the scene shades round things as if lit from the upper left.
 - Unknown options are errors (this catches typos such as `colour`).
 - Scene JSON may be written without any whitespace; indentation and line breaks are optional.
 
@@ -42,6 +42,7 @@ renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene foreve
   zoom?: number,          // default 1
   background?: string,    // CSS color; default transparent
   title?: string,         // accessible title
+  shading?: "flat" | "soft", // default "flat"; "soft" shades dots and round solids with a gradient, lit from the upper left
   rotate?: { x?, y?, z? },// view rotation in degrees
   children: Node[],       // required (may be [])
 }

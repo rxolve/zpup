@@ -271,6 +271,13 @@ export interface Scene {
   /** Accessible title, emitted as `<title>` and `aria-label`. */
   title?: string;
   /**
+   * How round things are painted. `"flat"` (default) gives each one a single
+   * color. `"soft"` shades dots and the round surfaces of solids with a
+   * gradient, as if lit from the upper left; flat shapes and lines stay as
+   * they are.
+   */
+  shading?: 'flat' | 'soft';
+  /**
    * View rotation applied to the whole scene, in degrees. For example
    * `{ x: -15 }` looks down on the scene from slightly above.
    */

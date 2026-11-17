@@ -12,6 +12,7 @@
 import { shadeColor } from './color.ts';
 import { ellipseGeometry, type PathGeometry, type Segment, transformGeometry } from './geometry.ts';
 import { cross, dot, invert, length, type Matrix, transformNormal, type Vec3 } from './math.ts';
+import { type SoftKind, sideKind } from './shading.ts';
 
 export type SolidKind = 'box' | 'cylinder' | 'cone' | 'hemisphere';
 
@@ -69,6 +70,8 @@ export interface SolidFace {
   readonly surface: Surface | undefined;
   /** Whether the outline depends on the view rather than being fixed 3D points. */
   readonly viewDependent: boolean;
+  /** For a round surface: how soft shading paints it. */
+  readonly soft: SoftKind | undefined;
 }
 
 const X: Vec3 = { x: 1, y: 0, z: 0 };
@@ -90,6 +93,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
     backfacing: dot(normal, view) <= 0,
     surface: undefined,
     viewDependent: false,
+    soft: undefined,
   });
   const round = (geometry: PathGeometry, axis: Vec3): SolidFace => ({
     geometry: transformGeometry(world, geometry),
@@ -101,6 +105,8 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
         ? { kind: s.kind, radius: s.diameter / 2, length: s.length, inverse }
         : undefined,
     viewDependent: true,
+    // The local z axis on screen: the axis of a cylinder or cone.
+    soft: s.kind === 'hemisphere' ? 'ball' : sideKind({ x: world[2], y: world[5], z: world[8] }),
   });
   const r = s.diameter / 2;
   const Z: Vec3 = { x: 0, y: 0, z: 1 };

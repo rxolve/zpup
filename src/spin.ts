@@ -14,6 +14,7 @@ import {
   paintConstraints,
   positions,
 } from './pieces.ts';
+import { Gradients, type SoftKind } from './shading.ts';
 import { escapeXml, formatNumber } from './svg.ts';
 import type { Scene } from './types.ts';
 import { checkScene, type NormalizedScene, normalizeScene } from './validate.ts';
@@ -487,6 +488,13 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
   const ref = (i: number, side: Side) => `${PREFIX}${i}${side === 'back' ? 'b' : ''}`;
   const drawn = new Set<string>();
   const defs: string[] = [];
+  const gradients = s.shading === 'soft' ? new Gradients() : undefined;
+  // A round side keeps its gradient only if it runs the same way at every
+  // keyframe (an upright cylinder turning about the vertical axis does).
+  const softOf = (i: number, piece: Piece) =>
+    keyframes.every((f) => (f[i] as Piece).soft === piece.soft) ? piece.soft : undefined;
+  const paint = (color: string, soft: SoftKind | undefined) =>
+    escapeXml(gradients ? gradients.paint(color, soft) : color);
   first.forEach((piece, i) => {
     const sides = (['front', 'back'] as const).filter((side) => shown[i]?.has(side));
     if (sides.length === 0) return;
@@ -503,7 +511,7 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
       );
       const animate = cx.animate + cy.animate;
       for (const side of sides) {
-        const color = escapeXml(sideColor(piece, side));
+        const color = paint(sideColor(piece, side), 'ball');
         const circle = `<circle id="${ref(i, side)}" cx="${cx.start}" cy="${cy.start}" r="${n(piece.stroke / 2)}" fill="${color}"`;
         defs.push(animate === '' ? `${circle}/>` : `${circle}>${animate}</circle>`);
         drawn.add(ref(i, side));
@@ -525,7 +533,7 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
         even ? undefined : times,
       );
       for (const side of sides) {
-        const color = escapeXml(sideColor(piece, side));
+        const color = paint(sideColor(piece, side), softOf(i, piece));
         const fill = piece.fill ? color : 'none';
         const stroke =
           piece.stroke > 0
@@ -614,7 +622,7 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
   if (s.background !== undefined) {
     lines.push(`<rect width="100%" height="100%" fill="${escapeXml(s.background)}"/>`);
   }
-  lines.push('<defs>', ...defs, '</defs>', ...body, '</svg>');
+  lines.push('<defs>', ...(gradients?.defs() ?? []), ...defs, '</defs>', ...body, '</svg>');
   const text = `${lines.join('\n')}\n`;
   // Ids are prefixed with a hash of the content, so that different
   // animations inlined in one HTML page do not refer to each other's shapes.
