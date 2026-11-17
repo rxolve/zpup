@@ -74,7 +74,7 @@ describe('runBenchmark with the mock provider', () => {
     const { provider, outDir } = await run(({ meta }) =>
       meta.condition === 'svg' ? GOOD_SVG : GOOD_SCENE,
     );
-    expect(provider.calls).toHaveLength(2); // one svg sample, one zpup sample
+    expect(provider.calls).toHaveLength(2); // one svg sample, one Zpup sample
     const { samples } = loadRun(outDir);
     expect(samples.map((s) => [s.firstValid, s.finalValid, s.repaired])).toEqual([
       [true, true, false],
@@ -226,13 +226,21 @@ describe('runBenchmark with the mock provider', () => {
     const { records } = await run(
       async (request) => {
         await new Promise((resolve) => setTimeout(resolve, Math.random() * 5));
-        return { text: GOOD_SVG, completionTokens: request.maxTokens, costUsd: worst(request) };
+        // Every reply is valid, so no sample asks for a repair. Repairs would
+        // join the queue for the budget in an order that depends on timing,
+        // and the number of samples that fit under the cap with it.
+        return {
+          text: request.meta.condition === 'svg' ? GOOD_SVG : GOOD_SCENE,
+          completionTokens: request.maxTokens,
+          costUsd: worst(request),
+        };
       },
       config,
       tasks,
     );
-    expect(records.length).toBeGreaterThanOrEqual(8);
-    expect(records.length).toBeLessThan(16);
+    // Reservations are granted in job order, so the run is the same prefix of
+    // the plan whatever the timing: the first 11 of 16 samples fit.
+    expect(records).toHaveLength(11);
     const spread = (key: (r: SampleRecord) => string) => {
       const counts = new Map<string, number>();
       for (const r of records) counts.set(key(r), (counts.get(key(r)) ?? 0) + 1);
@@ -266,11 +274,11 @@ describe('runBenchmark with the mock provider', () => {
     const { summary } = writeReport(outDir);
     const md = readFileSync(summary, 'utf8');
     // Truncated is its own column; the validity columns have nothing left to count.
-    expect(md).toMatch(/\| zpup JSON \| 1 \| - \| - \| 1 \| 0 \|/);
+    expect(md).toMatch(/\| Zpup JSON \| 1 \| - \| - \| 1 \| 0 \|/);
     expect(md).not.toContain('JSON parse error');
   });
 
-  it('collects scene warnings for valid zpup scenes without affecting validity', async () => {
+  it('collects scene warnings for valid Zpup scenes without affecting validity', async () => {
     const radians = JSON.stringify({
       width: 400,
       height: 400,
