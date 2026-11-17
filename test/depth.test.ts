@@ -403,4 +403,23 @@ describe('depth sorting of solids while the view turns', () => {
     expect(front(-60)).toBe(true); // handle toward the viewer
     expect(front(120)).toBe(false); // handle behind the mug
   });
+
+  it(
+    'keeps the walls of the hut in front of the base of its roof when seen from below',
+    () => {
+      // The top edge of each wall lies in the plane of the roof's base. Seen
+      // from just below, that base is nearly edge-on and depth samples put it
+      // in front of a wall at many angles, which erased the wall.
+      const wrong: string[] = [];
+      for (const x of [2, 3.3, 6, 12]) {
+        for (let step = 0; step < 720; step++) {
+          const y = step / 2;
+          const ids = compileScene({ ...lighthouse, rotate: { x, y } }).items.map((i) => i.nodeId);
+          if (ids.lastIndexOf('hut-roof') > ids.indexOf('hut-walls')) wrong.push(`${x}, ${y}`);
+        }
+      }
+      expect(wrong).toEqual([]);
+    },
+    FULL_TURN_TIMEOUT,
+  );
 });

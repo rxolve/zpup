@@ -170,6 +170,53 @@ function behindPlane(a: Analyzed, b: Analyzed): boolean {
   return true;
 }
 
+/** Slack, in screen units, for a point counted as lying on a face's plane. */
+const ON_PLANE = 1e-4;
+
+/**
+ * Where the outline of `b` lies against the plane of the flat face `a`: 1
+ * when all of it is on the plane or on the viewer's side and some of it is
+ * clearly on the viewer's side, -1 for the far side, 0 when it straddles the
+ * plane or lies in it.
+ */
+function sideOfFace(a: Analyzed, b: Analyzed): number {
+  const plane = a.plane && towardViewer(a.plane.center, a.plane.normal);
+  if (!plane) return 0;
+  const { center, normal } = plane;
+  let near = false;
+  let far = false;
+  for (const q of b.points) {
+    const d =
+      normal.x * (q.x - center.x) + normal.y * (q.y - center.y) + normal.z * (q.z - center.z);
+    if (d > ON_PLANE) near = true;
+    else if (d < -ON_PLANE) far = true;
+    if (near && far) return 0;
+  }
+  return near ? 1 : far ? -1 : 0;
+}
+
+/**
+ * Orders two flat faces of different solids by the plane of either one: 1
+ * when `a` is in front, -1 when behind, 0 when the planes do not decide.
+ *
+ * Solids stand on each other's flat faces, so a wall often has an edge lying
+ * exactly in the plane of the face it stands on or carries (a hut's wall under
+ * the base of its roof). Depth samples near that edge differ by rounding
+ * only, and when the face is seen nearly edge-on its depth changes steeply
+ * across the screen, so sampling can put the wall behind it. A face whose
+ * outline lies wholly on one side of the other's plane needs no sampling: the
+ * plane separates them. Strokes are ignored here; the faces of touching
+ * solids overlap by their strokes and are still meant to be apart.
+ */
+function splitByFacePlane(a: Analyzed, b: Analyzed): number {
+  if (a.solid === undefined || b.solid === undefined || !a.plane || !b.plane) return 0;
+  // b on the viewer's side of a's plane, or a on the far side of b's: b in front.
+  const bInFront = sideOfFace(a, b) > 0 || sideOfFace(b, a) < 0;
+  const aInFront = sideOfFace(b, a) > 0 || sideOfFace(a, b) < 0;
+  if (aInFront === bInFront) return 0;
+  return aInFront ? 1 : -1;
+}
+
 /** Best-fit plane by Newell's method; undefined when degenerate or edge-on. */
 function fitPlane(points: readonly Vec3[]): Plane | undefined {
   if (points.length < 3) return undefined;
@@ -473,6 +520,8 @@ function compare(a: Analyzed, b: Analyzed): number {
   if (a.solid !== undefined && a.solid === b.solid) return Math.sign(a.layer - b.layer);
   if (behindPlane(a, b)) return 1;
   if (behindPlane(b, a)) return -1;
+  const split = splitByFacePlane(a, b);
+  if (split !== 0) return split;
   if (a.surface || b.surface) {
     depthWork.roundComparisons++;
     return compareRound(a, b);
