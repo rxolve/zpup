@@ -54,7 +54,7 @@ The helpers only add a `type` field, so the same scene can be written, stored an
   "height": 120,
   "rotate": { "x": -20, "y": 30 },
   "children": [
-    { "type": "path", "path": [{}], "stroke": 40, "color": "#e62" },
+    { "type": "dot", "stroke": 40, "color": "#e62" },
     { "type": "ellipse", "diameter": 70, "stroke": 5, "color": "#636", "rotate": { "x": 90 } }
   ]
 }

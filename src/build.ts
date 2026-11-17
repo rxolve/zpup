@@ -8,6 +8,7 @@ import type {
   BoxNode,
   ConeNode,
   CylinderNode,
+  DotNode,
   EllipseNode,
   GroupNode,
   HemisphereNode,
@@ -42,10 +43,8 @@ export function path(options: Options<PathNode>): PathNode {
 }
 
 /** A single round dot, drawn like a sphere. Its diameter is `stroke`. */
-export function dot(options: Omit<Options<PathNode>, 'path' | 'fill' | 'closed'>): PathNode {
-  const out: PathNode = { type: 'path', ...options, path: [{}] };
-  out.type = 'path';
-  return out;
+export function dot(options: Options<DotNode>): DotNode {
+  return node('dot', options);
 }
 
 /** An ellipse or circle in the local x/y plane. */

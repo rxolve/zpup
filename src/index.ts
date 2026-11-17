@@ -27,6 +27,7 @@ export type {
   BoxNode,
   ConeNode,
   CylinderNode,
+  DotNode,
   EllipseNode,
   GroupNode,
   HemisphereNode,

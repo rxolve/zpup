@@ -97,6 +97,18 @@ export interface BezierInput {
 export type PathPoint = VectorInput | BezierInput;
 
 /**
+ * A round dot at the node's origin, drawn like a sphere. Its diameter is
+ * `stroke`. The same as a `path` with the single point `{}`.
+ */
+export interface DotNode extends NodeBase {
+  type: 'dot';
+  /** A CSS color. Default `"#333"`. */
+  color?: string;
+  /** The dot's diameter in scene units. Default 1. */
+  stroke?: number;
+}
+
+/**
  * A free-form path. One point draws a dot, two points draw a line, more
  * points draw a polyline or polygon. The first entry must be a plain point.
  */
@@ -233,6 +245,7 @@ export interface HemisphereNode extends SolidBase {
 /** Any node that can appear in a scene tree. */
 export type Node =
   | GroupNode
+  | DotNode
   | PathNode
   | EllipseNode
   | RectNode

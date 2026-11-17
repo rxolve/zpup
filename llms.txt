@@ -53,12 +53,13 @@ Every node: `type` (required), `id?` (string, shown in errors), `translate?`, `r
 
 Every shape (all types except `group`): `color?` (hex, `rgb()`, or a CSS color name; default `"#333"`), `stroke?` (width >= 0, default 1, round caps and joins), `fill?` (boolean, default false; fills with `color`).
 
-Flat shapes (`path`, `ellipse`, `rect`, `polygon`, `dot()`) also take `backface?`, as in Zdog: `true` (default) shows both sides; `false` hides the shape while its front (local +z) faces away, edge-on included; a color paints the back in that color. On `cylinder`, `cone` and `hemisphere`, `backface` is a face color instead.
+Flat shapes (`path`, `ellipse`, `rect`, `polygon`) also take `backface?`, as in Zdog: `true` (default) shows both sides; `false` hides the shape while its front (local +z) faces away, edge-on included; a color paints the back in that color. On `cylinder`, `cone` and `hemisphere`, `backface` is a face color instead.
 
 | type | own options | notes |
 | --- | --- | --- |
 | `group` | none | Draws nothing; moves its children together. No `color`. |
-| `path` | `path` (required, array of points), `closed?` (default false) | 1 point = dot/sphere, 2 = line/tube, 3+ = polyline or polygon. |
+| `dot` | none (takes only `color` and `stroke`; no `fill` or `backface`) | A ball at the node's origin; `stroke` is its diameter. |
+| `path` | `path` (required, array of points), `closed?` (default false) | 2 points = line/tube, 3+ = polyline or polygon. 1 point is the same as a `dot`. |
 | `ellipse` | `diameter`, or `width` and `height` | Circle or ellipse in the local x/y plane. |
 | `rect` | `width`, `height` (required) | Centered on the origin, in the local x/y plane. |
 | `polygon` | `sides` (integer >= 3), `radius` (required) | Regular polygon, one corner pointing up. |
@@ -71,11 +72,11 @@ Solids (`box`, `cylinder`, `cone`, `hemisphere`) are always filled and take `col
 
 Path entries are points `{ x?, y?, z? }` or cubic curves `{ "bezier": [control1, control2, end] }`. The first entry must be a point.
 
-Helpers: `group(o)`, `ellipse(o)`, `box(o)` and the rest return `{ type, ...o }`; `dot(o)` returns a `path` with `path: [{}]`.
+Helpers: `group(o)`, `dot(o)`, `ellipse(o)`, `box(o)` and the rest return `{ type, ...o }`.
 
 ## How to get volume
 
-- Sphere: `dot({ stroke: 40 })` (diameter = stroke).
+- Sphere: `{ "type": "dot", "stroke": 40 }`, or `dot({ stroke: 40 })` (diameter = stroke).
 - Tube or limb: a 2-point `path` with a thick `stroke`.
 - Disc or plate: `ellipse({ diameter, fill: true })`, optionally with a stroke for a rounded rim.
 - Ring: `ellipse({ diameter, stroke })` without fill. Rotate it with `rotate: { x: 90 }` to lay it flat.
@@ -125,7 +126,7 @@ Sphere with a ring:
   "height": 120,
   "rotate": { "x": -20, "y": 30 },
   "children": [
-    { "type": "path", "path": [{}], "stroke": 40, "color": "#e62" },
+    { "type": "dot", "stroke": 40, "color": "#e62" },
     { "type": "ellipse", "diameter": 70, "stroke": 5, "color": "#636", "rotate": { "x": 90 } }
   ]
 }
@@ -168,7 +169,7 @@ A longer example lives in `examples/pup.ts`.
 - Origin at the top-left as in SVG -> (0, 0) is the center; x and y run from -width/2 to width/2. Negative `y` is up.
 - `fill: "#fff"` -> `fill` is true or false; the color goes in `color`: `"color": "#fff", "fill": true`.
 - `stroke: "#000"` or `"12px"` -> `stroke` is a width in scene units (`2`); its color is `color`.
-- `type: "circle"` -> `"ellipse"` with `diameter`. `"line"` -> `"path"` with two points. `"sphere"` -> a dot (`path` `[{}]` with a thick stroke). `"cube"` -> `"box"`.
+- `type: "circle"` -> `"ellipse"` with `diameter`. `"line"` -> `"path"` with two points. `"sphere"` -> `"dot"` with a thick `stroke`. `"cube"` -> `"box"`.
 - `radius` on an ellipse or round solid -> `diameter`. `height` on a cylinder or cone -> `length`.
 - `color` on a `group` -> set it on the shapes inside.
 

@@ -52,7 +52,7 @@ describe('validation', () => {
       [
         "scene.width: expected a number greater than 0, received "100". Remove the quotes: 100.",
         "scene.height: expected a number greater than 0, received nothing. For example 240.",
-        "scene.children[0].type: expected one of "group", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "circle". Did you mean "ellipse"? A circle is an "ellipse" with "diameter", e.g. { "type": "ellipse", "diameter": 40 }. The other options were checked as an "ellipse".",
+        "scene.children[0].type: expected one of "group", "dot", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "circle". Did you mean "ellipse"? A circle is an "ellipse" with "diameter", e.g. { "type": "ellipse", "diameter": 40 }. The other options were checked as an "ellipse".",
         "scene.children[1].colour: unknown option "colour". Did you mean "color"? Allowed: "type", "id", "translate", "rotate", "scale", "visible", "children", "color", "stroke", "fill", "backface", "diameter", "width", "height" (options of an "ellipse" node).",
         "scene.children[2].translate: expected an object with optional numeric x, y and z, received an array [1,2,3]. Arrays are not accepted. Write { "x": 0, "y": -20, "z": 10 } instead.",
         "scene.children[3].color: unknown option "color". Groups draw nothing; set "color" on the shapes inside the group. Allowed: "type", "id", "translate", "rotate", "scale", "visible", "children" (options of a "group" node).",
@@ -105,18 +105,18 @@ describe('validation', () => {
       }),
     ).toMatchInlineSnapshot(`
       [
-        "scene.children[0].type: expected one of "group", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "circle". Did you mean "ellipse"? A circle is an "ellipse" with "diameter", e.g. { "type": "ellipse", "diameter": 40 }. The other options were checked as an "ellipse".",
+        "scene.children[0].type: expected one of "group", "dot", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "circle". Did you mean "ellipse"? A circle is an "ellipse" with "diameter", e.g. { "type": "ellipse", "diameter": 40 }. The other options were checked as an "ellipse".",
         "scene.children[0].radius: unknown option "radius". Use "diameter" (twice the radius). Allowed: "type", "id", "translate", "rotate", "scale", "visible", "children", "color", "stroke", "fill", "backface", "diameter", "width", "height" (options of an "ellipse" node).",
         "scene.children[0].colour: unknown option "colour". Did you mean "color"? Allowed: "type", "id", "translate", "rotate", "scale", "visible", "children", "color", "stroke", "fill", "backface", "diameter", "width", "height" (options of an "ellipse" node).",
         "scene.children[0].translate: expected an object with optional numeric x, y and z, received an array [1,2]. Arrays are not accepted. Write { "x": 0, "y": -20, "z": 10 } instead.",
-        "scene.children[1].type: expected one of "group", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "cube". Did you mean "box"? Give it a "width", "height" and "depth", e.g. { "type": "box", "width": 40, "height": 40, "depth": 40 }. The other options were checked as a "box".",
+        "scene.children[1].type: expected one of "group", "dot", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "cube". Did you mean "box"? Give it a "width", "height" and "depth", e.g. { "type": "box", "width": 40, "height": 40, "depth": 40 }. The other options were checked as a "box".",
         "scene.children[1].size: unknown option "size". Use "width", "height" and "depth". Allowed: "type", "id", "translate", "rotate", "scale", "visible", "children", "color", "stroke", "fill", "shade", "width", "height", "depth", "frontFace", "rearFace", "leftFace", "rightFace", "topFace", "bottomFace" (options of a "box" node).",
-        "scene.children[2].type: expected one of "group", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "sphere". For a sphere use a dot: { "type": "path", "path": [{}], "stroke": 20 } (the stroke is its diameter). For half a sphere use "hemisphere".",
+        "scene.children[2].type: expected one of "group", "dot", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "sphere". For a sphere use a dot: { "type": "dot", "stroke": 20 } (the stroke is its diameter). For half a sphere use "hemisphere".",
         "scene.children[2].colour: unknown option "colour". Did you mean "color"? Allowed: "type", "id", "translate", "rotate", "scale", "visible", "children", "color", "stroke", "fill", "backface", "path", "closed", "diameter", "width", "height", "sides", "radius", "shade", "depth", "frontFace", "rearFace", "leftFace", "rightFace", "topFace", "bottomFace", "length" (options of any node).",
         "scene.children[2].rotate.x: expected a finite number, received "a". For example 10.",
-        "scene.children[3].type: expected one of "group", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "cilinder". Did you mean "cylinder"? The other options were checked as a "cylinder".",
+        "scene.children[3].type: expected one of "group", "dot", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "cilinder". Did you mean "cylinder"? The other options were checked as a "cylinder".",
         "scene.children[3].stroke: expected a number of at least 0, received "2px". Use a plain number in scene units without a unit suffix, e.g. 2.",
-        "scene.children[4].type: expected one of "group", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "g". Did you mean "group"? SVG's <g> is a "group". The other options were checked as a "group".",
+        "scene.children[4].type: expected one of "group", "dot", "path", "ellipse", "rect", "polygon", "box", "cylinder", "cone", "hemisphere", received "g". Did you mean "group"? SVG's <g> is a "group". The other options were checked as a "group".",
         "scene.children[4].children[0].diameter: expected a number of at least 0, received -1. For example 20.",
       ]
     `);
@@ -126,7 +126,7 @@ describe('validation', () => {
     const hint = (type: string) =>
       checkScene({ width: 10, height: 10, children: [{ type }] })[0]?.hint ?? '';
     expect(hint('line')).toContain('{ "type": "path", "path": [{ "x": -20 }, { "x": 20 }] }');
-    expect(hint('sphere')).toContain('{ "type": "path", "path": [{}], "stroke": 20 }');
+    expect(hint('sphere')).toContain('{ "type": "dot", "stroke": 20 }');
     expect(hint('triangle')).toContain('{ "type": "polygon", "sides": 3, "radius": 20 }');
     expect(hint('hexagon')).toContain('"sides": 6');
     expect(hint('cube')).toContain('"type": "box"');
@@ -228,7 +228,7 @@ describe('validation', () => {
 
   it('puts "type" first in the objects the helpers return', () => {
     expect(Object.keys(group({ id: 'g', children: [] }))).toEqual(['type', 'id', 'children']);
-    expect(Object.keys(dot({ id: 'd', stroke: 4 }))).toEqual(['type', 'id', 'stroke', 'path']);
+    expect(Object.keys(dot({ id: 'd', stroke: 4 }))).toEqual(['type', 'id', 'stroke']);
     expect(Object.keys(box({ width: 1, height: 1, depth: 1 }))[0]).toBe('type');
     // The helper's type wins over one smuggled in through the options.
     expect(ellipse({ type: 'rect', diameter: 2 } as never).type).toBe('ellipse');
@@ -250,5 +250,30 @@ describe('validation', () => {
       expect(e.issues[0]).toMatchObject({ path: 'scene.children[0].width', received: '-1' });
       expect(e.message).toMatch(/^Invalid zpup scene \(1 problem\):/);
     }
+  });
+});
+
+describe('the dot node', () => {
+  const scene = (node: unknown) => ({ width: 100, height: 100, children: [node] });
+
+  it('is accepted as plain JSON and draws the same as a one-point path', () => {
+    const asDot = scene({ type: 'dot', translate: { x: 10 }, stroke: 30, color: '#e62' });
+    const asPath = scene({
+      type: 'path',
+      path: [{}],
+      translate: { x: 10 },
+      stroke: 30,
+      color: '#e62',
+    });
+    expect(checkScene(asDot)).toEqual([]);
+    expect(renderSvg(asDot as Scene)).toBe(renderSvg(asPath as Scene));
+    const helped = scene(dot({ translate: { x: 10 }, stroke: 30, color: '#e62' }));
+    expect(renderSvg(helped as Scene)).toBe(renderSvg(asPath as Scene));
+  });
+
+  it('says what a dot does not take', () => {
+    const issues = checkScene(scene({ type: 'dot', stroke: 30, fill: true, path: [{}] }));
+    expect(issues.map((i) => i.path)).toEqual(['scene.children[0].fill', 'scene.children[0].path']);
+    expect(issues[0]?.message).toContain('options of a "dot" node');
   });
 });

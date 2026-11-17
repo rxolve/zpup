@@ -126,12 +126,12 @@ describe('backface on flat shapes', () => {
     expect(still(shape, { x: -90 })).toHaveLength(0);
   });
 
-  it('applies to every flat type and to dots', () => {
+  it('applies to every flat type and to one-point paths', () => {
     const away = { y: 180 };
     for (const shape of [
       ellipse({ diameter: 20, backface: false }),
       path({ path: [{ x: -10 }, { x: 10 }], backface: false }),
-      dot({ stroke: 10, backface: false }),
+      path({ path: [{}], stroke: 10, backface: false }),
     ]) {
       expect(still(shape)).toHaveLength(1);
       expect(still(shape, away)).toHaveLength(0);

@@ -59,6 +59,7 @@ export interface NormalizedScene {
 
 const NODE_TYPES: readonly NodeType[] = [
   'group',
+  'dot',
   'path',
   'ellipse',
   'rect',
@@ -86,7 +87,7 @@ interface TypeAlias {
   readonly hint: string;
 }
 
-const DOT = '{ "type": "path", "path": [{}], "stroke": 20 }';
+const DOT = '{ "type": "dot", "stroke": 20 }';
 const polygonOf = (sides: number): TypeAlias => ({
   type: 'polygon',
   direct: false,
@@ -123,17 +124,16 @@ const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
     hint: 'For a ring use an unfilled "ellipse" with a thick stroke: { "type": "ellipse", "diameter": 60, "stroke": 8 }.',
   },
   sphere: {
-    type: 'path',
+    type: 'dot',
     direct: false,
     hint: `For a sphere use a dot: ${DOT} (the stroke is its diameter). For half a sphere use "hemisphere".`,
   },
   ball: {
-    type: 'path',
+    type: 'dot',
     direct: false,
     hint: `For a ball use a dot: ${DOT} (the stroke is its diameter).`,
   },
-  dot: { type: 'path', direct: false, hint: `For a dot use ${DOT}.` },
-  point: { type: 'path', direct: false, hint: `For a dot use ${DOT}.` },
+  point: { type: 'dot', direct: true, hint: `For a dot use ${DOT}.` },
   line: {
     type: 'path',
     direct: false,
@@ -211,6 +211,7 @@ const SOLID_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'shade'];
 const FLAT_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'backface'];
 const KEYS_BY_TYPE: Readonly<Record<NodeType, readonly string[]>> = {
   group: NODE_KEYS,
+  dot: [...NODE_KEYS, 'color', 'stroke'],
   path: [...FLAT_KEYS, 'path', 'closed'],
   ellipse: [...FLAT_KEYS, 'diameter', 'width', 'height'],
   rect: [...FLAT_KEYS, 'width', 'height'],
@@ -822,7 +823,9 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
     const dimension = (key: string) =>
       present(key) ? readNumber(c, input, key, path, nodeId, size) : undefined;
     let geometry: PathGeometry | undefined;
-    if (shapeType === 'path') {
+    if (shapeType === 'dot') {
+      geometry = { start: { x: 0, y: 0, z: 0 }, segments: [], closed: false };
+    } else if (shapeType === 'path') {
       const closed = readBoolean(c, input, 'closed', path, nodeId, false);
       if (present('path')) geometry = readPath(c, input.path, [...path, 'path'], nodeId, closed);
     } else if (shapeType === 'ellipse') {
