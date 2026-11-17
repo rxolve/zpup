@@ -1,10 +1,10 @@
-# zpup
+# Zpup
 
 A modern, AI-friendly pseudo-3D engine for the web, inspired by [Zdog](https://zzz.dog/).
 
 Pronounced "zee-pup".
 
-![A small sitting pup drawn with zpup, turning around](examples/pup-spin.svg)
+![A small sitting pup drawn with Zpup, turning around](examples/pup-spin.svg)
 
 The pup above is a single SVG file with no JavaScript. It was rendered by `renderSpinSvg` from [a short scene description](examples/pup.ts) and turns in current browsers, including inside a GitHub README.
 
@@ -22,13 +22,13 @@ Not built yet: a canvas renderer, general animation, and framework bindings. The
 npm install @zpup/core
 ```
 
-zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers.
+Zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers.
 
 ## Usage
 
 A scene is a plain object tree. `renderSvg` turns it into an SVG string, with no DOM, so it works on a server and the first paint needs no JavaScript. Here is the pup from the top as a still picture, `renderSvg(pup)`:
 
-![A small sitting pup drawn with zpup](examples/pup.svg)
+![A small sitting pup drawn with Zpup](examples/pup.svg)
 
 A smaller scene:
 
@@ -67,7 +67,7 @@ The helpers only add a `type` field, so the same scene can be written, stored an
 - **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
 - **Shapes:** `color` (hex, `rgb()` and other CSS functions, or one of the CSS color names; a misspelled name is an error), `stroke` (round-capped width; thick strokes give volume) and `fill`.
 - **Solids:** always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up.
-- **Errors:** an invalid scene or option throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. Each issue has the path as a string (`path`) and as keys and indices (`pathSegments`), and the message with (`message`) and without (`detail`) the path in front. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians or shapes placed outside the image.
+- **Errors:** an invalid scene or option throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. Each issue has the path as a string (`path`) and as keys and indices (`pathSegments`), and the message with (`message`) and without (`detail`) the path in front. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians, shapes placed outside the image, or shapes of different colors that pass through each other.
 
 ### Solids
 
@@ -87,7 +87,7 @@ Solids are depth-sorted like everything else, against each other and against fla
 
 ### Soft shading
 
-By default every shape has one flat color. `shading: "soft"` on the scene paints dots and the round surfaces of solids (the side of a cylinder or cone, the dome of a hemisphere) with a gradient made from their color, as if lit from the upper left. Flat shapes and lines stay as they are.
+By default every shape has one flat color. `shading: "soft"` on the scene shades round things from their color, as if lit from the upper left: dots and the round surfaces of solids (the side of a cylinder or cone, the dome of a hemisphere) with a gradient, and thick lines as tubes. Flat shapes and lines stay as they are.
 
 ```ts
 renderSvg({
@@ -98,7 +98,7 @@ renderSvg({
 });
 ```
 
-The light belongs to the picture, not to the scene: it stays in the upper left when the view changes. In a turning picture, a ball keeps its shading all the way round; the side of a cylinder or cone keeps it only when it runs the same way on screen throughout the turn (an upright cylinder turning about the vertical axis), and is flat otherwise.
+The light belongs to the picture, not to the scene: it stays in the upper left when the view changes. In a turning picture, a ball keeps its shading all the way round, and so does the side of an upright cylinder or cone turning about the vertical axis. A side that is tilted changes direction on screen as it turns, and its shading follows in steps of 15 degrees.
 
 Shapes of the same color that cut into each other look like one shape when flat. With soft shading each has its own highlight, so the seam shows, and in a turning picture the moment one passes in front of the other shows too. Keep such shapes just touching, or leave the shading flat.
 
@@ -106,7 +106,7 @@ Shapes of the same color that cut into each other look like one shape when flat.
 
 A flat shape takes `backface`, as in Zdog: `true` (the default) draws it from both sides, `false` leaves it out while its front (its local +z side) faces away, and a color paints its back in that color.
 
-This is what keeps a turning character clean. zpup paints whole shapes back to front, so an eye drawn as a dot on a head has to jump from in front of the head to behind it as the head turns, and it does so while it still covers part of the head: the eye flickers. Built this way instead, a model turns without popping:
+This is what keeps a turning character clean. Zpup paints whole shapes back to front, so an eye drawn as a dot on a head has to jump from in front of the head to behind it as the head turns, and it does so while it still covers part of the head: the eye flickers. Built this way instead, a model turns without popping:
 
 - Parts of different colors touch but do not cut into each other.
 - Parts that cut into each other have the same color.
@@ -187,7 +187,7 @@ pnpm playground:build  # builds the playground into playground/dist/, servable a
 
 ## Credits
 
-zpup is inspired by [Zdog](https://github.com/metafizzy/zdog) by David DeSandro. It is a new implementation that shares no code with Zdog. It is an independent project and is not affiliated with Zdog or Metafizzy.
+Zpup is inspired by [Zdog](https://github.com/metafizzy/zdog) by David DeSandro. It is a new implementation that shares no code with Zdog. It is an independent project and is not affiliated with Zdog or Metafizzy.
 
 ## License
 
