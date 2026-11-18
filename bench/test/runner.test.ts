@@ -324,7 +324,10 @@ describe('runBenchmark with the mock provider', () => {
     expect(second.calls).toHaveLength(0);
   });
 
-  it('runs the default canned replies end to end and writes the report', async () => {
+  // Scores every reply at 12 view angles: 2 s on a laptop, over 5 s on a CI runner.
+  it('runs the default canned replies end to end and writes the report', {
+    timeout: 30_000,
+  }, async () => {
     const config = smallConfig({ models: loadConfig().models, repetitions: 2, concurrency: 3 });
     const provider = new MockProvider();
     const outDir = tempDir();
