@@ -1,14 +1,20 @@
 # Zpup
 
-A modern, AI-friendly pseudo-3D engine for the web, inspired by [Zdog](https://zzz.dog/).
+Describe a small 3D scene as JSON and get a flat SVG picture of it from any angle. Inspired by [Zdog](https://zzz.dog/).
 
 Pronounced "zee-pup".
 
-![A small sitting pup drawn with Zpup, turning around](examples/pup-spin.svg)
+![One lighthouse scene drawn from four angles](examples/lighthouse-views.svg)
 
-The pup above is a single SVG file with no JavaScript. It was rendered by `renderSpinSvg` from [a short scene description](examples/pup.ts) and turns in current browsers, including inside a GitHub README.
+These four pictures come from [one scene](examples/lighthouse.ts): eleven solids with one color each, plus a door and a window, placed in 3D. Only the view angle differs. Zpup works out what hides what and how each face is shaded, and writes a plain SVG with no JavaScript, so the picture works in an `<img>` tag, an email or a README. One view of the lighthouse is 5.5 KB.
 
-**[Try it in the playground](https://rxolve.github.io/zpup/)**: edit a scene as JSON, drag the picture to turn it, and export a still or turning SVG.
+**[Try it in the playground](https://rxolve.github.io/zpup/)**: edit a scene as JSON, drag the picture to turn it, and export the SVG.
+
+## What it is for
+
+Small illustrations with volume: icons, mascots, props, a little building. The scene is data, so a person, a script or an AI model can write it, and mistakes come back as errors that say where and how to fix them.
+
+It is not a 3D engine. There is no perspective, no textures and no light to place, and shapes that cut deep into each other are not drawn correctly. For that, use three.js or a modeling tool.
 
 ## Status
 
@@ -26,7 +32,7 @@ Zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tes
 
 ## Usage
 
-A scene is a plain object tree. `renderSvg` turns it into an SVG string, with no DOM, so it works on a server and the first paint needs no JavaScript. Here is the pup from the top as a still picture, `renderSvg(pup)`:
+A scene is a plain object tree. `renderSvg` turns it into an SVG string, with no DOM, so it works on a server and the first paint needs no JavaScript. Here is [a pup](examples/pup.ts) built from thick dots and lines, `renderSvg(pup)`:
 
 ![A small sitting pup drawn with Zpup](examples/pup.svg)
 
@@ -60,6 +66,14 @@ The helpers only add a `type` field, so the same scene can be written, stored an
 }
 ```
 
+To see the scene from another side, change `rotate` on the scene and render again. Nothing else in the scene has to change:
+
+```ts
+const front = renderSvg({ ...scene, rotate: { x: -16, y: 24 } });
+const back = renderSvg({ ...scene, rotate: { x: -16, y: 204 } });
+const above = renderSvg({ ...scene, rotate: { x: -62, y: 24 } });
+```
+
 ### The basics
 
 - **Axes:** x right, y down, z toward the viewer. The origin is the center of the image.
@@ -71,7 +85,7 @@ The helpers only add a `type` field, so the same scene can be written, stored an
 
 ### Solids
 
-![A lighthouse on a rock built from cylinders, cones, hemispheres and a box, turning](examples/lighthouse-spin.svg)
+![A lighthouse on a rock built from cylinders, cones, hemispheres and a box](examples/lighthouse.svg)
 
 [The lighthouse](examples/lighthouse.ts) is made of eleven solids, each with a single color, plus a door and a window drawn as rectangles on the tower:
 
@@ -136,7 +150,10 @@ const head = [
 
 ### Turning in place
 
-`renderSpinSvg` returns an SVG that turns the scene one full rotation, forever, using SMIL animation. It needs no JavaScript, so it also plays inside an `<img>` tag and in a GitHub README.
+A scene can also be shown turning. `renderSpinSvg` returns an SVG that turns the scene one full rotation, forever, using SMIL animation. It needs no JavaScript, so it also plays inside an `<img>` tag and in a GitHub README. It suits small scenes; the file grows quickly with the number of shapes (see the limits below).
+
+![The pup, turning around](examples/pup-spin.svg)
+![The lighthouse, turning around](examples/lighthouse-spin.svg)
 
 ```ts
 import { renderSpinSvg } from '@zpup/core';
@@ -157,7 +174,7 @@ Limits:
 - Only a constant-speed turn about one axis. Nothing else moves, and there is no interaction or pausing.
 - It does not respect `prefers-reduced-motion`; SMIL cannot query it. A page that cares can show the still picture instead with a `<picture>` element and a `(prefers-reduced-motion: reduce)` media query.
 - Outlines are drawn one segment at a time, so a translucent color shows darker spots where the segments meet.
-- File size grows quickly with the number of pieces: every piece is listed once per change of paint order, and those changes grow with the number of overlapping pairs. The pup (19 pieces) is 54 KB, 11 KB gzipped; the lighthouse (34 pieces) is 132 KB, 24 KB gzipped. Lower `keyframes` and `precision` make it smaller.
+- File size grows quickly with the number of pieces: every piece is listed once per change of paint order, and those changes grow with the number of overlapping pairs. The turning pup is 43 KB, 6 KB gzipped; the turning lighthouse is 129 KB, 24 KB gzipped. A still picture of either is 2 to 6 KB. Lower `keyframes` and `precision` make it smaller.
 
 See [docs/decisions.md](docs/decisions.md#turning-animation) for how it works.
 
@@ -166,6 +183,7 @@ There is no perspective and no light to place, by design; soft shading is a fixe
 ## Goals
 
 - Round, flat, designer-friendly pseudo-3D illustrations, in the spirit of Zdog
+- One scene, any view angle, as a still SVG picture
 - TypeScript and ESM from the start
 - A declarative API that is easy for both people and AI coding tools to write correctly
 - SVG output that can be rendered on the server
