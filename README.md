@@ -32,7 +32,7 @@ Small illustrations with volume: icons, mascots, props, a little building. The s
 
 Each picture links to its scene, 60 to 150 lines of TypeScript. The cactus uses [soft shading](#soft-shading).
 
-It is not a 3D engine. There is no perspective, no textures and no light to place, and shapes that cut deep into each other are not drawn correctly. For that, use three.js or a modeling tool.
+It is not a 3D engine. There is no perspective, no textures and no light to place, and shapes that cut deep into each other are not drawn correctly. There is no text shape and no clipping either. For that, use three.js or a modeling tool.
 
 ## Status
 
@@ -46,7 +46,7 @@ Not built yet: a canvas renderer, general animation, and framework bindings. The
 npm install @zpup/core
 ```
 
-Zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers.
+Zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers. Bundled and minified, the whole library is 69 KB (26 KB gzipped), and `renderSvg` alone is 50 KB (19 KB gzipped).
 
 ## Usage
 
