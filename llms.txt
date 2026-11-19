@@ -1,6 +1,6 @@
 # Zpup
 
-> Zpup renders round, flat pseudo-3D illustrations (in the style of Zdog) from a plain JSON scene tree to an SVG string. ESM-only TypeScript, no runtime dependencies, no DOM needed.
+> Zpup takes a small 3D scene described as a plain JSON tree and returns a flat SVG picture of it from any angle, as a string. The look is round strokes and flat colors, in the style of Zdog. ESM-only TypeScript, no runtime dependencies, no DOM needed.
 
 ## Entry points
 
