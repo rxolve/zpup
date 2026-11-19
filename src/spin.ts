@@ -545,26 +545,25 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
         frames.map((g) => pathData(g, n)),
         even ? undefined : times,
       );
-      // A thick line with nothing filled is a tube: its geometry is defined
-      // once, unpainted, and painted as several strokes (see `tubeLayers`).
+      // WebKit does not redraw a moving shape that is reached through two
+      // levels of <use>, so a piece painted as several shapes repeats its
+      // geometry in each of them instead of sharing one definition.
+      const moving = (attributes: string, extra = '') =>
+        d.animate === '' && extra === ''
+          ? `<path d="${d.start}"${attributes}/>`
+          : `<path d="${d.start}"${attributes}>${d.animate}${extra}</path>`;
+      // A thick line with nothing filled is a tube, painted as several
+      // strokes of the same line (see `tubeLayers`).
       const tube = gradients !== undefined && !piece.fill && piece.stroke > 0 && !piece.soft;
-      const line = `${PREFIX}${i}t`;
-      let lineDefined = false;
       for (const side of sides) {
         const layers = tube ? tubeLayers(sideColor(piece, side)) : undefined;
         if (layers) {
-          if (!lineDefined) {
-            defs.push(
-              d.animate === ''
-                ? `<path id="${line}" d="${d.start}"/>`
-                : `<path id="${line}" d="${d.start}">${d.animate}</path>`,
-            );
-            lineDefined = true;
-          }
           const strokes = layers.map((layer) => {
             const by = (-layer.shift * piece.stroke) / Math.SQRT2;
             const move = layer.shift === 0 ? '' : ` transform="translate(${n(by)} ${n(by)})"`;
-            return `<use href="#${line}" stroke="${escapeXml(layer.color)}" stroke-width="${n(layer.width * piece.stroke)}"${move}/>`;
+            return moving(
+              ` stroke="${escapeXml(layer.color)}" stroke-width="${n(layer.width * piece.stroke)}"${move}`,
+            );
           });
           defs.push(
             `<g id="${ref(i, side)}" fill="none" stroke-linecap="round" stroke-linejoin="round">${strokes.join('')}</g>`,
@@ -590,19 +589,13 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
           );
         } else {
           // A paint that points to a gradient cannot be animated, so the
-          // outline is defined once, unpainted, and shown once per gradient,
-          // one at a time.
-          if (!lineDefined) {
-            defs.push(
-              d.animate === ''
-                ? `<path id="${line}" d="${d.start}"/>`
-                : `<path id="${line}" d="${d.start}">${d.animate}</path>`,
-            );
-            lineDefined = true;
-          }
+          // outline is drawn once per gradient and shown one at a time.
           const shows = [...new Set(steps.map((step) => step.paint))].map((color) => {
             const values = steps.map((step) => (step.paint === color ? 'visible' : 'hidden'));
-            return `<use href="#${line}"${painted(color)} visibility="${values[0]}"><animate attributeName="visibility" ${timing} calcMode="discrete" keyTimes="${steps.map((step) => step.time).join(';')}" values="${values.join(';')}"/></use>`;
+            return moving(
+              `${painted(color)} visibility="${values[0]}"`,
+              `<animate attributeName="visibility" ${timing} calcMode="discrete" keyTimes="${steps.map((step) => step.time).join(';')}" values="${values.join(';')}"/>`,
+            );
           });
           defs.push(`<g id="${ref(i, side)}"${outline}>${shows.join('')}</g>`);
         }

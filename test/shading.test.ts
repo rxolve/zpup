@@ -135,25 +135,32 @@ describe('soft shading', () => {
     const gradients = turning.match(/<linearGradient /g)?.length ?? 0;
     expect(gradients).toBeGreaterThan(2);
     // A paint that points to a gradient cannot be animated (browsers paint it
-    // black), so the side is shown once per gradient, one at a time.
+    // black), so the side is drawn once per gradient and shown one at a time.
     expect(turning).not.toMatch(/attributeName="(fill|stroke)"/);
     const shows = turning.match(
-      /<use href="#[^"]+" fill="url\(#zs-lm?\d+-[0-9a-f]+\)" stroke="url\(#zs-lm?\d+-[0-9a-f]+\)" visibility="(visible|hidden)"><animate attributeName="visibility"[^>]*calcMode="discrete"/g,
+      /<path d="[^"]+" fill="url\(#zs-lm?\d+-[0-9a-f]+\)" stroke="url\(#zs-lm?\d+-[0-9a-f]+\)" visibility="(visible|hidden)"><animate attributeName="d"[^>]*\/><animate attributeName="visibility"[^>]*calcMode="discrete"/g,
     );
     expect(shows).toHaveLength(gradients);
     expect(shows?.filter((x) => x.includes('visibility="visible"'))).toHaveLength(1);
-    expect(
-      (turning.match(/<animate /g)?.length ?? 0) - (plain.match(/<animate /g)?.length ?? 0),
-    ).toBe(gradients);
+    // Each copy moves by itself: WebKit does not redraw a moving shape that
+    // is reached through two levels of <use>.
+    expect(turning).not.toMatch(/<g id="[^"]+"[^>]*>(<[^g][^>]*>)*<use /);
+    const switches = (svg: string) => svg.match(/attributeName="visibility"/g)?.length ?? 0;
+    expect(switches(turning) - switches(plain)).toBe(gradients);
   });
 
-  it('paints a tube in a turning picture from one animated line', () => {
+  it('paints a tube in a turning picture as layered strokes that each move', () => {
     const line = path({ path: [{ x: -30, z: 10 }, { x: 30 }], stroke: 20, color: '#3366cc' });
     const flat = renderSpinSvg(scene([line]));
     const soft = renderSpinSvg(scene([line], { shading: 'soft' }));
-    expect(soft.match(/<animate /g)?.length).toBe(flat.match(/<animate /g)?.length);
-    expect(
-      soft.match(/<use href="#[^"]+" stroke="#[0-9a-f]{6}" stroke-width=/g)?.length,
-    ).toBeGreaterThanOrEqual(5);
+    const layers = soft.match(
+      /<path d="[^"]+" stroke="#[0-9a-f]{6}" stroke-width=[^>]*><animate /g,
+    );
+    expect(layers?.length).toBeGreaterThanOrEqual(5);
+    expect(soft.match(/<animate /g)?.length).toBe(
+      (flat.match(/<animate /g)?.length ?? 0) * (layers?.length ?? 0),
+    );
+    // Not shared through a second level of <use>: WebKit would not redraw it.
+    expect(soft.match(/<use /g)).toHaveLength(1);
   });
 });

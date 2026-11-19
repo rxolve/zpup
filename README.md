@@ -189,7 +189,7 @@ const svg = renderSpinSvg(scene, {
 });
 ```
 
-Every option is optional, and bad values throw a `ZpupValidationError` like an invalid scene does. Renderers without SMIL show the first frame, which is the same picture `renderSvg` draws. It is synchronous and depth-sorts the scene at 720 angles: about 60 ms for a small scene and 0.6 s for the lighthouse on a laptop, so in a browser run it in a worker (the playground does).
+Every option is optional, and bad values throw a `ZpupValidationError` like an invalid scene does. Renderers without SMIL show the first frame, which is the same picture `renderSvg` draws. The pictures on this page were checked in Chrome, Safari's engine (WebKit) and Firefox. It is synchronous and depth-sorts the scene at 720 angles: about 60 ms for a small scene and 0.6 s for the lighthouse on a laptop, so in a browser run it in a worker (the playground does).
 
 Limits:
 

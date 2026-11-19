@@ -216,6 +216,10 @@ A flipbook also jumps from frame to frame, while the keyframed version moves smo
 **No `AbortSignal` option.** (settled)
 `renderSpinSvg` is synchronous. A signal can only become aborted when other code runs on the same thread, which cannot happen while the function runs, so checking `signal.aborted` inside it would never see a change; making it asynchronous to give the signal a chance would complicate a pure function for the sake of scenes that now take under a second. A caller that needs to stop a long build runs it in a worker and terminates the worker, as the playground does.
 
+**One level of `<use>` only.** Each piece is defined once and placed with `<use>` in every paint order. A piece that soft shading paints as several shapes (a tube's layered strokes, or a tilted round side drawn once per gradient) repeats its moving outline in each of them. Sharing one outline through a second `<use>` would be smaller, and Chrome and Firefox draw it, but WebKit does not redraw a moving shape reached through two levels of `<use>`: in Safari the tubes stood still while the rest turned. The cost is size: the soft pup's turning picture is 87 KB instead of 48 KB.
+
+**Browsers.** The example pictures were compared in Chromium 141, WebKit 26 (Safari's engine) and Firefox 142, still and turning; they draw the same. The soft pup turning ran at about 22 frames a second in headless Firefox, where every other picture kept the full rate: many gradients moving at once are slow there.
+
 **Possible size reduction, not done.** The `<use>` lists are about a quarter of the file (722 references for the pup). Adjacent epochs usually differ by one swapped pair, so one sequence of references that contains every epoch's order as a subsequence (a common supersequence) would need only about 75 references for the pup. Each reference that is not always visible would then need its own visibility animation, roughly 100 bytes each, so the raw saving would be around 6 KB and the gzipped saving smaller, since the repeated lists compress well. Not worth the extra complexity yet.
 
 ## Tooling
