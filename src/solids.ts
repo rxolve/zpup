@@ -1,7 +1,8 @@
 /**
- * Geometry of the solids (box, cylinder, cone, hemisphere).
+ * Geometry of the solids (box, pyramid, cylinder, cone, hemisphere).
  *
- * A solid becomes several filled faces. Flat faces (box sides, round ends)
+ * A solid becomes several filled faces. Flat faces (box and pyramid sides,
+ * round ends)
  * are fixed 3D outlines, like any other shape. Round surfaces are not: their
  * outline on screen depends on the view. Each one is built as a closed path
  * from 3D points on the surface (the rims and the contour where the surface
@@ -23,15 +24,17 @@ import {
 } from './math.ts';
 import { type SoftKind, sideKind } from './shading.ts';
 
-export type SolidKind = 'box' | 'cylinder' | 'cone' | 'hemisphere';
+export type SolidKind = 'box' | 'pyramid' | 'cylinder' | 'cone' | 'hemisphere';
 
 /** A solid after validation. Sizes are in local units. */
 export interface NormalizedSolid {
   readonly kind: SolidKind;
-  /** Box only. */
+  /** Box and pyramid. */
   readonly width: number;
   readonly height: number;
   readonly depth: number;
+  /** Pyramid only: the length of the edge along its top. 0 is a point. */
+  readonly ridge: number;
   /** Cylinder, cone and hemisphere. */
   readonly diameter: number;
   /** Cylinder and cone. */
@@ -46,6 +49,7 @@ export interface NormalizedSolid {
 /** The face options each solid accepts. */
 export const FACE_KEYS: Readonly<Record<SolidKind, readonly string[]>> = {
   box: ['frontFace', 'rearFace', 'leftFace', 'rightFace', 'topFace', 'bottomFace'],
+  pyramid: ['frontFace', 'rearFace', 'leftFace', 'rightFace', 'bottomFace'],
   cylinder: ['frontFace', 'backface'],
   cone: ['backface'],
   hemisphere: ['backface'],
@@ -126,7 +130,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
     layer: 0,
     backfacing: false,
     surface:
-      inverse && s.kind !== 'box'
+      inverse && s.kind !== 'box' && s.kind !== 'pyramid'
         ? { kind: s.kind, radius: s.diameter / 2, length: s.length, inverse }
         : undefined,
     viewDependent: true,
@@ -212,6 +216,29 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
         ),
       ];
     }
+    case 'pyramid': {
+      const p = pyramidShape(s);
+      const face = (points: Vec3[]): PathGeometry => {
+        // With no ridge the two top corners are one point.
+        const [first, ...rest] = points.filter(
+          (q, i) => i === 0 || !samePoint(q, points[i - 1] as Vec3),
+        );
+        return {
+          start: first as Vec3,
+          segments: rest.map((to) => ({ kind: 'line', to })),
+          closed: true,
+        };
+      };
+      const [a, b, c, d] = p.base;
+      const [l, t] = p.top;
+      return [
+        flat('bottomFace', face([a, b, c, d]), Y),
+        flat('rearFace', face([a, b, t, l]), p.normals.rear),
+        flat('rightFace', face([b, c, t]), p.normals.right),
+        flat('frontFace', face([d, c, t, l]), p.normals.front),
+        flat('leftFace', face([a, d, l]), p.normals.left),
+      ];
+    }
     case 'cylinder': {
       const h = s.length / 2;
       return [
@@ -262,6 +289,22 @@ function solidBody(s: NormalizedSolid, world: Matrix): SolidBody {
           z * Math.abs(dot(n, ez)),
       };
     }
+    case 'pyramid': {
+      const p = pyramidShape(s);
+      const corners = [...p.base, ...p.top].map((q) => transformPoint(world, q));
+      const [a, , c] = p.base;
+      return {
+        planes: [
+          plane(origin, { x: 0, y: 1, z: 0 }),
+          plane(a, p.normals.rear),
+          plane(c, p.normals.right),
+          plane(c, p.normals.front),
+          plane(a, p.normals.left),
+        ],
+        // A convex solid's lowest point in any direction is one of its corners.
+        support: (n) => Math.min(...corners.map((q) => dot(n, q))),
+      };
+    }
     case 'cylinder': {
       const h = s.length / 2;
       return {
@@ -293,6 +336,50 @@ function solidBody(s: NormalizedSolid, world: Matrix): SolidBody {
         },
       };
   }
+}
+
+/**
+ * A pyramid in local space: its base is a rectangle in the x/z plane at
+ * y = 0, and its top is an edge of length `ridge` along x at y = -height, a
+ * single point when `ridge` is 0. A ridge as long as the width gives a gable
+ * roof, with upright triangles at the left and right ends.
+ */
+function pyramidShape(s: NormalizedSolid): {
+  /** Corners of the base: rear left, rear right, front right, front left. */
+  base: [Vec3, Vec3, Vec3, Vec3];
+  /** Ends of the top edge: left, right. */
+  top: [Vec3, Vec3];
+  /** Outward normals of the four sloping faces (any length). */
+  normals: { front: Vec3; rear: Vec3; left: Vec3; right: Vec3 };
+} {
+  const x = s.width / 2;
+  const z = s.depth / 2;
+  const h = s.height;
+  const e = s.ridge / 2;
+  // A face of no size has no direction of its own; up stands in for it.
+  const or = (n: Vec3): Vec3 => (length(n) === 0 ? { x: 0, y: -1, z: 0 } : n);
+  return {
+    base: [
+      { x: -x, y: 0, z: -z },
+      { x, y: 0, z: -z },
+      { x, y: 0, z },
+      { x: -x, y: 0, z },
+    ],
+    top: [
+      { x: -e, y: -h, z: 0 },
+      { x: e, y: -h, z: 0 },
+    ],
+    normals: {
+      front: or({ x: 0, y: -z, z: h }),
+      rear: or({ x: 0, y: -z, z: -h }),
+      right: or({ x: h, y: -(x - e), z: 0 }),
+      left: or({ x: -h, y: -(x - e), z: 0 }),
+    },
+  };
+}
+
+function samePoint(a: Vec3, b: Vec3): boolean {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 function faceColor(s: NormalizedSolid, name: string, normal: Vec3): string {

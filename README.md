@@ -98,7 +98,7 @@ const above = renderSvg({ ...scene, rotate: { x: -62, y: 24 } });
 - **Angles:** degrees. Positive `rotate.z` turns clockwise on screen.
 - **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
 - **Shapes:** `color` (hex, `rgb()` and other CSS functions, or one of the CSS color names; a misspelled name is an error), `stroke` (round-capped width; thick strokes give volume) and `fill`.
-- **Solids:** always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up.
+- **Solids:** `box`, `pyramid`, `cylinder`, `cone` and `hemisphere`, always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up. A box and a pyramid stand upright as they are.
 - **Errors:** an invalid scene or option throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. Each issue has the path as a string (`path`) and as keys and indices (`pathSegments`), and the message with (`message`) and without (`detail`) the path in front. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians, shapes placed outside the image, or shapes of different colors that pass through each other.
 
 ### Solids
@@ -113,6 +113,16 @@ import { cone, cylinder } from '@zpup/core';
 const up = { x: 90 }; // round solids point along z; this stands them up
 cylinder({ diameter: 60, length: 36, rotate: up, color: '#f4f1ea' }); // a band of the tower
 cone({ diameter: 44, length: 18, rotate: up, color: '#d8463c' }); // the hut's roof
+```
+
+A `pyramid` stands on a rectangular base with its top straight above the middle. Its `ridge` turns the point into an edge, which gives the three usual roofs from one shape ([scene](examples/roofs.ts)):
+
+![Three huts with a pointed roof, a hip roof and a gable roof](examples/roofs.svg)
+
+```ts
+pyramid({ width: 68, depth: 52, height: 30 }); // a point
+pyramid({ width: 68, depth: 52, height: 30, ridge: 30 }); // a hip roof
+pyramid({ width: 68, depth: 52, height: 30, ridge: 68 }); // a gable roof, or a wedge
 ```
 
 Solids are depth-sorted like everything else, against each other and against flat shapes. Rest one solid on a flat face of another; solids that cut into each other cannot be drawn correctly.

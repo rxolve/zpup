@@ -9,6 +9,7 @@ import {
   cylinder,
   hemisphere,
   type Node,
+  pyramid,
   renderSpinSvg,
   renderSvg,
   type Scene,
@@ -30,6 +31,7 @@ const solids: [string, Node][] = [
   ['cylinder', cylinder({ diameter: 60, length: 80, color: '#3a7' })],
   ['cone', cone({ diameter: 60, length: 70, color: '#46c' })],
   ['hemisphere', hemisphere({ diameter: 70, color: '#c4a' })],
+  ['pyramid', pyramid({ width: 60, height: 40, depth: 50, ridge: 20, color: '#a63' })],
 ];
 
 /** The command letters of a piece's outline, as the spin renderer writes them. */

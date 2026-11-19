@@ -8,6 +8,7 @@ export {
   hemisphere,
   path,
   polygon,
+  pyramid,
   rect,
   scene,
 } from './build.ts';
@@ -37,6 +38,7 @@ export type {
   PathNode,
   PathPoint,
   PolygonNode,
+  PyramidNode,
   RectNode,
   RotationInput,
   Scene,

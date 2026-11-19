@@ -150,7 +150,8 @@ export interface PolygonNode extends ShapeBase {
 }
 
 /**
- * Options shared by the solids: `box`, `cylinder`, `cone` and `hemisphere`.
+ * Options shared by the solids: `box`, `pyramid`, `cylinder`, `cone` and
+ * `hemisphere`.
  *
  * A solid is always filled. With one `color`, each face gets a fixed lighter
  * or darker version of it, chosen by the direction the face points in the
@@ -197,6 +198,37 @@ export interface BoxNode extends SolidBase {
   /** Color of the face toward -y (up). */
   topFace?: string;
   /** Color of the face toward +y (down). */
+  bottomFace?: string;
+}
+
+/**
+ * A pyramid standing on a rectangular base: the base is in the local x/z
+ * plane at y = 0, `width` along x and `depth` along z, and the top is at
+ * y = -`height`, straight above the middle. It stands upright without any
+ * rotation, so a roof goes at the y of the top of the wall under it.
+ *
+ * With `ridge`, the top is an edge along x in place of a point: a `ridge` as
+ * long as `width` is a gable roof, and a shorter one is a hip roof.
+ */
+export interface PyramidNode extends SolidBase {
+  type: 'pyramid';
+  /** Size of the base along x. */
+  width: number;
+  /** Distance from the base up to the top, along -y. */
+  height: number;
+  /** Size of the base along z. */
+  depth: number;
+  /** Length of the edge along the top, from 0 to `width`. Default 0, a point. */
+  ridge?: number;
+  /** Color of the sloping face toward +z. */
+  frontFace?: string;
+  /** Color of the sloping face toward -z. */
+  rearFace?: string;
+  /** Color of the face toward -x. */
+  leftFace?: string;
+  /** Color of the face toward +x. */
+  rightFace?: string;
+  /** Color of the base. */
   bottomFace?: string;
 }
 
@@ -251,6 +283,7 @@ export type Node =
   | RectNode
   | PolygonNode
   | BoxNode
+  | PyramidNode
   | CylinderNode
   | ConeNode
   | HemisphereNode;

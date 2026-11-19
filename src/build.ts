@@ -14,6 +14,7 @@ import type {
   HemisphereNode,
   PathNode,
   PolygonNode,
+  PyramidNode,
   RectNode,
   Scene,
 } from './types.ts';
@@ -65,6 +66,14 @@ export function polygon(options: Options<PolygonNode>): PolygonNode {
 /** A box centered on the origin, `width` by `height` by `depth`. */
 export function box(options: Options<BoxNode>): BoxNode {
   return node('box', options);
+}
+
+/**
+ * A pyramid standing on its base at y = 0 with its top at y = -`height`.
+ * `ridge` makes the top an edge: as long as `width`, it is a gable roof.
+ */
+export function pyramid(options: Options<PyramidNode>): PyramidNode {
+  return node('pyramid', options);
 }
 
 /** A cylinder along the local z axis. `rotate: { x: 90 }` stands it up. */

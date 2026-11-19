@@ -66,11 +66,12 @@ const NODE_TYPES: readonly NodeType[] = [
   'rect',
   'polygon',
   'box',
+  'pyramid',
   'cylinder',
   'cone',
   'hemisphere',
 ];
-const SOLID_TYPES: readonly SolidKind[] = ['box', 'cylinder', 'cone', 'hemisphere'];
+const SOLID_TYPES: readonly SolidKind[] = ['box', 'pyramid', 'cylinder', 'cone', 'hemisphere'];
 
 function isSolid(type: NodeType): type is SolidKind {
   return (SOLID_TYPES as readonly string[]).includes(type);
@@ -192,10 +193,20 @@ const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
   },
   dome: { type: 'hemisphere', direct: true, hint: 'Give it a "diameter".' },
   halfsphere: { type: 'hemisphere', direct: true, hint: 'Give it a "diameter".' },
-  pyramid: {
-    type: 'cone',
+  wedge: {
+    type: 'pyramid',
     direct: false,
-    hint: 'There is no pyramid. Use a "cone", or build the sides from closed, filled "path" nodes.',
+    hint: 'For a wedge or a gable roof use a "pyramid" whose "ridge" equals its "width", e.g. { "type": "pyramid", "width": 40, "height": 20, "depth": 30, "ridge": 40 }.',
+  },
+  prism: {
+    type: 'pyramid',
+    direct: false,
+    hint: 'For a triangular prism use a "pyramid" whose "ridge" equals its "width", e.g. { "type": "pyramid", "width": 40, "height": 20, "depth": 30, "ridge": 40 }.',
+  },
+  roof: {
+    type: 'pyramid',
+    direct: false,
+    hint: 'For a roof use a "pyramid": "ridge" 0 for a pointed roof, or equal to "width" for a gable roof. A round roof is a "cone".',
   },
   text: {
     direct: false,
@@ -218,6 +229,7 @@ const KEYS_BY_TYPE: Readonly<Record<NodeType, readonly string[]>> = {
   rect: [...FLAT_KEYS, 'width', 'height'],
   polygon: [...FLAT_KEYS, 'sides', 'radius'],
   box: [...SOLID_KEYS, 'width', 'height', 'depth', ...FACE_KEYS.box],
+  pyramid: [...SOLID_KEYS, 'width', 'height', 'depth', 'ridge', ...FACE_KEYS.pyramid],
   cylinder: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cylinder],
   cone: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cone],
   hemisphere: [...SOLID_KEYS, 'diameter', ...FACE_KEYS.hemisphere],
@@ -584,6 +596,18 @@ function keyHint(type: NodeType, key: string): string | undefined {
   if (type === 'box' && (key === 'size' || key === 'diameter' || key === 'length')) {
     return 'Use "width", "height" and "depth".';
   }
+  if (type === 'pyramid' && (key === 'size' || key === 'diameter' || key === 'length')) {
+    return 'Use "width" and "depth" for the base and "height" for how far the top is above it.';
+  }
+  if (type === 'pyramid' && key === 'topFace') {
+    return 'A pyramid has no top face. Its faces are "frontFace", "rearFace", "leftFace", "rightFace" and "bottomFace".';
+  }
+  if (type === 'pyramid' && key === 'backface') {
+    return 'A pyramid\'s base is "bottomFace" and its face toward -z is "rearFace". Faces of solids cannot be left out.';
+  }
+  if (type === 'pyramid' && (key === 'apex' || key === 'tip' || key === 'top')) {
+    return 'The top is straight above the middle of the base. Use "ridge" to make it an edge along x.';
+  }
   if (type === 'cylinder' && key.endsWith('Face') && key !== 'frontFace') {
     return 'A cylinder\'s ends are "frontFace" (+z) and "backface" (-z); with "rotate": { "x": 90 } the frontFace is on top. The side uses "color".';
   }
@@ -880,12 +904,13 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
         width: 0,
         height: 0,
         depth: 0,
+        ridge: 0,
         diameter: 0,
         length: 0,
       };
       let ok = true;
       const need =
-        shapeType === 'box'
+        shapeType === 'box' || shapeType === 'pyramid'
           ? (['width', 'height', 'depth'] as const)
           : shapeType === 'hemisphere'
             ? (['diameter'] as const)
@@ -894,6 +919,20 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
         const value = dimension(key);
         if (value === undefined) ok = false;
         else dims[key] = value;
+      }
+      if (shapeType === 'pyramid' && input.ridge !== undefined) {
+        const ridge = readNumber(c, input, 'ridge', path, nodeId, { min: 0, example: '0' });
+        if (ridge === undefined) ok = false;
+        else if (ok && ridge > dims.width) {
+          c.report(
+            [...path, 'ridge'],
+            nodeId,
+            `a number from 0 to the width (${dims.width})`,
+            ridge,
+            `The ridge runs along x and cannot be longer than the base. Use ${dims.width} for a gable roof, or make "width" larger.`,
+          );
+          ok = false;
+        } else dims.ridge = ridge;
       }
       if (ok) solid = { kind: shapeType, ...dims, color, stroke, shade, faces };
     }

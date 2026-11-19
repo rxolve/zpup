@@ -10,6 +10,7 @@ import {
   piecesOverlap,
   visiblePieces,
 } from './pieces.ts';
+import { FACE_KEYS } from './solids.ts';
 import { formatNumber } from './svg.ts';
 import {
   Checker,
@@ -197,7 +198,9 @@ function unshadedSolids(c: Checker, s: NormalizedScene): void {
   walk(s.children, (node) => {
     const solid = node.solid;
     if (!solid?.shade || parseColor(solid.color)) return;
-    if (solid.kind === 'box' && Object.keys(solid.faces).length === 6) return;
+    // A solid of flat faces that all have their own color has nothing left to shade.
+    const flat = solid.kind === 'box' || solid.kind === 'pyramid';
+    if (flat && Object.keys(solid.faces).length === FACE_KEYS[solid.kind].length) return;
     c.note(
       [...node.location, 'color'],
       node.id,

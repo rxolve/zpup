@@ -27,7 +27,7 @@ const previewSize = z
   .describe('Longer side of the PNG in pixels. Default 512.');
 
 const FORMAT_NOTE =
-  'A scene is plain JSON: { width, height, rotate?, children: [...] } with shapes such as dot, path, ellipse, rect, polygon, box, cylinder, cone and hemisphere placed with translate and rotate (degrees). x is right, y is down, z is toward the viewer. Call get_reference once before writing a first scene.';
+  'A scene is plain JSON: { width, height, rotate?, children: [...] } with shapes such as dot, path, ellipse, rect, polygon, box, pyramid, cylinder, cone and hemisphere placed with translate and rotate (degrees). x is right, y is down, z is toward the viewer. Call get_reference once before writing a first scene.';
 
 /** Builds the server with its tools and the reference resource. It is not connected to anything yet. */
 export function createServer(): McpServer {

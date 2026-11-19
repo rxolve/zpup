@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+Added
+
+- `pyramid`: a solid on a rectangular base with its top straight above the middle. It stands upright with no rotation. `ridge` makes the top an edge along x: as long as the width it is a gable roof or a wedge, shorter a hip roof.
+- The types `wedge`, `prism` and `roof` are answered with how to write them as a pyramid.
+
 ## 0.2.1
 
 Documentation only.

@@ -8,7 +8,7 @@ The npm package is `@zpup/core`.
 
 ```ts
 import { renderSvg, renderSpinSvg, checkScene, compileScene, ZpupValidationError } from '@zpup/core';
-import { group, path, dot, ellipse, rect, polygon, box, cylinder, cone, hemisphere } from '@zpup/core'; // optional typed helpers
+import { group, path, dot, ellipse, rect, polygon, box, pyramid, cylinder, cone, hemisphere } from '@zpup/core'; // optional typed helpers
 
 renderSvg(scene, { precision: 2 }) // -> "<svg ...>...</svg>\n" (pure, deterministic)
 checkScene(scene)                  // -> ValidationIssue[] (empty when valid), never throws
@@ -65,11 +65,12 @@ Flat shapes (`path`, `ellipse`, `rect`, `polygon`) also take `backface?`, as in 
 | `rect` | `width`, `height` (required) | Centered on the origin, in the local x/y plane. |
 | `polygon` | `sides` (integer >= 3), `radius` (required) | Regular polygon, one corner pointing up. |
 | `box` | `width`, `height`, `depth` (required); `frontFace`, `rearFace`, `leftFace`, `rightFace`, `topFace`, `bottomFace` | Centered. Faces: front +z, top -y. |
+| `pyramid` | `width`, `height`, `depth` (required); `ridge` (0 to `width`, default 0); `frontFace`, `rearFace`, `leftFace`, `rightFace`, `bottomFace` | Stands upright with no rotation: base in the x/z plane at y = 0, top at y = -height. `ridge` makes the top an edge along x: equal to `width` it is a gable roof or wedge, shorter a hip roof. |
 | `cylinder` | `diameter`, `length` (required); `frontFace` (+z end), `backface` (-z end) | Along local z, centered. |
 | `cone` | `diameter`, `length` (required); `backface` (base) | Base at z = 0, tip at z = length. |
 | `hemisphere` | `diameter` (required); `backface` (flat side) | Flat side at z = 0, dome toward +z. |
 
-Solids (`box`, `cylinder`, `cone`, `hemisphere`) are always filled and take `color`, `stroke` (default 1, rounds the edges) and `shade?` (default true). Each face gets a fixed lighter or darker version of `color` by the direction it points in the scene (up lighter, down darker, left and right different), so one color reads as 3D. Face options set one face's exact color. `shade: false` paints every face in `color`. Like Zdog, round solids point along z: `rotate: { x: 90 }` stands them up (the +z end, `frontFace`, goes on top).
+Solids (`box`, `pyramid`, `cylinder`, `cone`, `hemisphere`) are always filled and take `color`, `stroke` (default 1, rounds the edges) and `shade?` (default true). Each face gets a fixed lighter or darker version of `color` by the direction it points in the scene (up lighter, down darker, left and right different), so one color reads as 3D. Face options set one face's exact color. `shade: false` paints every face in `color`. Like Zdog, round solids point along z: `rotate: { x: 90 }` stands them up (the +z end, `frontFace`, goes on top).
 
 Path entries are points `{ x?, y?, z? }` or cubic curves `{ "bezier": [control1, control2, end] }`. The first entry must be a point.
 
@@ -83,7 +84,8 @@ Helpers: `group(o)`, `dot(o)`, `ellipse(o)`, `box(o)` and the rest return `{ typ
 - Ring: `ellipse({ diameter, stroke })` without fill. Rotate it with `rotate: { x: 90 }` to lay it flat.
 - Lay a flat shape on the ground with `rotate: { x: 90 }`.
 - Mug: `{ "type": "cylinder", "diameter": 80, "length": 90, "rotate": { "x": 90 }, "color": "#4a7bd0", "frontFace": "#5b3a29" }` (coffee on top), plus a thick `path` for the handle.
-- Roof or rocket nose: a `cone` with `rotate: { x: 90 }`, placed on the top of a cylinder.
+- Round roof or rocket nose: a `cone` with `rotate: { x: 90 }`, placed on the top of a cylinder.
+- Roof of a house: a `pyramid` on a `box`, slightly wider and deeper than the box so it overhangs. `ridge: 0` is a pointed roof; `ridge` equal to `width` is a gable roof whose ridge runs along x (add `rotate: { y: 90 }` to run it along z). Example for a box 60 wide, 40 tall and 44 deep centered at y = 0: `{ "type": "pyramid", "width": 68, "depth": 52, "height": 30, "ridge": 68, "translate": { "y": -20 } }`.
 - Dome or rock: `hemisphere` with `rotate: { x: 90 }`; `scale: { z: 0.5 }` flattens it.
 - Crate, building, robot parts: `box`. Stack solids so they touch on flat faces.
 
@@ -95,6 +97,7 @@ Standing a round solid upright: `cylinder`, `cone` and `hemisphere` lie along lo
 | `cone` | Base at Y, tip at `Y - length`. |
 | `hemisphere` | Flat side at Y, top of the dome at `Y - diameter / 2`. |
 | `box` (no rotation) | Centered on Y: top at `Y - height / 2`, bottom at `Y + height / 2`. |
+| `pyramid` (no rotation) | Base at Y, top at `Y - height`. |
 
 `rotate: { x: -90 }` points them down instead: the cone's tip is at `Y + length` and the dome hangs below Y. Example of stacking: an upright cylinder of length 80 at `y: 0` has its top at y = -40, so a cone roof on it goes at `translate: { y: -40 }` with `rotate: { x: 90 }`, and the ground under it is at y = 40.
 
