@@ -198,6 +198,20 @@ See [docs/decisions.md](docs/decisions.md#turning-animation) for how it works.
 
 There is no perspective and no light to place, by design; soft shading is a fixed look, not a lighting model. See [docs/decisions.md](docs/decisions.md) for the reasoning behind these and other choices, and [llms.txt](llms.txt) for a compact reference written for AI coding tools.
 
+## With an AI model
+
+[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call.
+
+```json
+{
+  "mcpServers": {
+    "zpup": { "command": "npx", "args": ["-y", "@zpup/mcp"] }
+  }
+}
+```
+
+A model that can run code needs only the library and [llms.txt](llms.txt).
+
 ## Goals
 
 - Round, flat, designer-friendly pseudo-3D illustrations, in the spirit of Zdog
@@ -220,6 +234,8 @@ pnpm build       # writes dist/
 pnpm example     # writes the pictures in examples/
 pnpm playground:build  # builds the playground into playground/dist/, servable as static files
 ```
+
+The MCP server is a second package in [`mcp/`](mcp), built with `pnpm --dir mcp build`. Its tests run with the rest.
 
 ## Credits
 

@@ -1,0 +1,50 @@
+{
+  "name": "@zpup/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Zpup: an AI model writes a small 3D scene as JSON, gets its mistakes back as fixable errors, and sees the picture.",
+  "mcpName": "io.github.rxolve/zpup",
+  "license": "MIT",
+  "author": "rxolve",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rxolve/zpup.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://github.com/rxolve/zpup/tree/main/mcp#readme",
+  "bugs": {
+    "url": "https://github.com/rxolve/zpup/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "svg",
+    "3d",
+    "illustration",
+    "zpup"
+  ],
+  "type": "module",
+  "bin": {
+    "zpup-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm --dir .. run build && rm -rf dist && tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@resvg/resvg-js": "^2.6.2",
+    "@zpup/core": "workspace:^",
+    "zod": "^4.6.7"
+  }
+}
