@@ -557,10 +557,36 @@ function samplePoints(a: Analyzed, b: Analyzed): [number, number][] {
   return samples;
 }
 
+/**
+ * Whether two filled flat shapes, neither a face of a solid, lie in one
+ * plane: a road on a lawn, a pupil on an iris. Neither is in front of the
+ * other, and depth samples differ by rounding and by the strokes only, which
+ * would let the answer change with the view. The one later in the tree is
+ * painted on top instead, at every view angle.
+ */
+function samePlane(a: Analyzed, b: Analyzed): boolean {
+  if (a.solid !== undefined || b.solid !== undefined) return false;
+  return liesIn(a, b) && liesIn(b, a);
+}
+
+/** Whether every point of the outline of `b` is in the plane of the filled flat shape `a`. */
+function liesIn(a: Analyzed, b: Analyzed): boolean {
+  const plane = a.plane && towardViewer(a.plane.center, a.plane.normal);
+  if (!plane || !b.plane) return false;
+  const { center, normal } = plane;
+  for (const q of b.points) {
+    const d =
+      normal.x * (q.x - center.x) + normal.y * (q.y - center.y) + normal.z * (q.z - center.z);
+    if (Math.abs(d) > ON_PLANE) return false;
+  }
+  return true;
+}
+
 /** 1 when `a` is in front of `b`, -1 when behind, 0 when they do not overlap or it is unclear. */
 function compare(a: Analyzed, b: Analyzed): number {
   if (a.maxX < b.minX || b.maxX < a.minX || a.maxY < b.minY || b.maxY < a.minY) return 0;
   if (a.solid !== undefined && a.solid === b.solid) return Math.sign(a.layer - b.layer);
+  if (samePlane(a, b)) return a.index > b.index ? 1 : -1;
   const outsideA = outsideFace(a, b);
   if (outsideA !== 0) return -outsideA;
   const outsideB = outsideFace(b, a);

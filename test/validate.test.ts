@@ -276,4 +276,18 @@ describe('the dot node', () => {
     expect(issues.map((i) => i.path)).toEqual(['scene.children[0].fill', 'scene.children[0].path']);
     expect(issues[0]?.message).toContain('options of a "dot" node');
   });
+
+  it('says how to move a whole scene, which has no translate', () => {
+    const issues = checkScene({
+      width: 10,
+      height: 10,
+      translate: { y: 5 },
+      scale: 2,
+      children: [],
+    });
+    expect(issues.map((i) => i.hint)).toEqual([
+      'The scene cannot be moved. To move everything, put the children in one group: { "type": "group", "translate": { "y": 20 }, "children": [...] }.',
+      'Use "zoom" to make everything larger or smaller.',
+    ]);
+  });
 });

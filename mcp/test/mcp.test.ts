@@ -91,11 +91,14 @@ describe('mcp: render_scene', () => {
     const result = await renderScene({ scene: planet, views, preview_size: 128 });
     const all = texts(result.content);
     expect(all[0]).toMatch(/^Drew 3 views/);
-    expect(all.filter((t) => t.startsWith('View '))).toEqual([
+    expect(all.filter((t) => t.startsWith('View ')).map((t) => t.split('. ')[0])).toEqual([
       'View 1: x 0, y 0, z 0',
       'View 2: x -45, y 0, z 0',
       'View 3: x -60, y 30, z 0',
     ]);
+    expect(all.filter((t) => t.startsWith('View ')).every((t) => t.includes('Space around'))).toBe(
+      true,
+    );
     const pngs = images(result.content);
     expect(pngs).toHaveLength(3);
     expect(pngs[0]?.equals(pngs[1] as Buffer)).toBe(false);
@@ -148,6 +151,46 @@ describe('mcp: render_scene', () => {
     });
     expect(result.isError).toBeUndefined();
     expect(texts(result.content)[0]).toMatch(/1 warning \(the scene is valid/);
+  });
+});
+
+describe('mcp: framing', () => {
+  const dotAt = (x: number, y: number) => ({
+    width: 100,
+    height: 80,
+    children: [{ type: 'dot', stroke: 20, translate: { x, y } }],
+  });
+
+  it('gives the empty space on each side of the drawing', async () => {
+    const result = await renderScene({ scene: dotAt(0, 0), svg: false });
+    expect(texts(result.content)[0]).toContain(
+      'Space around the drawing, in pixels: left 40, right 40, top 30, bottom 30.',
+    );
+  });
+
+  it('says where the drawing is cut off and by how much', async () => {
+    const result = await renderScene({ scene: dotAt(45, -40), svg: false });
+    expect(texts(result.content)[0]).toContain(
+      'left 85, right -5, top -10, bottom 70. It is cut off at the right by 5 and the top by 10.',
+    );
+  });
+
+  it('counts the width of a stroke', async () => {
+    const line = {
+      width: 100,
+      height: 80,
+      children: [{ type: 'path', path: [{ x: -30 }, { x: 30 }], stroke: 10 }],
+    };
+    const result = await renderScene({ scene: line, svg: false });
+    expect(texts(result.content)[0]).toContain('left 15, right 15, top 35, bottom 35.');
+  });
+
+  it('says so when nothing is drawn', async () => {
+    const result = await renderScene({
+      scene: { width: 100, height: 80, children: [] },
+      svg: false,
+    });
+    expect(texts(result.content)[0]).toContain('Nothing is drawn.');
   });
 });
 

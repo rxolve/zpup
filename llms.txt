@@ -48,6 +48,8 @@ renderSpinSvg(scene, options?)     // -> "<svg ...>" that turns the scene foreve
 }
 ```
 
+The scene itself takes no `translate`. To move everything, put the children in one `group` and translate that.
+
 ## Nodes
 
 Every node: `type` (required), `id?` (string, shown in errors), `translate?`, `rotate?`, `scale?` (number or `{ x?, y?, z? }`, missing axes = 1), `visible?` (default true), `children?`.
@@ -99,13 +101,13 @@ Standing a round solid upright: `cylinder`, `cone` and `hemisphere` lie along lo
 | `box` (no rotation) | Centered on Y: top at `Y - height / 2`, bottom at `Y + height / 2`. |
 | `pyramid` (no rotation) | Base at Y, top at `Y - height`. |
 
-`rotate: { x: -90 }` points them down instead: the cone's tip is at `Y + length` and the dome hangs below Y. Example of stacking: an upright cylinder of length 80 at `y: 0` has its top at y = -40, so a cone roof on it goes at `translate: { y: -40 }` with `rotate: { x: 90 }`, and the ground under it is at y = 40.
+To lay one on its side, `rotate: { y: 90 }` turns local +z to point right (+x): a cone at `translate: { x: X }` has its base at X and its tip at `X + length`. `rotate: { y: -90 }` points it left. `rotate: { x: -90 }` points them down instead: the cone's tip is at `Y + length` and the dome hangs below Y. Example of stacking: an upright cylinder of length 80 at `y: 0` has its top at y = -40, so a cone roof on it goes at `translate: { y: -40 }` with `rotate: { x: 90 }`, and the ground under it is at y = 40.
 
 ## Depth sorting
 
-Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Do not sink one solid into another: rest it on a flat face (a tower on a base's top, not inside a dome). Coplanar shapes keep tree order (later children paint on top).
+Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Do not sink one solid into another: rest it on a flat face (a tower on a base's top, not inside a dome). Filled flat shapes that lie in the same plane keep tree order at every view angle: the later one paints on top, so list a lawn before the road on it. A line or dot lying on a filled shape shows on it whichever comes first.
 
-Place details slightly in front of the surface they sit on: an eye on a sphere of stroke 40 goes at `z` around 18 to 20.
+Place details slightly in front of the surface they sit on: an eye on a sphere of stroke 40 goes at `z` around 18 to 20, and a door or window on a flat wall goes 0.5 in front of it.
 
 ## Models that turn without popping
 

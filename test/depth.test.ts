@@ -173,6 +173,43 @@ describe('depth sorting in a scene', () => {
     });
     expect(order).toEqual(['face', 'mouth']);
   });
+
+  it('paints the later of two filled shapes in one plane on top, at every view angle', () => {
+    // A road on a lawn. Before this rule the lawn covered the road when
+    // neither had a stroke, and with strokes the answer changed with the view.
+    const flat = (id: string, depth: number, z: number, stroke: number) =>
+      rect({
+        id,
+        width: 200,
+        height: depth,
+        rotate: { x: 90 },
+        translate: { y: 30, z },
+        fill: true,
+        stroke,
+      });
+    for (const stroke of [0, 1, 6]) {
+      const lawn = flat('lawn', 120, 0, stroke);
+      const road = flat('road', 30, 40, stroke);
+      for (let x = -90; x <= 90; x += 30) {
+        if (x === 0) continue; // edge-on: nothing of either shows
+        for (let y = 0; y < 360; y += 40) {
+          const at = `stroke ${stroke}, x ${x}, y ${y}`;
+          const scene = { width: 300, height: 300, rotate: { x, y } };
+          expect(ids({ ...scene, children: [lawn, road] }), at).toEqual(['lawn', 'road']);
+          expect(ids({ ...scene, children: [road, lawn] }), at).toEqual(['road', 'lawn']);
+        }
+      }
+    }
+  });
+
+  it('still sorts flat shapes in parallel planes by depth, whatever their order in the tree', () => {
+    const sheet = (id: string, z: number) =>
+      rect({ id, width: 40, height: 40, translate: { z }, fill: true, stroke: 0 });
+    const near = sheet('near', 0.5);
+    const far = sheet('far', 0);
+    expect(ids({ width: 100, height: 100, children: [near, far] })).toEqual(['far', 'near']);
+    expect(ids({ width: 100, height: 100, children: [far, near] })).toEqual(['far', 'near']);
+  });
 });
 
 describe('depth sorting while the view turns', () => {

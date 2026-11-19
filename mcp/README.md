@@ -60,6 +60,12 @@ The scene has 3 problems. Nothing was drawn. Fix them and call again.
 
 The PNG has white painted behind a scene that has no background, so a model does not see a transparent picture as black. A PNG written with `save_to` keeps its transparency.
 
+The summary also says how the drawing sits in the image, for each view:
+
+```
+Space around the drawing, in pixels: left 85, right -5, top -10, bottom 70. It is cut off at the right by 5 and the top by 10.
+```
+
 SVG text is sent back only up to 30 KB in all. Past that, pass `save_to`.
 
 ### `render_spin`

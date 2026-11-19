@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+Fixed
+
+- Two filled flat shapes lying in one plane, such as a road on a lawn, are now painted in tree order at every view angle: the later one on top. Before, the earlier one covered the later one when neither had a stroke, and with strokes the order changed with the view.
+
+Changed
+
+- `translate` or `scale` on the scene is answered with what to use in its place.
+- `llms.txt` says which way a round solid points when laid on its side, how far in front of a wall to put a door, and that the scene itself cannot be moved.
+
 ## 0.3.0
 
 Added

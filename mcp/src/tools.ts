@@ -8,6 +8,7 @@ import { dirname, extname, isAbsolute } from 'node:path';
 import {
   checkScene,
   checkSceneWarnings,
+  compileScene,
   renderSpinSvg,
   renderSvg,
   type Scene,
@@ -105,6 +106,54 @@ function kb(chars: number): string {
   return chars < 1000 ? `${chars} B` : `${(chars / 1000).toFixed(1)} KB`;
 }
 
+/**
+ * How much empty space is left around what a scene draws, and where it is cut
+ * off, so a model can center the picture without guessing. Curves are measured
+ * by their control points, which is at most a little generous.
+ */
+export function framing(scene: Scene): string {
+  const frame = compileScene(scene);
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  const reach = (x: number, y: number, r: number) => {
+    minX = Math.min(minX, x - r);
+    maxX = Math.max(maxX, x + r);
+    minY = Math.min(minY, y - r);
+    maxY = Math.max(maxY, y + r);
+  };
+  for (const item of frame.items) {
+    if (item.kind === 'dot') {
+      reach(item.x, item.y, item.radius);
+      continue;
+    }
+    const r = item.stroke / 2;
+    for (const c of item.commands) {
+      if (c.op === 'Z') continue;
+      if (c.op === 'C') {
+        reach(c.x1, c.y1, r);
+        reach(c.x2, c.y2, r);
+      }
+      reach(c.x, c.y, r);
+    }
+  }
+  if (minX > maxX) return 'Nothing is drawn.';
+  const sides = [
+    ['left', minX],
+    ['right', frame.width - maxX],
+    ['top', minY],
+    ['bottom', frame.height - maxY],
+  ] as const;
+  const margins = sides.map(([name, space]) => `${name} ${Math.round(space)}`).join(', ');
+  const cut = sides.filter(([, space]) => space < -0.5);
+  const cutText =
+    cut.length === 0
+      ? ''
+      : ` It is cut off at the ${cut.map(([name, space]) => `${name} by ${Math.round(-space)}`).join(' and the ')}.`;
+  return `Space around the drawing, in pixels: ${margins}.${cutText}`;
+}
+
 function viewLabel(v: View): string {
   return `x ${v.x ?? 0}, y ${v.y ?? 0}, z ${v.z ?? 0}`;
 }
@@ -197,11 +246,16 @@ export function renderScene(args: RenderSceneArgs): Promise<ToolResult> {
     if (wantSvg && !inline) {
       summary += `\nThe SVG is too long to send back here (over ${kb(INLINE_SVG_LIMIT)}). Pass save_to to write it to a file.`;
     }
+    if (!views) summary += `\n${framing(base)}`;
     summary += warningText(warningsOf(scenes));
 
     const content: Content[] = [text(summary)];
     for (const [i, png] of previews.entries()) {
-      if (views) content.push(text(`View ${i + 1}: ${viewLabel(views[i] as View)}`));
+      if (views) {
+        content.push(
+          text(`View ${i + 1}: ${viewLabel(views[i] as View)}. ${framing(scenes[i] as Scene)}`),
+        );
+      }
       content.push({ type: 'image', data: png.toString('base64'), mimeType: 'image/png' });
       if (inline) content.push(text(svgs[i] as string));
     }

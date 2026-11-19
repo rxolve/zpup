@@ -561,6 +561,11 @@ function checkKeys(
       hint = `Groups draw nothing; set "${key}" on the shapes inside the group.`;
     } else if (special) {
       hint = special;
+    } else if (owner === 'the scene' && key === 'translate') {
+      hint =
+        'The scene cannot be moved. To move everything, put the children in one group: { "type": "group", "translate": { "y": 20 }, "children": [...] }.';
+    } else if (owner === 'the scene' && key === 'scale') {
+      hint = 'Use "zoom" to make everything larger or smaller.';
     } else if (guess) {
       hint = `Did you mean "${guess}"?`;
     } else if (otherTypes.length > 0 && owner !== 'the scene') {
