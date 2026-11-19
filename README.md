@@ -247,6 +247,16 @@ pnpm playground:build  # builds the playground into playground/dist/, servable a
 
 The MCP server is a second package in [`mcp/`](mcp), built with `pnpm --dir mcp build`. Its tests run with the rest.
 
+### Releasing
+
+Raise the version in `package.json` (and, for the server, in `mcp/package.json` and both places in `mcp/server.json`), add the changes to the changelog, and push a tag:
+
+```bash
+git tag v0.3.0 && git push origin v0.3.0
+```
+
+[The release workflow](.github/workflows/release.yml) then publishes whatever version is not out yet: `@zpup/core` and `@zpup/mcp` to npm, and the server's entry to the MCP Registry. It uses no tokens; npm trusts the workflow by name. A tag starting with `mcp-v` does the same, for a release of the server alone.
+
 ## Credits
 
 Zpup is inspired by [Zdog](https://github.com/metafizzy/zdog) by David DeSandro. It is a new implementation that shares no code with Zdog. It is an independent project and is not affiliated with Zdog or Metafizzy.
