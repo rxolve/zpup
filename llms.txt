@@ -87,6 +87,17 @@ Helpers: `group(o)`, `dot(o)`, `ellipse(o)`, `box(o)` and the rest return `{ typ
 - Dome or rock: `hemisphere` with `rotate: { x: 90 }`; `scale: { z: 0.5 }` flattens it.
 - Crate, building, robot parts: `box`. Stack solids so they touch on flat faces.
 
+Standing a round solid upright: `cylinder`, `cone` and `hemisphere` lie along local z, and `rotate: { x: 90 }` turns local +z to point up (-y). With that rotation and `translate: { y: Y }`:
+
+| solid | where it ends up |
+| --- | --- |
+| `cylinder` | Centered on Y: top at `Y - length / 2` (its `frontFace`), bottom at `Y + length / 2` (its `backface`). |
+| `cone` | Base at Y, tip at `Y - length`. |
+| `hemisphere` | Flat side at Y, top of the dome at `Y - diameter / 2`. |
+| `box` (no rotation) | Centered on Y: top at `Y - height / 2`, bottom at `Y + height / 2`. |
+
+`rotate: { x: -90 }` points them down instead: the cone's tip is at `Y + length` and the dome hangs below Y. Example of stacking: an upright cylinder of length 80 at `y: 0` has its top at y = -40, so a cone roof on it goes at `translate: { y: -40 }` with `rotate: { x: 90 }`, and the ground under it is at y = 40.
+
 ## Depth sorting
 
 Shapes are painted back to front. Overlapping shapes are compared where they overlap on screen, not by their centers, so a dot standing on a large floor sorts correctly. Unfilled outlines are sorted segment by segment, so a ring can pass behind and in front of a sphere. Shapes that truly intersect each other, or filled shapes that weave through each other, cannot be drawn correctly; split them into smaller shapes. Do not sink one solid into another: rest it on a flat face (a tower on a base's top, not inside a dome). Coplanar shapes keep tree order (later children paint on top).

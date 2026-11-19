@@ -93,7 +93,7 @@ export function createServer(): McpServer {
     'render_spin',
     {
       title: 'Make a turning Zpup SVG',
-      description: `Makes an SVG that turns the scene forever about one axis, with no JavaScript in the file, so it plays inside an <img> tag or a README. Returns a PNG of the first frame. These files are large (tens to hundreds of KB), so pass save_to; the SVG text comes back only when it is small. ${FORMAT_NOTE}`,
+      description: `Makes an SVG that turns the scene forever about one axis, with no JavaScript in the file, so it plays inside an <img> tag or a README. Returns PNG stills at even steps of the turn, so you can see what the animation shows. These files are large (tens to hundreds of KB), so pass save_to; the SVG text comes back only when it is small. ${FORMAT_NOTE}`,
       inputSchema: {
         scene,
         axis: z
@@ -106,6 +106,15 @@ export function createServer(): McpServer {
           .optional()
           .describe('Angles computed exactly, 4 to 720. More is smoother and larger. Default 36.'),
         direction: z.enum(['positive', 'negative']).optional(),
+        preview_frames: z
+          .number()
+          .int()
+          .min(1)
+          .max(8)
+          .optional()
+          .describe(
+            'How many stills to send back, at even steps of the turn. Default 4 (0, 90, 180 and 270 degrees). Their default size is 256.',
+          ),
         preview_size: previewSize,
         save_to: z
           .string()

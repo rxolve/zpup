@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+Documentation only.
+
+- `llms.txt` says where a `cylinder`, `cone` and `hemisphere` end up once they are stood upright, with an example of stacking them.
+- The README states the bundle size and that there is no text shape and no clipping.
+
 ## 0.2.0
 
 Added

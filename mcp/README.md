@@ -34,7 +34,7 @@ It needs Node 20 or later and runs offline, over standard input and output.
 | `get_reference` | Returns how to write a scene: the format, every shape and its options, and the conventions for axes and angles.                                   |
 | `check_scene`   | Checks a scene without drawing it. Returns every error with its path and a fix, and warnings for things that are valid but probably not intended. |
 | `render_scene`  | Draws the scene. Returns a PNG to look at, the SVG text, and any warnings. `views` draws the same scene from up to six angles in one call.        |
-| `render_spin`   | Makes an SVG that turns the scene forever, with no JavaScript in the file. Returns a PNG of the first frame.                                      |
+| `render_spin`   | Makes an SVG that turns the scene forever, with no JavaScript in the file. Returns PNG stills at even steps of the turn.                          |
 
 The reference is also available as the resource `zpup://reference`.
 
@@ -64,15 +64,18 @@ SVG text is sent back only up to 30 KB in all. Past that, pass `save_to`.
 
 ### `render_spin`
 
-| Argument       |                                                                            |
-| -------------- | -------------------------------------------------------------------------- |
-| `scene`        | The scene, as an object or as JSON text.                                   |
-| `axis`         | Which view angle turns: `"x"`, `"y"` or `"z"`. Default `"y"`, a turntable. |
-| `duration`     | Seconds for one full turn. Default 8.                                      |
-| `keyframes`    | Angles computed exactly, 4 to 720. Default 36.                             |
-| `direction`    | `"positive"` or `"negative"`.                                              |
-| `preview_size` | As above.                                                                  |
-| `save_to`      | Absolute path ending in `.svg`.                                            |
+| Argument         |                                                                              |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `scene`          | The scene, as an object or as JSON text.                                     |
+| `axis`           | Which view angle turns: `"x"`, `"y"` or `"z"`. Default `"y"`, a turntable.   |
+| `duration`       | Seconds for one full turn. Default 8.                                        |
+| `keyframes`      | Angles computed exactly, 4 to 720. Default 36.                               |
+| `direction`      | `"positive"` or `"negative"`.                                                |
+| `preview_frames` | How many stills to send back, at even steps of the turn, 1 to 8. Default 4.  |
+| `preview_size`   | Longer side of each still in pixels. Default 256, or 512 for a single still. |
+| `save_to`        | Absolute path ending in `.svg`.                                              |
+
+A model cannot play the animation, so the stills show it what the turn looks like: by default the scene at 0, 90, 180 and 270 degrees.
 
 Turning files are large, 43 KB for a small pup and 129 KB for a lighthouse, so the text comes back only when it is under 30 KB. Pass `save_to` to get the file.
 

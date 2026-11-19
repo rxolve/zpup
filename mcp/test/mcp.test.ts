@@ -25,6 +25,17 @@ const planet = {
   ],
 };
 
+/** A box whose six faces differ, so every quarter turn looks different. */
+const box = {
+  type: 'box',
+  width: 50,
+  height: 30,
+  depth: 20,
+  color: '#e62',
+  frontFace: '#36c',
+  leftFace: '#3a3',
+};
+
 const texts = (content: readonly Content[]) =>
   content.flatMap((c) => (c.type === 'text' ? [c.text] : []));
 const images = (content: readonly Content[]) =>
@@ -154,29 +165,78 @@ describe('mcp: check_scene', () => {
 });
 
 describe('mcp: render_spin', () => {
-  it('sends a small turning SVG back with a picture of its first frame', async () => {
-    const result = await renderSpin({ scene: planet, keyframes: 8 });
+  it('sends a small turning SVG back with one picture when asked for one', async () => {
+    const result = await renderSpin({ scene: planet, keyframes: 8, preview_frames: 1 });
     const [summary, svg] = texts(result.content);
     expect(summary).toMatch(/^Made a turning SVG of a 120x120 scene/);
+    expect(summary).toContain('The picture below is its first frame.');
     expect(svg).toContain('<animate');
     expect((svg as string).length).toBeLessThanOrEqual(INLINE_SVG_LIMIT);
-    expect(images(result.content)).toHaveLength(1);
+    const pngs = images(result.content);
+    expect(pngs).toHaveLength(1);
+    expect(pngSize(pngs[0] as Buffer)).toEqual({ width: 512, height: 512 });
+  });
+
+  it('shows four stills along the turn by default, each the scene at that angle', async () => {
+    const tilted = { ...planet, rotate: { x: -20, y: 30 }, children: [box] };
+    const result = await renderSpin({ scene: tilted, keyframes: 8 });
+    const all = texts(result.content);
+    expect(all[0]).toContain('The 4 pictures below are stills at even steps of the turn.');
+    expect(all.filter((t) => t.endsWith('into the turn'))).toEqual([
+      '0 degrees into the turn',
+      '90 degrees into the turn',
+      '180 degrees into the turn',
+      '270 degrees into the turn',
+    ]);
+    const pngs = images(result.content);
+    expect(pngs).toHaveLength(4);
+    expect(pngSize(pngs[0] as Buffer)).toEqual({ width: 256, height: 256 });
+
+    // The second still is the scene turned a quarter about y, as a plain render draws it.
+    const quarter = await renderScene({
+      scene: tilted,
+      views: [{ x: -20, y: 120 }],
+      preview_size: 256,
+      svg: false,
+    });
+    expect(pngs[1]?.equals(images(quarter.content)[0] as Buffer)).toBe(true);
+    expect(pngs[1]?.equals(pngs[0] as Buffer)).toBe(false);
+  });
+
+  it('steps the stills the other way for a negative turn, about the chosen axis', async () => {
+    const tilted = { ...planet, rotate: { x: -20, y: 30 }, children: [box] };
+    const result = await renderSpin({
+      scene: tilted,
+      keyframes: 8,
+      axis: 'x',
+      direction: 'negative',
+      preview_frames: 2,
+    });
+    const pngs = images(result.content);
+    expect(pngs).toHaveLength(2);
+    const half = await renderScene({
+      scene: tilted,
+      views: [{ x: -200, y: 30 }],
+      preview_size: 256,
+      svg: false,
+    });
+    expect(pngs[1]?.equals(images(half.content)[0] as Buffer)).toBe(true);
   });
 
   it('keeps a large one out of the reply and says how to get it', async () => {
     const result = await renderSpin({ scene: lighthouse });
     expect(result.isError).toBeUndefined();
     const all = texts(result.content);
-    expect(all).toHaveLength(1);
+    expect(all.some((t) => t.startsWith('<svg'))).toBe(false);
     expect(all[0]).toContain('Call again with save_to');
-    expect(images(result.content)).toHaveLength(1);
+    expect(images(result.content)).toHaveLength(4);
   });
 
   it('writes the file when given a path, and does not send the text', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
     const path = join(dir, 'planet-spin.svg');
     const result = await renderSpin({ scene: planet, keyframes: 8, save_to: path });
-    expect(texts(result.content)).toHaveLength(1);
+    expect(texts(result.content).some((t) => t.startsWith('<svg'))).toBe(false);
     expect(readFileSync(path, 'utf8')).toContain('<animate');
   });
 

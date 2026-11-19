@@ -49,6 +49,7 @@ export interface RenderSpinArgs {
   duration?: number | undefined;
   keyframes?: number | undefined;
   direction?: 'positive' | 'negative' | undefined;
+  preview_frames?: number | undefined;
   preview_size?: number | undefined;
   save_to?: string | undefined;
 }
@@ -57,6 +58,9 @@ export interface RenderSpinArgs {
 export const INLINE_SVG_LIMIT = 30_000;
 
 const DEFAULT_PREVIEW = 512;
+/** Pictures along a turn are smaller by default, since several come back at once. */
+const DEFAULT_TURN_PREVIEW = 256;
+const DEFAULT_TURN_FRAMES = 4;
 
 const text = (t: string): Content => ({ type: 'text', text: t });
 const failure = (t: string): ToolResult => ({ content: [text(t)], isError: true });
@@ -126,8 +130,8 @@ async function save(path: string, data: string | Uint8Array): Promise<void> {
   await writeFile(path, data);
 }
 
-function previewSize(value: number | undefined): number {
-  return Math.round(value ?? DEFAULT_PREVIEW);
+function previewSize(value: number | undefined, fallback = DEFAULT_PREVIEW): number {
+  return Math.round(value ?? fallback);
 }
 
 /** Runs a tool body and turns a Zpup validation error into an error result. */
@@ -205,7 +209,7 @@ export function renderScene(args: RenderSceneArgs): Promise<ToolResult> {
   });
 }
 
-/** `render_spin`: an SVG that turns the scene forever, with a picture of its first frame. */
+/** `render_spin`: an SVG that turns the scene forever, with stills along the turn to look at. */
 export function renderSpin(args: RenderSpinArgs): Promise<ToolResult> {
   return guarded(async () => {
     const read = readScene(args.scene);
@@ -225,12 +229,30 @@ export function renderSpin(args: RenderSpinArgs): Promise<ToolResult> {
     if (args.direction !== undefined) options.direction = args.direction;
 
     const svg = renderSpinSvg(scene, options);
-    const preview = svgToPng(renderSvg(scene), {
-      size: previewSize(args.preview_size),
-      backdrop: scene.background === undefined,
-    });
 
-    let summary = `Made a turning SVG of a ${scene.width}x${scene.height} scene: ${kb(svg.length)}. The picture below is its first frame.`;
+    // Stills at even steps of the turn, so the model sees what the animation
+    // shows without being able to play it.
+    const frames = Math.round(args.preview_frames ?? DEFAULT_TURN_FRAMES);
+    const size = previewSize(
+      args.preview_size,
+      frames > 1 ? DEFAULT_TURN_PREVIEW : DEFAULT_PREVIEW,
+    );
+    const axis = args.axis ?? 'y';
+    const sign = args.direction === 'negative' ? -1 : 1;
+    const start = { x: 0, y: 0, z: 0, ...scene.rotate };
+    const turns = Array.from({ length: frames }, (_, i) => (360 / frames) * i);
+    const previews = turns.map((turn) =>
+      svgToPng(renderSvg({ ...scene, rotate: { ...start, [axis]: start[axis] + sign * turn } }), {
+        size,
+        backdrop: scene.background === undefined,
+      }),
+    );
+
+    const shown =
+      frames === 1
+        ? 'The picture below is its first frame.'
+        : `The ${frames} pictures below are stills at even steps of the turn.`;
+    let summary = `Made a turning SVG of a ${scene.width}x${scene.height} scene: ${kb(svg.length)}. ${shown}`;
     const inline = args.save_to === undefined && svg.length <= INLINE_SVG_LIMIT;
     if (args.save_to !== undefined) {
       await save(args.save_to, svg);
@@ -240,10 +262,11 @@ export function renderSpin(args: RenderSpinArgs): Promise<ToolResult> {
     }
     summary += warningText(warningsOf([scene]));
 
-    const content: Content[] = [
-      text(summary),
-      { type: 'image', data: preview.toString('base64'), mimeType: 'image/png' },
-    ];
+    const content: Content[] = [text(summary)];
+    for (const [i, png] of previews.entries()) {
+      if (frames > 1) content.push(text(`${Math.round(turns[i] as number)} degrees into the turn`));
+      content.push({ type: 'image', data: png.toString('base64'), mimeType: 'image/png' });
+    }
     if (inline) content.push(text(svg));
     return { content };
   });
