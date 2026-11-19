@@ -26,6 +26,16 @@ Zdog draws to a canvas or to live SVG and cannot write a turning file, so its ha
 
 Small illustrations with volume: icons, mascots, props, a little building. The scene is data, so a person, a script or an AI model can write it, and mistakes come back as errors that say where and how to fix them.
 
+<p>
+  <a href="examples/pup.ts"><img src="examples/pup.svg" alt="A sitting pup" width="130"></a>
+  <a href="examples/rocket.ts"><img src="examples/rocket.svg" alt="A rocket on its pad" width="130"></a>
+  <a href="examples/cake.ts"><img src="examples/cake.svg" alt="A two-tier cake with candles" width="130"></a>
+  <a href="examples/robot.ts"><img src="examples/robot.svg" alt="A small robot" width="130"></a>
+  <a href="examples/cactus.ts"><img src="examples/cactus.svg" alt="A cactus in a pot" width="130"></a>
+</p>
+
+Each picture links to its scene, 60 to 150 lines of TypeScript. The cactus uses [soft shading](#soft-shading).
+
 It is not a 3D engine. There is no perspective, no textures and no light to place, and shapes that cut deep into each other are not drawn correctly. For that, use three.js or a modeling tool.
 
 ## Status

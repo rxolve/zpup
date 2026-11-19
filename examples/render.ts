@@ -1,8 +1,12 @@
 /** Renders every example scene to an SVG file next to this script. */
 import { writeFileSync } from 'node:fs';
 import { renderSpinSvg, renderSvg, type Scene } from '../src/index.ts';
+import { cactus } from './cactus.ts';
+import { cake } from './cake.ts';
 import { lighthouse } from './lighthouse.ts';
 import { pup } from './pup.ts';
+import { robot } from './robot.ts';
+import { rocket } from './rocket.ts';
 
 /** One scene drawn side by side from several view angles, as a single SVG. */
 function views(s: Scene, title: string, angles: NonNullable<Scene['rotate']>[]): string {
@@ -31,6 +35,10 @@ const outputs: [string, string][] = [
   ['./lighthouse.svg', renderSvg(lighthouse)],
   ['./lighthouse-views.svg', lighthouseViews],
   ['./lighthouse-spin.svg', renderSpinSvg(lighthouse)],
+  ['./rocket.svg', renderSvg(rocket)],
+  ['./cake.svg', renderSvg(cake)],
+  ['./robot.svg', renderSvg(robot)],
+  ['./cactus.svg', renderSvg(cactus)],
 ];
 for (const [name, svg] of outputs) {
   const out = new URL(name, import.meta.url);
