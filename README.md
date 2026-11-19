@@ -10,6 +10,18 @@ These four pictures come from [one scene](examples/lighthouse.ts): eleven solids
 
 **[Try it in the playground](https://rxolve.github.io/zpup/)**: edit a scene as JSON, drag the picture to turn it, and export the SVG.
 
+## Compared with Zdog
+
+![The same lighthouse turning in Zdog and in Zpup](examples/zdog-vs-zpup.svg)
+
+Both halves are the same solids at the same places and sizes ([Zdog script](examples/lighthouse.zdog.js), [Zpup scene](examples/lighthouse.ts)). Watch the hut and the boulder as they pass behind the tower: in Zdog the island is painted over them.
+
+Zdog orders shapes by one point each, so a large shape such as the ground covers smaller ones that sit on it once they are farther away than its center. In Zdog the fix is done by hand, with groups or by cutting the large shape up. Zpup compares every pair of shapes that overlap on screen and works out which one is in front.
+
+On the scenes of [the benchmark](bench/README.md) (12 subjects, each written twice by one model for both libraries and turned through 12 views), the share of the picture painted in the wrong order had a median of 2.9% and 4.2% for Zdog in two runs, and 0.4% and 0.3% for Zpup.
+
+Zdog draws to a canvas or to live SVG and cannot write a turning file, so its half above is a flip-book of Zdog's own SVG output, one frame every 3 degrees.
+
 ## What it is for
 
 Small illustrations with volume: icons, mascots, props, a little building. The scene is data, so a person, a script or an AI model can write it, and mistakes come back as errors that say where and how to fix them.
@@ -199,7 +211,7 @@ pnpm test        # unit and snapshot tests
 pnpm typecheck
 pnpm lint
 pnpm build       # writes dist/
-pnpm example     # writes the pup and lighthouse pictures in examples/
+pnpm example     # writes the pictures in examples/
 pnpm playground:build  # builds the playground into playground/dist/, servable as static files
 ```
 

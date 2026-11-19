@@ -42,7 +42,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
-    "example": "node examples/render.ts",
+    "example": "node examples/render.ts && node examples/compare.ts",
     "playground:build": "pnpm run build && node playground/build.ts",
     "bench": "node bench/run.ts",
     "bench:report": "node bench/report.ts",
