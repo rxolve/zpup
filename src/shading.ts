@@ -51,6 +51,15 @@ function tint(c: { r: number; g: number; b: number; a: number }, amount: number)
 const SIDE_STEP = 15;
 
 /**
+ * Where a ball's gradient sits in its bounding box. The circle is centered
+ * toward the light and reaches past the ball, so the edge facing the light
+ * stays near the ball's own color and only the far edge goes dark. Centered
+ * on the ball it darkened the whole rim, and a ball a few pixels wide showed
+ * as a dark ring.
+ */
+const BALL = 'cx="0.4" cy="0.36" r="0.7" fx="0.34" fy="0.3"';
+
+/**
  * The gradient vector for a direction in degrees, in bounding-box units:
  * through the middle of the box, long enough to reach its corners.
  */
@@ -88,7 +97,7 @@ export class Gradients {
       this.made.set(
         id,
         kind === 'ball'
-          ? `<radialGradient id="${id}" cx="0.5" cy="0.5" r="0.5" fx="0.34" fy="0.3">${stop(0, 0.3)}${stop(0.55, 0)}${stop(1, -0.24)}</radialGradient>`
+          ? `<radialGradient id="${id}" ${BALL}>${stop(0, 0.3)}${stop(0.5, 0)}${stop(1, -0.24)}</radialGradient>`
           : `<linearGradient id="${id}" ${gradientVector(Number(kind.slice(5)))}>${stop(0, 0.1)}${stop(0.26, 0.26)}${stop(0.62, 0)}${stop(1, -0.24)}</linearGradient>`,
       );
     }

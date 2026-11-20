@@ -203,6 +203,11 @@ const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
     direct: false,
     hint: 'For a triangular prism use a "pyramid" whose "ridge" equals its "width", e.g. { "type": "pyramid", "width": 40, "height": 20, "depth": 30, "ridge": 40 }.',
   },
+  frustum: {
+    type: 'cone',
+    direct: false,
+    hint: 'For a cone with its tip cut off (a lamp shade, a pot, a cup) use a "cone" with "tipDiameter", e.g. { "type": "cone", "diameter": 40, "tipDiameter": 20, "length": 30 }.',
+  },
   roof: {
     type: 'pyramid',
     direct: false,
@@ -231,7 +236,7 @@ const KEYS_BY_TYPE: Readonly<Record<NodeType, readonly string[]>> = {
   box: [...SOLID_KEYS, 'width', 'height', 'depth', ...FACE_KEYS.box],
   pyramid: [...SOLID_KEYS, 'width', 'height', 'depth', 'ridge', ...FACE_KEYS.pyramid],
   cylinder: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cylinder],
-  cone: [...SOLID_KEYS, 'diameter', 'length', ...FACE_KEYS.cone],
+  cone: [...SOLID_KEYS, 'diameter', 'length', 'tipDiameter', ...FACE_KEYS.cone],
   hemisphere: [...SOLID_KEYS, 'diameter', ...FACE_KEYS.hemisphere],
 };
 const ALL_NODE_KEYS = [...new Set(NODE_TYPES.flatMap((t) => KEYS_BY_TYPE[t]))];
@@ -616,7 +621,18 @@ function keyHint(type: NodeType, key: string): string | undefined {
   if (type === 'cylinder' && key.endsWith('Face') && key !== 'frontFace') {
     return 'A cylinder\'s ends are "frontFace" (+z) and "backface" (-z); with "rotate": { "x": 90 } the frontFace is on top. The side uses "color".';
   }
-  if ((type === 'cone' || type === 'hemisphere') && /face$/i.test(key) && key !== 'backface') {
+  if (
+    type === 'cone' &&
+    /^(top|tip|end|small|upper)(Diameter|Radius|Width|Size)?$|^(diameter|radius)(Top|Tip|2)$/i.test(
+      key,
+    )
+  ) {
+    return 'Use "tipDiameter", the diameter of the far end (at z = length), to cut the tip off. 0 is a point.';
+  }
+  if (type === 'cone' && /face$/i.test(key) && key !== 'backface' && key !== 'frontFace') {
+    return 'The base of a cone is "backface" and, when "tipDiameter" cuts the tip off, the far end is "frontFace"; the round surface uses "color".';
+  }
+  if (type === 'hemisphere' && /face$/i.test(key) && key !== 'backface') {
     return `The flat side of a ${type} is "backface"; the round surface uses "color".`;
   }
   if (isSolid(type) && /^(fill|stroke|side|top|front)(Color|Colour)$/i.test(key)) {
@@ -912,6 +928,7 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
         ridge: 0,
         diameter: 0,
         length: 0,
+        tipDiameter: 0,
       };
       let ok = true;
       const need =
@@ -938,6 +955,21 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
           );
           ok = false;
         } else dims.ridge = ridge;
+      }
+      if (shapeType === 'cone' && input.tipDiameter !== undefined) {
+        const tip = readNumber(c, input, 'tipDiameter', path, nodeId, { min: 0, example: '0' });
+        if (tip === undefined) ok = false;
+        else dims.tipDiameter = tip;
+      }
+      if (shapeType === 'cone' && faces.frontFace !== undefined && dims.tipDiameter === 0 && ok) {
+        c.report(
+          [...path, 'frontFace'],
+          nodeId,
+          'no "frontFace" on a cone that ends in a point',
+          faces.frontFace,
+          'A cone has a far end to color only when "tipDiameter" cuts its tip off. Set "tipDiameter", or use "backface" for the base.',
+        );
+        ok = false;
       }
       if (ok) solid = { kind: shapeType, ...dims, color, stroke, shade, faces };
     }

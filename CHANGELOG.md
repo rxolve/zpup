@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+Added
+
+- `tipDiameter` on a `cone` cuts its tip off and is the diameter of that end: a lamp shade, a plant pot, a cup. It may be larger than `diameter`. The far end takes `frontFace`, as a cylinder's does. A node of type `frustum` is answered with this.
+
+Changed
+
+- With `shading: "soft"`, a ball's edge that faces the light stays near its own color and only the far edge goes dark. The whole rim used to be darkened, so a ball a few pixels wide showed as a dark ring around its color. Pictures with soft balls and domes come out a little lighter.
+- `frontFace` on a cone that ends in a point is answered with what it needs (`tipDiameter`), where it used to be an unknown option.
+
 ## 0.3.1
 
 Fixed

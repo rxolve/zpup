@@ -39,6 +39,8 @@ export interface NormalizedSolid {
   readonly diameter: number;
   /** Cylinder and cone. */
   readonly length: number;
+  /** Cone only: the diameter of its far end. 0 is a point. */
+  readonly tipDiameter: number;
   readonly color: string;
   readonly stroke: number;
   readonly shade: boolean;
@@ -51,7 +53,7 @@ export const FACE_KEYS: Readonly<Record<SolidKind, readonly string[]>> = {
   box: ['frontFace', 'rearFace', 'leftFace', 'rightFace', 'topFace', 'bottomFace'],
   pyramid: ['frontFace', 'rearFace', 'leftFace', 'rightFace', 'bottomFace'],
   cylinder: ['frontFace', 'backface'],
-  cone: ['backface'],
+  cone: ['frontFace', 'backface'],
   hemisphere: ['backface'],
 };
 
@@ -64,6 +66,8 @@ export interface Surface {
   readonly kind: 'cylinder' | 'cone' | 'hemisphere';
   readonly radius: number;
   readonly length: number;
+  /** Cone only: the radius of its far end. 0 is a point. */
+  readonly tipRadius: number;
   /** Screen space to local space. */
   readonly inverse: Matrix;
 }
@@ -131,7 +135,13 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
     backfacing: false,
     surface:
       inverse && s.kind !== 'box' && s.kind !== 'pyramid'
-        ? { kind: s.kind, radius: s.diameter / 2, length: s.length, inverse }
+        ? {
+            kind: s.kind,
+            radius: s.diameter / 2,
+            length: s.length,
+            tipRadius: s.tipDiameter / 2,
+            inverse,
+          }
         : undefined,
     viewDependent: true,
     // The local z axis on screen: the axis of a cylinder or cone.
@@ -247,8 +257,17 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
         flat('frontFace', disc(r, h), Z),
       ];
     }
-    case 'cone':
-      return [round(coneSide(r, s.length, view), Z), flat('backface', disc(r, 0), minusZ)];
+    case 'cone': {
+      if (s.tipDiameter === 0) {
+        return [round(coneSide(r, s.length, view), Z), flat('backface', disc(r, 0), minusZ)];
+      }
+      const tip = s.tipDiameter / 2;
+      return [
+        round(cutConeSide(r, tip, s.length, view), Z),
+        flat('backface', disc(r, 0), minusZ),
+        flat('frontFace', disc(tip, s.length), Z),
+      ];
+    }
     case 'hemisphere':
       return [round(dome(r, view), Z), flat('backface', disc(r, 0), minusZ)];
   }
@@ -316,13 +335,19 @@ function solidBody(s: NormalizedSolid, world: Matrix): SolidBody {
           dot(n, center) - r * Math.hypot(dot(n, ex), dot(n, ey)) - h * Math.abs(dot(n, ez)),
       };
     }
-    case 'cone':
-      // The lowest point is on the rim of the base or at the tip.
+    case 'cone': {
+      // The lowest point is on the rim of the base, or at the tip, which is a
+      // second rim when the cone is cut off.
+      const tip = s.tipDiameter / 2;
+      const base = plane(origin, down);
       return {
-        planes: [plane(origin, down)],
-        support: (n) =>
-          dot(n, center) + Math.min(-r * Math.hypot(dot(n, ex), dot(n, ey)), s.length * dot(n, ez)),
+        planes: tip > 0 ? [base, plane({ x: 0, y: 0, z: s.length }, { x: 0, y: 0, z: 1 })] : [base],
+        support: (n) => {
+          const across = Math.hypot(dot(n, ex), dot(n, ey));
+          return dot(n, center) + Math.min(-r * across, s.length * dot(n, ez) - tip * across);
+        },
       };
+    }
     case 'hemisphere':
       // Half a ball above the base: the lowest point is on the dome when the
       // direction leans below the base, and on the rim of the base otherwise.
@@ -550,6 +575,40 @@ function coneSide(r: number, l: number, view: Vec3): PathGeometry {
 }
 
 /**
+ * The outline of the side of a cone cut off before its tip, with radius `r`
+ * at z = 0 and `tip` at z = `l`: the two contour lines where the side turns
+ * away from the viewer, joined at each end by the part of that rim whose side
+ * faces the viewer. That is the part of the side that can be seen, as for a
+ * cylinder, which this is when the two radii are equal. Looking down the
+ * axis from the small end, all of the side faces the viewer: the two lines
+ * run along one generator and each rim is drawn all the way round, which
+ * fills the ring between them.
+ *
+ * Commands: M L C C C C L C C C C Z.
+ */
+function cutConeSide(r: number, tip: number, l: number, view: Vec3): PathGeometry {
+  const psi = viewAngle(view);
+  const rho = Math.hypot(view.x, view.y);
+  // The side leans in toward the axis by this much per unit of length; the
+  // generator at angle t faces the viewer when cos(t - psi) > -lean * view.z / rho.
+  const lean = (r - tip) / l;
+  let beta: number;
+  if (rho > 1e-12) {
+    beta = Math.acos(Math.min(1, Math.max(-1, (-lean * view.z) / rho)));
+  } else {
+    const toward = lean * view.z;
+    beta = toward > 0 ? Math.PI : toward < 0 ? 0 : HALF_PI;
+  }
+  const start = rim(r, 0, psi + beta);
+  return closeAt(start, [
+    { kind: 'line', to: rim(tip, l, psi + beta) },
+    ...arc({ x: 0, y: 0, z: l }, X, Y, tip, psi + beta, -2 * beta, 4),
+    { kind: 'line', to: rim(r, 0, psi - beta) },
+    ...arc({ x: 0, y: 0, z: 0 }, X, Y, r, psi - beta, 2 * beta, 4),
+  ]);
+}
+
+/**
  * The outline of a hemisphere's dome: half of the base rim, then half of the
  * sphere's contour (the great circle perpendicular to the view) on the dome
  * side. The two halves meet where the contour crosses the base.
@@ -599,7 +658,7 @@ export function surfaceDepth(s: Surface, x: number, y: number): number | undefin
     slabbed = linear(pz, dz, -s.length / 2, s.length / 2);
   } else if (s.kind === 'cone') {
     if (s.length <= 0) return undefined;
-    const k = r / s.length;
+    const k = (r - s.tipRadius) / s.length;
     const q = r - k * pz;
     count = quadratic(
       dx * dx + dy * dy - k * k * dz * dz,

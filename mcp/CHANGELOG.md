@@ -3,6 +3,7 @@
 ## 0.3.0
 
 - `changes` takes `copy`: a copy of a shape is added to the list it is in, with the keys of `value` put over it, so a second tree or window does not have to be sent again.
+- Uses `@zpup/core` 0.4.0, which adds `tipDiameter` on a `cone` and stops small balls under soft shading from showing a dark ring.
 
 ## 0.2.0
 

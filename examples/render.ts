@@ -4,6 +4,7 @@ import { renderSpinSvg, renderSvg, type Scene } from '../src/index.ts';
 import { cactus } from './cactus.ts';
 import { cake } from './cake.ts';
 import { lighthouse } from './lighthouse.ts';
+import { pots } from './pots.ts';
 import { pup } from './pup.ts';
 import { robot } from './robot.ts';
 import { rocket } from './rocket.ts';
@@ -41,6 +42,7 @@ const outputs: [string, string][] = [
   ['./robot.svg', renderSvg(robot)],
   ['./cactus.svg', renderSvg(cactus)],
   ['./roofs.svg', renderSvg(roofs)],
+  ['./pots.svg', renderSvg(pots)],
 ];
 for (const [name, svg] of outputs) {
   const out = new URL(name, import.meta.url);

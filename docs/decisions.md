@@ -59,6 +59,9 @@ Option names follow the flat shapes (`diameter`, `width`, `height`, `color`, `st
 **`pyramid` stands up on its own, and `ridge` covers the roofs.** (open)
 Zdog has no pyramid, so there is no habit to follow. A pyramid is used almost only as a roof or a spire on top of a box, so it follows the box and not the cone: the base is in the x/z plane at y = 0 and the top is at y = -height, with no rotation needed. A model that drew a hut without it said the missing shape was "a pyramid or a wedge", which are one shape with a different top edge. `ridge` is the length of that edge along x: 0 is a point, the width is a gable roof or a wedge, and anything between is a hip roof. All of them are convex and have only flat faces, so they sort like a box.
 
+**A cone's tip can be cut off; solids stay closed.** (open)
+`tipDiameter` on a `cone` is the diameter of its far end, 0 by default. It covers the lamp shade, pot, cup and bucket that models asked for as a "hollow" or "open-ended" shape, and it may be larger than `diameter`, so the wide end can be either one. The cut cone is still a closed convex solid: its side is the contour lines joined by the part of each rim whose side faces the viewer, as for a cylinder, and its depth is the same line-of-sight test as the cone's with a second radius. A solid that is really hollow would need its inner wall as a surface of its own, sorted behind what stands inside it and in front of what is behind it, which the depth sort has no notion of. A darker `frontFace` reads as an opening at this size, and that is what the reference recommends.
+
 **One color, fixed shades per face.** (open)
 With no lighting, a box in one color is a flat hexagon. So each face gets a lighter or darker version of `color` chosen by the direction the face points in the scene (after the node's own transforms, before the view): up is 25% toward white, down 30% toward black, and left and right are lighter and darker in proportion to how far they face sideways (up to 12%), so the two sides a box shows at any turn always differ. A round surface uses the direction perpendicular to its axis that faces most toward the front and slightly up, so an upright cylinder's side keeps `color` exactly and a cylinder pointing at the viewer gets a lighter side than its front end. This does not conflict with "no lighting": nothing depends on the view, a face keeps its color as the scene turns, and the result is the same as painting each face by hand. Near-white colors cannot get lighter and near-black ones cannot get darker, so for them the scale is moved and narrowed (the top of a white box stays white, the other faces get darker in half steps). Face options give a face an exact color, unshaded; `shade: false` paints every face in `color`. Colors that Zpup cannot parse (`currentColor`, `oklch()`) are drawn unshaded, with a warning.
 
@@ -189,6 +192,9 @@ Coordinates are rounded to a fixed precision (default 2), negative zero is never
 
 **Dots are emitted as `<circle>`.** (settled)
 Zero-length stroked paths render inconsistently across SVG renderers.
+
+**A soft ball's gradient is centered toward the light.** (settled)
+The radial gradient's circle sits up and to the left of the ball's middle and reaches past it (`cx 0.4, cy 0.36, r 0.7`), so the edge facing the light stays near the ball's own color and only the far edge goes dark. Centered on the ball, it darkened the whole rim by the same amount; that read as roundness on a large ball, but a ball of 4 to 12 pixels showed as a dark ring around its color, and about 70% of every ball was darker than the color asked for. The cost is a weaker outline on the lit side against a background of a similar color.
 
 **Node ids are not emitted into the SVG.** (open)
 Ids would collide when several images share a page. A `data-` attribute or class hook can be added when animation needs it.

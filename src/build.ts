@@ -81,7 +81,10 @@ export function cylinder(options: Options<CylinderNode>): CylinderNode {
   return node('cylinder', options);
 }
 
-/** A cone with its base at z = 0 and its tip toward +z. `rotate: { x: 90 }` points it up. */
+/**
+ * A cone with its base at z = 0 and its tip toward +z. `rotate: { x: 90 }` points it up.
+ * `tipDiameter` cuts the tip off: a lamp shade, a pot or a cup.
+ */
 export function cone(options: Options<ConeNode>): ConeNode {
   return node('cone', options);
 }

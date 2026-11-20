@@ -329,6 +329,7 @@ export function solidFrame(
     kind,
     radius,
     length,
+    tipRadius: 0,
     inverse: [u.x, u.y, u.z, v.x, v.y, v.z, w.x, w.y, w.z, -dot(u, c), -dot(v, c), -dot(w, c)],
   };
 }

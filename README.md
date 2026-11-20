@@ -125,6 +125,10 @@ pyramid({ width: 68, depth: 52, height: 30, ridge: 30 }); // a hip roof
 pyramid({ width: 68, depth: 52, height: 30, ridge: 68 }); // a gable roof, or a wedge
 ```
 
+A `cone` takes `tipDiameter`, which cuts its tip off: a lamp shade, a plant pot, a cup. Solids are not hollow, so the open end is a face in a darker color ([scene](examples/pots.ts)):
+
+![A lamp, a plant pot and a cup, each a cone with its tip cut off](examples/pots.svg)
+
 Solids are depth-sorted like everything else, against each other and against flat shapes. Rest one solid on a flat face of another; solids that cut into each other cannot be drawn correctly.
 
 ### Soft shading

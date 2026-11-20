@@ -69,7 +69,7 @@ Flat shapes (`path`, `ellipse`, `rect`, `polygon`) also take `backface?`, as in 
 | `box` | `width`, `height`, `depth` (required); `frontFace`, `rearFace`, `leftFace`, `rightFace`, `topFace`, `bottomFace` | Centered. Faces: front +z, top -y. |
 | `pyramid` | `width`, `height`, `depth` (required); `ridge` (0 to `width`, default 0); `frontFace`, `rearFace`, `leftFace`, `rightFace`, `bottomFace` | Stands upright with no rotation: base in the x/z plane at y = 0, top at y = -height. `ridge` makes the top an edge along x: equal to `width` it is a gable roof or wedge, shorter a hip roof. |
 | `cylinder` | `diameter`, `length` (required); `frontFace` (+z end), `backface` (-z end) | Along local z, centered. |
-| `cone` | `diameter`, `length` (required); `backface` (base) | Base at z = 0, tip at z = length. |
+| `cone` | `diameter`, `length` (required); `tipDiameter` (default 0, a point); `backface` (base), `frontFace` (the far end, only with `tipDiameter`) | Base at z = 0, tip at z = length. `tipDiameter` cuts the tip off and is the diameter of that end; it may be larger than `diameter`. |
 | `hemisphere` | `diameter` (required); `backface` (flat side) | Flat side at z = 0, dome toward +z. |
 
 Solids (`box`, `pyramid`, `cylinder`, `cone`, `hemisphere`) are always filled and take `color`, `stroke` (default 1, rounds the edges) and `shade?` (default true). Each face gets a fixed lighter or darker version of `color` by the direction it points in the scene (up lighter, down darker, left and right different), so one color reads as 3D. Face options set one face's exact color. `shade: false` paints every face in `color`. Like Zdog, round solids point along z: `rotate: { x: 90 }` stands them up (the +z end, `frontFace`, goes on top).
@@ -87,6 +87,7 @@ Helpers: `group(o)`, `dot(o)`, `ellipse(o)`, `box(o)` and the rest return `{ typ
 - Lay a flat shape on the ground with `rotate: { x: 90 }`.
 - Mug: `{ "type": "cylinder", "diameter": 80, "length": 90, "rotate": { "x": 90 }, "color": "#4a7bd0", "frontFace": "#5b3a29" }` (coffee on top), plus a thick `path` for the handle.
 - Round roof or rocket nose: a `cone` with `rotate: { x: 90 }`, placed on the top of a cylinder.
+- Lamp shade, plant pot, cup, bucket: a `cone` with `tipDiameter`. Upright with `rotate: { x: 90 }` the far end is on top, so a shade is `{ "diameter": 70, "tipDiameter": 34, "length": 44 }` and a pot is `{ "diameter": 44, "tipDiameter": 66, "length": 50 }`. Solids are not hollow: give the open end a darker `frontFace` (soil, coffee, shadow) and it reads as an opening.
 - Roof of a house: a `pyramid` on a `box`, slightly wider and deeper than the box so it overhangs. `ridge: 0` is a pointed roof; `ridge` equal to `width` is a gable roof whose ridge runs along x (add `rotate: { y: 90 }` to run it along z). Example for a box 60 wide, 40 tall and 44 deep centered at y = 0: `{ "type": "pyramid", "width": 68, "depth": 52, "height": 30, "ridge": 68, "translate": { "y": -20 } }`.
 - Dome or rock: `hemisphere` with `rotate: { x: 90 }`; `scale: { z: 0.5 }` flattens it.
 - Crate, building, robot parts: `box`. Stack solids so they touch on flat faces.
@@ -96,7 +97,7 @@ Standing a round solid upright: `cylinder`, `cone` and `hemisphere` lie along lo
 | solid | where it ends up |
 | --- | --- |
 | `cylinder` | Centered on Y: top at `Y - length / 2` (its `frontFace`), bottom at `Y + length / 2` (its `backface`). |
-| `cone` | Base at Y, tip at `Y - length`. |
+| `cone` | Base at Y, tip (or the far end, with `tipDiameter`) at `Y - length`. |
 | `hemisphere` | Flat side at Y, top of the dome at `Y - diameter / 2`. |
 | `box` (no rotation) | Centered on Y: top at `Y - height / 2`, bottom at `Y + height / 2`. |
 | `pyramid` (no rotation) | Base at Y, top at `Y - height`. |

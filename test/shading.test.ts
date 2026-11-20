@@ -37,6 +37,17 @@ describe('soft shading', () => {
     expect(svg).toMatch(/stop-color="#efc293".*stop-color="#e8a865".*stop-color="#b0804d"/);
   });
 
+  it('darkens only the edge of a ball that faces away from the light', () => {
+    const svg = renderSvg(scene([ball], { shading: 'soft' }));
+    const g = /<radialGradient id="zs-b-e8a865" cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/.exec(svg);
+    const [cx, cy, r] = (g ?? []).slice(1).map(Number) as [number, number, number];
+    // How far along the gradient the ball's edge is, toward and away from the upper left.
+    const along = (x: number, y: number) => Math.hypot(x - cx, y - cy) / r;
+    const edge = Math.SQRT1_2 / 2;
+    expect(along(0.5 - edge, 0.5 - edge)).toBeLessThan(0.55);
+    expect(along(0.5 + edge, 0.5 + edge)).toBeGreaterThan(0.9);
+  });
+
   it('defines one gradient for all shapes of the same kind and color', () => {
     const svg = renderSvg(
       scene(

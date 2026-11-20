@@ -258,6 +258,14 @@ export interface ConeNode extends SolidBase {
   diameter: number;
   /** Distance from the base to the tip, along z. */
   length: number;
+  /**
+   * Diameter of the far end, at z = `length`. The default 0 is a point; a
+   * larger value cuts the tip off, for a lamp shade, a pot or a cup. It may be
+   * larger than `diameter`.
+   */
+  tipDiameter?: number;
+  /** Color of the far end. Only with a `tipDiameter` above 0. */
+  frontFace?: string;
   /** Color of the flat base. */
   backface?: string;
 }
