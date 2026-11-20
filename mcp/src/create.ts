@@ -1,14 +1,47 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { packageVersion, readReference } from './reference.ts';
-import { checkSceneTool, getReference, renderScene, renderSpin } from './tools.ts';
+import {
+  checkSceneTool,
+  getReference,
+  getScene,
+  type Memory,
+  renderScene,
+  renderSpin,
+} from './tools.ts';
 
 export const REFERENCE_URI = 'zpup://reference';
 
 const scene = z
   .union([z.record(z.string(), z.unknown()), z.string()])
+  .optional()
   .describe(
-    'The scene: an object with width, height and children (JSON text of the same is accepted). Call get_reference for the full format.',
+    'The scene: an object with width, height and children (JSON text of the same is accepted). Call get_reference for the full format. Leave it out to use the scene from the last valid call.',
+  );
+
+const changes = z
+  .array(
+    z
+      .object({
+        op: z
+          .enum(['set', 'remove', 'insert', 'append'])
+          .describe(
+            'set: put value at path, replacing what is there. remove: delete what is at path. insert: put value into a list before the item at path. append: add value to the end of the list at path.',
+          ),
+        path: z
+          .string()
+          .describe(
+            'Where, in the form the errors use: "children[2].color", "children[0].translate.y", "rotate". A shape that has an id can be named by it in place of counting: "#roof.color", "#tree.children[0].length", or "#tree" alone for the shape itself. For append, the list itself: "children" or "#tree.children".',
+          ),
+        value: z.unknown().optional().describe('The new value. Not used by remove.'),
+      })
+      .strict(),
+  )
+  .min(1)
+  .max(100)
+  .optional()
+  .describe(
+    'Edits to the remembered scene (or to scene, when both are passed), applied in order, so that a small fix does not need the whole scene again. Example: [{ "op": "set", "path": "children[2].translate.y", "value": -30 }, { "op": "append", "path": "children", "value": { "type": "dot", "stroke": 8, "color": "#333" } }]. After a remove or insert, later items in that list have a different index, so give shapes an id and use "#id" paths. If the result is not valid, nothing is changed.',
   );
 
 const angle = z
@@ -27,11 +60,13 @@ const previewSize = z
   .describe('Longer side of the PNG in pixels. Default 512.');
 
 const FORMAT_NOTE =
-  'A scene is plain JSON: { width, height, rotate?, children: [...] } with shapes such as dot, path, ellipse, rect, polygon, box, pyramid, cylinder, cone and hemisphere placed with translate and rotate (degrees). x is right, y is down, z is toward the viewer. Call get_reference once before writing a first scene.';
+  'A scene is plain JSON: { width, height, rotate?, children: [...] } with shapes such as dot, path, ellipse, rect, polygon, box, pyramid, cylinder, cone and hemisphere placed with translate and rotate (degrees). x is right, y is down, z is toward the viewer. Call get_reference once before writing a first scene. The server remembers the last valid scene: a later call can leave scene out to draw it again, or pass changes to edit it.';
 
 /** Builds the server with its tools and the reference resource. It is not connected to anything yet. */
 export function createServer(): McpServer {
   const server = new McpServer({ name: 'zpup', version: packageVersion() });
+  // One server serves one client, so one remembered scene is enough.
+  const memory: Memory = {};
 
   server.registerTool(
     'get_reference',
@@ -52,7 +87,18 @@ export function createServer(): McpServer {
       inputSchema: { scene },
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     },
-    (args) => checkSceneTool(args),
+    (args) => checkSceneTool(args, memory),
+  );
+
+  server.registerTool(
+    'get_scene',
+    {
+      title: 'Read the remembered Zpup scene',
+      description:
+        'Returns the scene the server remembers, as JSON: the last valid scene sent, with every change applied since. Use it to see the current indexes after several edits, or to keep the scene.',
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+    },
+    () => getScene(memory),
   );
 
   server.registerTool(
@@ -62,6 +108,7 @@ export function createServer(): McpServer {
       description: `Draws a small 3D scene as a flat SVG picture and returns a PNG of it to look at, the SVG text, and any warnings. An invalid scene draws nothing and returns every error with its path and how to fix it. Pass views to see the same scene from several angles in one call, which is the quickest way to find a shape that is in the wrong place. ${FORMAT_NOTE}`,
       inputSchema: {
         scene,
+        changes,
         views: z
           .array(angle)
           .min(1)
@@ -84,9 +131,9 @@ export function createServer(): McpServer {
             'Absolute path ending in .svg or .png to write the picture to. With several views, -1, -2 and so on are added to the name.',
           ),
       },
-      annotations: { idempotentHint: true, openWorldHint: false },
+      annotations: { idempotentHint: false, openWorldHint: false },
     },
-    (args) => renderScene(args),
+    (args) => renderScene(args, memory),
   );
 
   server.registerTool(
@@ -96,6 +143,7 @@ export function createServer(): McpServer {
       description: `Makes an SVG that turns the scene forever about one axis, with no JavaScript in the file, so it plays inside an <img> tag or a README. Returns PNG stills at even steps of the turn, so you can see what the animation shows. These files are large (tens to hundreds of KB), so pass save_to; the SVG text comes back only when it is small. ${FORMAT_NOTE}`,
       inputSchema: {
         scene,
+        changes,
         axis: z
           .enum(['x', 'y', 'z'])
           .optional()
@@ -121,9 +169,9 @@ export function createServer(): McpServer {
           .optional()
           .describe('Absolute path ending in .svg to write the file to.'),
       },
-      annotations: { idempotentHint: true, openWorldHint: false },
+      annotations: { idempotentHint: false, openWorldHint: false },
     },
-    (args) => renderSpin(args),
+    (args) => renderSpin(args, memory),
   );
 
   server.registerResource(

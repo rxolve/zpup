@@ -1,6 +1,6 @@
 {
   "name": "@zpup/mcp",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "MCP server for Zpup: an AI model writes a small 3D scene as JSON, gets its mistakes back as fixable errors, and sees the picture.",
   "mcpName": "io.github.rxolve/zpup",
   "license": "MIT",

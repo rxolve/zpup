@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- The server remembers the last valid scene. `render_scene`, `render_spin` and `check_scene` can leave `scene` out to use it again.
+- `render_scene` and `render_spin` take `changes`: `set`, `remove`, `insert` and `append` at a path such as `children[2].color`, so a small fix does not need the whole scene again. If the result is not valid, nothing is changed.
+- A path can start at a shape's `id`: `#roof.color`.
+- New tool `get_scene` returns the remembered scene as JSON.
+
 ## 0.1.3
 
 - `render_scene` says how much empty space is left on each side of the drawing and where it is cut off, so a picture can be centered without guessing.

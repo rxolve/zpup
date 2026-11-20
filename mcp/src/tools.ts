@@ -16,6 +16,7 @@ import {
   type ValidationIssue,
   ZpupValidationError,
 } from '@zpup/core';
+import { applyChanges, type Change, ChangeError } from './changes.ts';
 import { svgToPng } from './png.ts';
 import { readReference } from './reference.ts';
 
@@ -36,8 +37,17 @@ export interface View {
   z?: number | undefined;
 }
 
+/**
+ * What the server keeps between calls: the last scene that was valid, so the
+ * next call can leave the scene out or send only what changes.
+ */
+export interface Memory {
+  scene?: Scene | undefined;
+}
+
 export interface RenderSceneArgs {
-  scene: unknown;
+  scene?: unknown;
+  changes?: Change[] | undefined;
   views?: View[] | undefined;
   svg?: boolean | undefined;
   preview_size?: number | undefined;
@@ -45,7 +55,8 @@ export interface RenderSceneArgs {
 }
 
 export interface RenderSpinArgs {
-  scene: unknown;
+  scene?: unknown;
+  changes?: Change[] | undefined;
   axis?: 'x' | 'y' | 'z' | undefined;
   duration?: number | undefined;
   keyframes?: number | undefined;
@@ -81,13 +92,62 @@ function list(issues: readonly ValidationIssue[]): string {
 }
 
 /** The scene's problems as an error result, or nothing when it is valid. */
-function invalid(scene: unknown): ToolResult | undefined {
+function invalid(scene: unknown, changed: boolean): ToolResult | undefined {
   const issues = checkScene(scene);
   if (issues.length === 0) return undefined;
   const n = issues.length === 1 ? '1 problem' : `${issues.length} problems`;
-  return failure(
-    `The scene has ${n}. Nothing was drawn. Fix them and call again.\n\n${list(issues)}`,
-  );
+  const what = changed
+    ? `With these changes the scene has ${n}. Nothing was changed or drawn: the remembered scene is as it was. Fix the changes and send all of them again.`
+    : `The scene has ${n}. Nothing was drawn. Fix them and call again.`;
+  return failure(`${what}\n\n${list(issues)}`);
+}
+
+const NO_SCENE =
+  'scene: there is no scene yet. Pass scene. Once a scene is valid the server remembers it, and later calls can leave scene out or pass changes.';
+
+/**
+ * The scene a call is about: the one it sends, or the remembered one, with the
+ * call's changes applied. A valid result is remembered; an invalid one leaves
+ * the memory as it was.
+ */
+function resolve(
+  args: { scene?: unknown; changes?: Change[] | undefined },
+  memory: Memory,
+): { scene: Scene; note: string } | { error: ToolResult } {
+  let base: unknown;
+  const sent = args.scene !== undefined;
+  if (sent) {
+    const read = readScene(args.scene);
+    if ('error' in read) return { error: failure(read.error) };
+    base = read.scene;
+  } else if (memory.scene === undefined) {
+    return { error: failure(NO_SCENE) };
+  } else {
+    base = memory.scene;
+  }
+
+  const changes = args.changes ?? [];
+  if (changes.length > 0) {
+    try {
+      base = applyChanges(base, changes);
+    } catch (e) {
+      if (!(e instanceof ChangeError)) throw e;
+      const kept = sent ? '' : ' The remembered scene is as it was.';
+      return { error: failure(`${e.message}\nNothing was changed or drawn.${kept}`) };
+    }
+  }
+  const bad = invalid(base, changes.length > 0);
+  if (bad) return { error: bad };
+
+  memory.scene = base as Scene;
+  const n = changes.length === 1 ? '1 change' : `${changes.length} changes`;
+  const note =
+    changes.length > 0
+      ? `Applied ${n} to the ${sent ? 'scene' : 'remembered scene'}. `
+      : sent
+        ? ''
+        : 'Used the remembered scene. ';
+  return { scene: base as Scene, note };
 }
 
 function warningsOf(scenes: readonly Scene[]): string[] {
@@ -194,28 +254,32 @@ async function guarded(run: () => Promise<ToolResult>): Promise<ToolResult> {
 }
 
 /** `check_scene`: every error and warning, without drawing. */
-export function checkSceneTool(args: { scene: unknown }): ToolResult {
-  const read = readScene(args.scene);
-  if ('error' in read) return failure(read.error);
-  const bad = invalid(read.scene);
-  if (bad) return bad;
-  const warnings = warningsOf([read.scene as Scene]);
-  return { content: [text(`The scene is valid.${warningText(warnings) || ' No warnings.'}`)] };
+export function checkSceneTool(args: { scene?: unknown }, memory: Memory = {}): ToolResult {
+  const found = resolve(args, memory);
+  if ('error' in found) return found.error;
+  const warnings = warningsOf([found.scene]);
+  return {
+    content: [text(`${found.note}The scene is valid.${warningText(warnings) || ' No warnings.'}`)],
+  };
+}
+
+/** `get_scene`: the remembered scene as JSON, with the edits made so far. */
+export function getScene(memory: Memory): ToolResult {
+  if (memory.scene === undefined) return failure(NO_SCENE);
+  return { content: [text(JSON.stringify(memory.scene, null, 2))] };
 }
 
 /** `render_scene`: a still picture from one or more angles. */
-export function renderScene(args: RenderSceneArgs): Promise<ToolResult> {
+export function renderScene(args: RenderSceneArgs, memory: Memory = {}): Promise<ToolResult> {
   return guarded(async () => {
-    const read = readScene(args.scene);
-    if ('error' in read) return failure(read.error);
-    const bad = invalid(read.scene);
-    if (bad) return bad;
     if (args.save_to !== undefined) {
       const wrong = badPath(args.save_to, ['.svg', '.png']);
       if (wrong) return failure(wrong);
     }
+    const found = resolve(args, memory);
+    if ('error' in found) return found.error;
 
-    const base = read.scene as Scene;
+    const base = found.scene;
     const views = args.views;
     const scenes: Scene[] = views
       ? views.map((v) => ({ ...base, rotate: { x: v.x ?? 0, y: v.y ?? 0, z: v.z ?? 0 } }))
@@ -241,7 +305,7 @@ export function renderScene(args: RenderSceneArgs): Promise<ToolResult> {
     const inline = wantSvg && total <= INLINE_SVG_LIMIT;
 
     const count = svgs.length === 1 ? '1 view' : `${svgs.length} views`;
-    let summary = `Drew ${count} of a ${base.width}x${base.height} scene. SVG: ${kb(total)} in all.`;
+    let summary = `${found.note}Drew ${count} of a ${base.width}x${base.height} scene. SVG: ${kb(total)} in all.`;
     if (saved.length > 0) summary += `\nSaved: ${saved.join(', ')}`;
     if (wantSvg && !inline) {
       summary += `\nThe SVG is too long to send back here (over ${kb(INLINE_SVG_LIMIT)}). Pass save_to to write it to a file.`;
@@ -264,18 +328,16 @@ export function renderScene(args: RenderSceneArgs): Promise<ToolResult> {
 }
 
 /** `render_spin`: an SVG that turns the scene forever, with stills along the turn to look at. */
-export function renderSpin(args: RenderSpinArgs): Promise<ToolResult> {
+export function renderSpin(args: RenderSpinArgs, memory: Memory = {}): Promise<ToolResult> {
   return guarded(async () => {
-    const read = readScene(args.scene);
-    if ('error' in read) return failure(read.error);
-    const bad = invalid(read.scene);
-    if (bad) return bad;
     if (args.save_to !== undefined) {
       const wrong = badPath(args.save_to, ['.svg']);
       if (wrong) return failure(wrong);
     }
+    const found = resolve(args, memory);
+    if ('error' in found) return found.error;
 
-    const scene = read.scene as Scene;
+    const scene = found.scene;
     const options: SpinOptions = {};
     if (args.axis !== undefined) options.axis = args.axis;
     if (args.duration !== undefined) options.duration = args.duration;
@@ -306,7 +368,7 @@ export function renderSpin(args: RenderSpinArgs): Promise<ToolResult> {
       frames === 1
         ? 'The picture below is its first frame.'
         : `The ${frames} pictures below are stills at even steps of the turn.`;
-    let summary = `Made a turning SVG of a ${scene.width}x${scene.height} scene: ${kb(svg.length)}. ${shown}`;
+    let summary = `${found.note}Made a turning SVG of a ${scene.width}x${scene.height} scene: ${kb(svg.length)}. ${shown}`;
     const inline = args.save_to === undefined && svg.length <= INLINE_SVG_LIMIT;
     if (args.save_to !== undefined) {
       await save(args.save_to, svg);

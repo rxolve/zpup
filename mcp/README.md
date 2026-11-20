@@ -35,14 +35,47 @@ It needs Node 20 or later and runs offline, over standard input and output.
 | `check_scene`   | Checks a scene without drawing it. Returns every error with its path and a fix, and warnings for things that are valid but probably not intended. |
 | `render_scene`  | Draws the scene. Returns a PNG to look at, the SVG text, and any warnings. `views` draws the same scene from up to six angles in one call.        |
 | `render_spin`   | Makes an SVG that turns the scene forever, with no JavaScript in the file. Returns PNG stills at even steps of the turn.                          |
+| `get_scene`     | Returns the scene the server remembers, as JSON.                                                                                                  |
 
 The reference is also available as the resource `zpup://reference`.
+
+### The remembered scene
+
+The server keeps the last scene that was valid, so a model sends a scene once and then only what changes. `render_scene`, `render_spin` and `check_scene` can leave `scene` out to use it again, for example to look from other angles. `render_scene` and `render_spin` also take `changes`, a list of edits applied in order:
+
+```json
+{
+  "changes": [
+    { "op": "set", "path": "children[2].translate.y", "value": -30 },
+    {
+      "op": "append",
+      "path": "children",
+      "value": { "type": "dot", "stroke": 8, "color": "#333" }
+    },
+    { "op": "remove", "path": "children[0]" }
+  ]
+}
+```
+
+| `op`     |                                                                     |
+| -------- | ------------------------------------------------------------------- |
+| `set`    | Puts `value` at `path`, replacing what is there.                    |
+| `remove` | Deletes what is at `path`.                                          |
+| `insert` | Puts `value` into a list before the item at `path` (`children[2]`). |
+| `append` | Adds `value` to the end of the list at `path` (`children`).         |
+
+A path is written the way the errors write it, `children[2].color`, with or without `scene.` in front. A shape that has an `id` can be named by it in place of counting: `#roof.color`, `#tree.children[0].length`, or `#tree` alone for the shape itself, wherever it is in the tree. The id has to belong to exactly one shape.
+
+After a `remove` or `insert`, the items behind it in that list have a different index, which is one more reason to use ids; `get_scene` returns the scene as it now is.
+
+If a change cannot be applied, or the changed scene is not valid, nothing is changed and the answer says why. A scene that is not valid is not remembered. The memory lasts as long as the server process and is not written anywhere.
 
 ### `render_scene`
 
 | Argument       |                                                                                                                                   |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `scene`        | The scene, as an object or as JSON text.                                                                                          |
+| `scene`        | The scene, as an object or as JSON text. Leave it out to use the remembered scene.                                                |
+| `changes`      | Edits to the remembered scene, or to `scene` when both are passed.                                                                |
 | `views`        | Up to six view angles in degrees, `{ x, y, z }`, each used in place of the scene's own `rotate`.                                  |
 | `svg`          | Whether to send the SVG text back. Default `true`.                                                                                |
 | `preview_size` | Longer side of the PNG in pixels, 64 to 1024. Default 512.                                                                        |
@@ -72,7 +105,8 @@ SVG text is sent back only up to 30 KB in all. Past that, pass `save_to`.
 
 | Argument         |                                                                              |
 | ---------------- | ---------------------------------------------------------------------------- |
-| `scene`          | The scene, as an object or as JSON text.                                     |
+| `scene`          | The scene, as an object or as JSON text, or left out as in `render_scene`.   |
+| `changes`        | Edits to the remembered scene, as in `render_scene`.                         |
 | `axis`           | Which view angle turns: `"x"`, `"y"` or `"z"`. Default `"y"`, a turntable.   |
 | `duration`       | Seconds for one full turn. Default 8.                                        |
 | `keyframes`      | Angles computed exactly, 4 to 720. Default 36.                               |
@@ -87,7 +121,7 @@ Turning files are large, 43 KB for a small pup and 129 KB for a lighthouse, so t
 
 ## What it writes
 
-The server reads no files of yours and makes no network requests. It writes a file only when a call passes `save_to`, at exactly that path, creating the folders above it if they are missing.
+The server reads no files of yours and makes no network requests. The remembered scene is held in memory only. It writes a file only when a call passes `save_to`, at exactly that path, creating the folders above it if they are missing.
 
 ## Limits
 
