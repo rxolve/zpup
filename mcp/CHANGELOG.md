@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Uses `@zpup/core` 0.4.1, so a file from `render_spin` with many shapes no longer stops in Firefox.
+
 ## 0.3.0
 
 - `changes` takes `copy`: a copy of a shape is added to the list it is in, with the keys of `value` put over it, so a second tree or window does not have to be sent again.

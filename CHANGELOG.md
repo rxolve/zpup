@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+Fixed
+
+- A turning SVG with many shapes no longer stops in Firefox. The groups that are not on screen are now hidden with `display` where they used `visibility`; Firefox went on animating everything inside an invisible group, and a soft-shaded scene of about twenty shapes drew no frame at all. The pictures are the same in every browser.
+
 ## 0.4.0
 
 Added
