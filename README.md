@@ -10,6 +10,8 @@ These four pictures come from [one scene](examples/lighthouse.ts): eleven solids
 
 **[Try it in the playground](https://rxolve.github.io/zpup/)**: edit a scene as JSON, drag the picture to turn it, and export the SVG.
 
+**[Use it from an AI model](#with-an-ai-model)**: an MCP server lets Claude and other models write a scene, look at the picture and correct it. In Claude Code, `claude mcp add zpup -- npx -y @zpup/mcp`.
+
 ## Compared with Zdog
 
 ![The same lighthouse turning in Zdog and in Zpup](examples/zdog-vs-zpup.svg)
@@ -214,7 +216,7 @@ There is no perspective and no light to place, by design; soft shading is a fixe
 
 ## With an AI model
 
-[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call.
+[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call. It remembers the scene, so after the first picture the model sends only what changes.
 
 ```json
 {
@@ -222,6 +224,12 @@ There is no perspective and no light to place, by design; soft shading is a fixe
     "zpup": { "command": "npx", "args": ["-y", "@zpup/mcp"] }
   }
 }
+```
+
+In Claude Code:
+
+```bash
+claude mcp add zpup -- npx -y @zpup/mcp
 ```
 
 A model that can run code needs only the library and [llms.txt](llms.txt).

@@ -647,11 +647,11 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
         // Two changes that round to the same time: the later one wins.
         keyTimes.pop();
         values.pop();
-        visible = values.length > 0 ? values[values.length - 1] === 'visible' : false;
+        visible = values.length > 0 ? values[values.length - 1] === 'inline' : false;
         if (keyTimes.length > 0 && value === visible) return;
       }
       keyTimes.push(t);
-      values.push(value ? 'visible' : 'hidden');
+      values.push(value ? 'inline' : 'none');
       visible = value;
     };
     if ((intervals[0] as [number, number])[0] > 0) set(0, false);
@@ -660,8 +660,11 @@ function spinToSvg(s: NormalizedScene, o: ResolvedSpinOptions, epochs: readonly 
       if (end < SPIN_STEPS) set(end, false);
     }
     const initial = values[0] as string;
+    // Hidden with `display`, not `visibility`: Firefox keeps animating every
+    // shape referenced from a group that is only invisible, and a scene with
+    // a thousand references stops drawing.
     return (
-      `<g visibility="${initial}"><animate attributeName="visibility" ${timing} calcMode="discrete" keyTimes="${keyTimes.join(';')}" values="${values.join(';')}"/>` +
+      `<g display="${initial}"><animate attributeName="display" ${timing} calcMode="discrete" keyTimes="${keyTimes.join(';')}" values="${values.join(';')}"/>` +
       `${uses}</g>`
     );
   });

@@ -69,12 +69,12 @@ function groupsOf(svg: Element): Group[] {
       const animate = g.children.find((e) => e.name === 'animate');
       const visible: boolean[] = [];
       if (!animate) {
-        expect(g.attributes.visibility ?? 'visible').toBe('visible');
+        expect(g.attributes.display ?? 'inline').toBe('inline');
         for (let step = 0; step < SPIN_STEPS; step++) visible.push(true);
         return { order, visible };
       }
       expect(animate.attributes).toMatchObject({
-        attributeName: 'visibility',
+        attributeName: 'display',
         calcMode: 'discrete',
         repeatCount: 'indefinite',
       });
@@ -82,13 +82,13 @@ function groupsOf(svg: Element): Group[] {
       const values = (animate.attributes.values ?? '').split(';');
       expect(times[0]).toBe(0);
       expect(values).toHaveLength(times.length);
-      expect(g.attributes.visibility).toBe(values[0]);
+      expect(g.attributes.display).toBe(values[0]);
       for (let step = 0; step < SPIN_STEPS; step++) {
         let value = values[0];
         times.forEach((t, i) => {
           if (Math.round(t * SPIN_STEPS) <= step) value = values[i];
         });
-        visible.push(value === 'visible');
+        visible.push(value === 'inline');
       }
       return { order, visible };
     });
@@ -187,7 +187,7 @@ describe('renderSpinSvg', () => {
       ]),
     );
     const first = spin.children.find(
-      (e) => e.name === 'g' && (e.attributes.visibility ?? 'visible') === 'visible',
+      (e) => e.name === 'g' && (e.attributes.display ?? 'inline') === 'inline',
     ) as Element;
     const shown = first.children
       .filter((e) => e.name === 'use')

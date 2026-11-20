@@ -73,7 +73,7 @@ function groupsOf(svg: Element): { refs: string[]; shown: [number, number][] }[]
       const values = (animate.attributes.values ?? '').split(';');
       const shown: [number, number][] = [];
       times.forEach((t, i) => {
-        if (values[i] === 'visible') shown.push([t, times[i + 1] ?? 1]);
+        if (values[i] === 'inline') shown.push([t, times[i + 1] ?? 1]);
       });
       return { refs, shown };
     });
