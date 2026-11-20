@@ -63,8 +63,21 @@ The server keeps the last scene that was valid, so a model sends a scene once an
 | `remove` | Deletes what is at `path`.                                          |
 | `insert` | Puts `value` into a list before the item at `path` (`children[2]`). |
 | `append` | Adds `value` to the end of the list at `path` (`children`).         |
+| `copy`   | Adds a copy of the shape at `path` to the end of the list it is in. |
 
 A path is written the way the errors write it, `children[2].color`, with or without `scene.` in front. A shape that has an `id` can be named by it in place of counting: `#roof.color`, `#tree.children[0].length`, or `#tree` alone for the shape itself, wherever it is in the tree. The id has to belong to exactly one shape.
+
+`copy` repeats a shape without sending it again, for a second tree or a row of windows. Its `value` is an object with what differs in the copy; each key replaces that key of the shape, so a `translate` there is the copy's whole `translate`:
+
+```json
+{
+  "op": "copy",
+  "path": "#tree",
+  "value": { "id": "tree2", "translate": { "x": 60 }, "scale": 0.7 }
+}
+```
+
+The copy and the shapes inside it lose their ids, so that each id still names one shape; give the copy a new one in `value`. It is a separate shape from then on: changing the first does not change the copy.
 
 After a `remove` or `insert`, the items behind it in that list have a different index, which is one more reason to use ids; `get_scene` returns the scene as it now is.
 

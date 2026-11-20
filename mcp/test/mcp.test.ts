@@ -363,6 +363,65 @@ describe('mcp: changes', () => {
     ]);
   });
 
+  it('copies a shape to the end of its list, with what differs put over it', () => {
+    const scene = {
+      width: 10,
+      height: 10,
+      children: [
+        {
+          type: 'group',
+          id: 'tree',
+          translate: { x: -20, y: 5 },
+          children: [{ type: 'dot', id: 'top', stroke: 4 }],
+        },
+        { type: 'dot' },
+      ],
+    };
+    const next = applyChanges(scene, [
+      { op: 'copy', path: '#tree', value: { id: 'tree2', translate: { x: 30 }, scale: 0.5 } },
+      { op: 'copy', path: 'children[1]' },
+      { op: 'set', path: '#top.stroke', value: 9 },
+      { op: 'copy', path: '#tree2.children[0]', value: { color: '#0a0' } },
+    ]) as { children: unknown[] };
+    expect(next.children).toEqual([
+      {
+        type: 'group',
+        id: 'tree',
+        translate: { x: -20, y: 5 },
+        children: [{ type: 'dot', id: 'top', stroke: 9 }],
+      },
+      { type: 'dot' },
+      {
+        type: 'group',
+        id: 'tree2',
+        translate: { x: 30 },
+        scale: 0.5,
+        children: [
+          { type: 'dot', stroke: 4 },
+          { type: 'dot', stroke: 4, color: '#0a0' },
+        ],
+      },
+      { type: 'dot' },
+    ]);
+    expect(scene.children).toHaveLength(2);
+  });
+
+  it('says what a copy needs', () => {
+    const fail = (path: string, value?: unknown) => {
+      try {
+        applyChanges(planet, [{ op: 'copy', path, value }]);
+      } catch (e) {
+        return (e as Error).message;
+      }
+      return 'no error';
+    };
+    expect(fail('rotate')).toMatch(/copy needs a shape in a list.*"rotate" is not one/);
+    expect(fail('children[0].color')).toMatch(/copy needs a shape in a list/);
+    expect(fail('children[4]')).toMatch(/nothing at "children\[4\]"/);
+    expect(fail('children[0]', 5)).toMatch(/the value of a copy is an object/);
+    expect(fail('scene')).toMatch(/Pass scene to replace it/);
+  });
+
   it('says when no shape or more than one has the id', () => {
     const scene = {
       width: 10,
@@ -463,6 +522,24 @@ describe('mcp: scene memory', () => {
     const spin = await renderSpin({ preview_frames: 1, preview_size: 64 }, memory);
     expect(texts(spin.content)[0]).toMatch(/^Used the remembered scene\. Made a turning SVG/);
     expect(texts(spin.content).at(-1)).toContain('#06c');
+  });
+
+  it('draws a copy made from the remembered scene', async () => {
+    const memory: Memory = {};
+    const first = await renderScene({ scene: planet, svg: false, preview_size: 64 }, memory);
+    const result = await renderScene(
+      {
+        changes: [
+          { op: 'copy', path: 'children[0]', value: { stroke: 12, translate: { x: 40, y: -40 } } },
+        ],
+        svg: false,
+        preview_size: 64,
+      },
+      memory,
+    );
+    expect(result.isError).toBeUndefined();
+    expect(memory.scene?.children).toHaveLength(3);
+    expect(images(result.content)[0]?.equals(images(first.content)[0] as Buffer)).toBe(false);
   });
 
   it('changes nothing when the changed scene is not valid', async () => {

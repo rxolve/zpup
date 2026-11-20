@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+- `changes` takes `copy`: a copy of a shape is added to the list it is in, with the keys of `value` put over it, so a second tree or window does not have to be sent again.
+
 ## 0.2.0
 
 - The server remembers the last valid scene. `render_scene`, `render_spin` and `check_scene` can leave `scene` out to use it again.

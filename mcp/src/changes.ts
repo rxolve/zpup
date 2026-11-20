@@ -5,7 +5,7 @@
  */
 
 export interface Change {
-  op: 'set' | 'remove' | 'insert' | 'append';
+  op: 'set' | 'remove' | 'insert' | 'append' | 'copy';
   path: string;
   value?: unknown;
 }
@@ -116,9 +116,16 @@ function walk(root: unknown, segments: readonly Segment[]): unknown {
   return at;
 }
 
+function withoutIds(node: unknown): unknown {
+  if (!isContainer(node) || Array.isArray(node)) return node;
+  delete node.id;
+  if (Array.isArray(node.children)) for (const child of node.children) withoutIds(child);
+  return node;
+}
+
 function applyOne(root: Container, change: Change): void {
   const segments = parsePath(change.path, root);
-  const needsValue = change.op !== 'remove';
+  const needsValue = change.op !== 'remove' && change.op !== 'copy';
   if (needsValue && change.value === undefined) {
     throw new ChangeError(`"${change.op}" needs a value`);
   }
@@ -152,6 +159,28 @@ function applyOne(root: Container, change: Change): void {
   const last = segments[segments.length - 1] as Segment;
   const parentPath = segments.slice(0, -1);
   const parent = walk(root, parentPath);
+
+  if (change.op === 'copy') {
+    const source = step(parent, last, parentPath);
+    if (!Array.isArray(parent) || !isContainer(source) || Array.isArray(source)) {
+      throw new ChangeError(
+        `copy needs a shape in a list, such as "children[2]" or "#tree". "${show(segments)}" is not one`,
+      );
+    }
+    const overrides = change.value ?? {};
+    if (!isContainer(overrides) || Array.isArray(overrides)) {
+      throw new ChangeError(
+        'the value of a copy is an object with what differs, such as { "id": "tree2", "translate": { "x": 40 } }',
+      );
+    }
+    for (const key of Object.keys(overrides)) {
+      if (UNSAFE.has(key)) throw new ChangeError(`"${key}" cannot be used`);
+    }
+    // The copy and what is inside it lose their ids, so each id still names one shape.
+    const copy = withoutIds(structuredClone(source)) as Record<string, unknown>;
+    parent.push(Object.assign(copy, structuredClone(overrides)));
+    return;
+  }
 
   if (change.op === 'insert') {
     if (!Array.isArray(parent) || typeof last !== 'number') {

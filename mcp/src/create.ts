@@ -24,16 +24,19 @@ const changes = z
     z
       .object({
         op: z
-          .enum(['set', 'remove', 'insert', 'append'])
+          .enum(['set', 'remove', 'insert', 'append', 'copy'])
           .describe(
-            'set: put value at path, replacing what is there. remove: delete what is at path. insert: put value into a list before the item at path. append: add value to the end of the list at path.',
+            'set: put value at path, replacing what is there. remove: delete what is at path. insert: put value into a list before the item at path. append: add value to the end of the list at path. copy: add a copy of the shape at path to the end of the list it is in, with the keys of value (an object, such as a new id, translate, scale or color) put over the copy; the copy and the shapes inside it lose their ids.',
           ),
         path: z
           .string()
           .describe(
             'Where, in the form the errors use: "children[2].color", "children[0].translate.y", "rotate". A shape that has an id can be named by it in place of counting: "#roof.color", "#tree.children[0].length", or "#tree" alone for the shape itself. For append, the list itself: "children" or "#tree.children".',
           ),
-        value: z.unknown().optional().describe('The new value. Not used by remove.'),
+        value: z
+          .unknown()
+          .optional()
+          .describe('The new value. Not used by remove. For copy, what differs in the copy.'),
       })
       .strict(),
   )
@@ -41,7 +44,7 @@ const changes = z
   .max(100)
   .optional()
   .describe(
-    'Edits to the remembered scene (or to scene, when both are passed), applied in order, so that a small fix does not need the whole scene again. Example: [{ "op": "set", "path": "children[2].translate.y", "value": -30 }, { "op": "append", "path": "children", "value": { "type": "dot", "stroke": 8, "color": "#333" } }]. After a remove or insert, later items in that list have a different index, so give shapes an id and use "#id" paths. If the result is not valid, nothing is changed.',
+    'Edits to the remembered scene (or to scene, when both are passed), applied in order, so that a small fix does not need the whole scene again. Example: [{ "op": "set", "path": "children[2].translate.y", "value": -30 }, { "op": "append", "path": "children", "value": { "type": "dot", "stroke": 8, "color": "#333" } }, { "op": "copy", "path": "#tree", "value": { "id": "tree2", "translate": { "x": 60 }, "scale": 0.7 } }]. After a remove or insert, later items in that list have a different index, so give shapes an id and use "#id" paths. If the result is not valid, nothing is changed.',
   );
 
 const angle = z
