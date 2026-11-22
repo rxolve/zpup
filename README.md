@@ -48,7 +48,7 @@ Not built yet: a canvas renderer, general animation, and framework bindings. The
 npm install @zpup/core
 ```
 
-Zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers. Bundled and minified, the whole library is 69 KB (26 KB gzipped), and `renderSvg` alone is 50 KB (19 KB gzipped).
+Zpup is ESM-only and has no runtime dependencies. It is built for ES2022 and tested on Node 24; it uses no Node APIs, so it also runs in browsers. Bundled and minified, the whole library is 75 KB (27 KB gzipped), and `renderSvg` alone is 55 KB (20 KB gzipped).
 
 ## Usage
 
