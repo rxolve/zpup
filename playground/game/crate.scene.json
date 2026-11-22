@@ -1,0 +1,141 @@
+{
+  "width": 96,
+  "height": 96,
+  "rotate": {
+    "x": -30,
+    "y": 0
+  },
+  "shading": "soft",
+  "children": [
+    {
+      "type": "group",
+      "id": "crate",
+      "translate": {
+        "y": 5
+      },
+      "children": [
+        {
+          "type": "box",
+          "id": "body",
+          "width": 40,
+          "height": 24,
+          "depth": 40,
+          "topFace": false,
+          "color": "#b07a45",
+          "inside": "#6e4824",
+          "stroke": 1.5
+        },
+        {
+          "type": "path",
+          "path": [
+            {
+              "x": -20,
+              "z": 20.6
+            },
+            {
+              "x": 20,
+              "z": 20.6
+            }
+          ],
+          "stroke": 1,
+          "color": "#7a5029"
+        },
+        {
+          "type": "path",
+          "path": [
+            {
+              "x": -20,
+              "z": -20.6
+            },
+            {
+              "x": 20,
+              "z": -20.6
+            }
+          ],
+          "stroke": 1,
+          "color": "#7a5029"
+        },
+        {
+          "type": "path",
+          "path": [
+            {
+              "z": -20,
+              "x": 20.6
+            },
+            {
+              "z": 20,
+              "x": 20.6
+            }
+          ],
+          "stroke": 1,
+          "color": "#7a5029"
+        },
+        {
+          "type": "path",
+          "path": [
+            {
+              "z": -20,
+              "x": -20.6
+            },
+            {
+              "z": 20,
+              "x": -20.6
+            }
+          ],
+          "stroke": 1,
+          "color": "#7a5029"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": -8,
+            "y": -9,
+            "z": -6
+          },
+          "stroke": 13,
+          "color": "#d4322c"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 7,
+            "y": -9,
+            "z": -8
+          },
+          "stroke": 13,
+          "color": "#c8282a"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": -6,
+            "y": -9,
+            "z": 8
+          },
+          "stroke": 13,
+          "color": "#e04a2e"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 8,
+            "y": -9,
+            "z": 7
+          },
+          "stroke": 13,
+          "color": "#7cb342"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 0,
+            "y": -15,
+            "z": 0
+          },
+          "stroke": 13,
+          "color": "#d9362b"
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@
  *   *.js           the page's modules, compiled from playground/src
  *   lib/*.js       the library, copied from dist/ (run `pnpm build` first)
  *   llms.txt
+ *   game/          the sprite demo, copied from playground/game as it is
  *
  * The examples are taken from examples/*.ts at build time, so the page
  * always shows the same scenes as the repository.
@@ -52,6 +53,12 @@ for (const file of readdirSync(root('dist'))) {
 
 copyFileSync(root('playground/style.css'), `${out}/style.css`);
 copyFileSync(root('llms.txt'), `${out}/llms.txt`);
+
+// The sprite demo: a static page with its sheets, served at game/.
+mkdirSync(`${out}/game`);
+for (const file of readdirSync(root('playground/game'))) {
+  copyFileSync(root(`playground/game/${file}`), `${out}/game/${file}`);
+}
 
 const scenes: Record<string, Scene> = { hello, pup, lighthouse };
 const examples: Record<string, string> = {};

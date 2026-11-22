@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zpup: one scene, eight directions</title>
+<meta name="description" content="A dog and three props, each drawn by an AI model as one small 3D scene and turned into an 8-direction sprite sheet by Zpup.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="game.css">
+<script type="module" src="game.js"></script>
+</head>
+<body>
+<header>
+  <h1>One scene, eight directions</h1>
+  <p>
+    Everything here was drawn by an AI model with
+    <a href="https://github.com/rxolve/zpup">Zpup</a>: it wrote each object once, as a small 3D
+    scene in JSON, and Zpup drew that scene from eight sides. The eight pictures cannot disagree,
+    because they are one object.
+  </p>
+</header>
+
+<main>
+  <canvas id="stage" width="480" height="320" tabindex="0" aria-label="A dog you can walk around three props"></canvas>
+  <p class="keys">
+    <b>Move:</b> arrow keys or WASD, or click where the dog should go.
+    <b>Turn a prop:</b> click it.
+  </p>
+
+  <h2>The sheets</h2>
+  <p>
+    Each is one PNG with a frame list beside it, as <code>render_sprites</code> writes them. The
+    same two files load in Phaser and PixiJS as they are. The scene is the JSON the model wrote.
+  </p>
+  <div id="sheets"></div>
+
+  <h2>What this is not</h2>
+  <p>
+    The dog turns, it does not walk: there are no animation frames, only directions. Zpup is for
+    small props and things that turn, in one flat style.
+  </p>
+</main>
+</body>
+</html>

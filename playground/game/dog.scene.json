@@ -1,0 +1,209 @@
+{
+  "width": 96,
+  "height": 96,
+  "shading": "soft",
+  "rotate": {
+    "x": -30
+  },
+  "children": [
+    {
+      "type": "group",
+      "id": "dog",
+      "translate": {
+        "y": 2
+      },
+      "children": [
+        {
+          "type": "path",
+          "id": "body",
+          "path": [
+            {
+              "z": -8
+            },
+            {
+              "z": 7
+            }
+          ],
+          "stroke": 18,
+          "color": "#d9a066"
+        },
+        {
+          "type": "path",
+          "id": "legFL",
+          "path": [
+            {
+              "x": -5,
+              "y": 4,
+              "z": 6
+            },
+            {
+              "x": -5,
+              "y": 14,
+              "z": 6
+            }
+          ],
+          "stroke": 6,
+          "color": "#d9a066"
+        },
+        {
+          "type": "path",
+          "id": "legFR",
+          "path": [
+            {
+              "x": 5,
+              "y": 4,
+              "z": 6
+            },
+            {
+              "x": 5,
+              "y": 14,
+              "z": 6
+            }
+          ],
+          "stroke": 6,
+          "color": "#d9a066"
+        },
+        {
+          "type": "path",
+          "id": "legBL",
+          "path": [
+            {
+              "x": -5,
+              "y": 4,
+              "z": -7
+            },
+            {
+              "x": -5,
+              "y": 14,
+              "z": -7
+            }
+          ],
+          "stroke": 6,
+          "color": "#d9a066"
+        },
+        {
+          "type": "path",
+          "id": "legBR",
+          "path": [
+            {
+              "x": 5,
+              "y": 4,
+              "z": -7
+            },
+            {
+              "x": 5,
+              "y": 14,
+              "z": -7
+            }
+          ],
+          "stroke": 6,
+          "color": "#d9a066"
+        },
+        {
+          "type": "path",
+          "id": "tail",
+          "path": [
+            {
+              "y": -4,
+              "z": -14
+            },
+            {
+              "y": -8,
+              "z": -20
+            }
+          ],
+          "stroke": 5,
+          "color": "#d9a066"
+        },
+        {
+          "type": "dot",
+          "id": "head",
+          "translate": {
+            "y": -11,
+            "z": 12
+          },
+          "stroke": 18,
+          "color": "#d9a066"
+        },
+        {
+          "type": "dot",
+          "id": "snout",
+          "translate": {
+            "y": -8,
+            "z": 20
+          },
+          "stroke": 9,
+          "color": "#f2d0a4"
+        },
+        {
+          "type": "dot",
+          "id": "nose",
+          "translate": {
+            "y": -9,
+            "z": 24.5
+          },
+          "stroke": 4,
+          "color": "#2b1d14"
+        },
+        {
+          "type": "dot",
+          "id": "eyeL",
+          "translate": {
+            "x": -4,
+            "y": -14,
+            "z": 19.5
+          },
+          "stroke": 3,
+          "color": "#2b1d14"
+        },
+        {
+          "type": "dot",
+          "id": "eyeR",
+          "translate": {
+            "x": 4,
+            "y": -14,
+            "z": 19.5
+          },
+          "stroke": 3,
+          "color": "#2b1d14"
+        },
+        {
+          "type": "path",
+          "id": "earL",
+          "path": [
+            {
+              "x": -8,
+              "y": -17,
+              "z": 8
+            },
+            {
+              "x": -10,
+              "y": -9,
+              "z": 8
+            }
+          ],
+          "stroke": 5,
+          "color": "#8a5a32"
+        },
+        {
+          "type": "path",
+          "id": "earR",
+          "path": [
+            {
+              "x": 8,
+              "y": -17,
+              "z": 8
+            },
+            {
+              "x": 10,
+              "y": -9,
+              "z": 8
+            }
+          ],
+          "stroke": 5,
+          "color": "#8a5a32"
+        }
+      ]
+    }
+  ]
+}

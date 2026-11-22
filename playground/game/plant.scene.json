@@ -1,0 +1,137 @@
+{
+  "width": 96,
+  "height": 96,
+  "rotate": {
+    "x": -30,
+    "y": 0
+  },
+  "shading": "soft",
+  "children": [
+    {
+      "type": "group",
+      "id": "plant",
+      "translate": {
+        "y": 17
+      },
+      "children": [
+        {
+          "type": "cone",
+          "id": "pot",
+          "diameter": 24,
+          "tipDiameter": 34,
+          "length": 24,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": 10
+          },
+          "frontFace": false,
+          "color": "#c0623a",
+          "inside": "#7a3a20",
+          "stroke": 1
+        },
+        {
+          "type": "ellipse",
+          "id": "soil",
+          "diameter": 31,
+          "fill": true,
+          "stroke": 0,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": -11
+          },
+          "color": "#4a2e1c"
+        },
+        {
+          "type": "ellipse",
+          "id": "rim",
+          "diameter": 34,
+          "stroke": 3,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": -14
+          },
+          "color": "#d0734a"
+        },
+        {
+          "type": "path",
+          "path": [
+            {
+              "y": -11
+            },
+            {
+              "y": -24
+            }
+          ],
+          "stroke": 3,
+          "color": "#4f7a2c"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 0,
+            "y": -34,
+            "z": 0
+          },
+          "stroke": 18,
+          "color": "#4f9a3a"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": -10,
+            "y": -25,
+            "z": 4
+          },
+          "stroke": 15,
+          "color": "#5aa843"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 10,
+            "y": -26,
+            "z": -3
+          },
+          "stroke": 15,
+          "color": "#468f35"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 2,
+            "y": -24,
+            "z": 10
+          },
+          "stroke": 14,
+          "color": "#62b34a"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": -3,
+            "y": -26,
+            "z": -10
+          },
+          "stroke": 14,
+          "color": "#3f8530"
+        },
+        {
+          "type": "dot",
+          "translate": {
+            "x": 7,
+            "y": -45,
+            "z": 2
+          },
+          "stroke": 10,
+          "color": "#6cbf52"
+        }
+      ]
+    }
+  ]
+}

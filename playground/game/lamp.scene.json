@@ -1,0 +1,109 @@
+{
+  "width": 96,
+  "height": 96,
+  "rotate": {
+    "x": -30,
+    "y": 0
+  },
+  "shading": "soft",
+  "children": [
+    {
+      "type": "group",
+      "id": "lamp",
+      "translate": {
+        "y": 2
+      },
+      "children": [
+        {
+          "type": "cylinder",
+          "id": "base",
+          "diameter": 16,
+          "length": 5,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": 36.5
+          },
+          "color": "#3b4450"
+        },
+        {
+          "type": "cone",
+          "id": "foot",
+          "diameter": 10,
+          "tipDiameter": 5,
+          "length": 6,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": 34
+          },
+          "color": "#3b4450"
+        },
+        {
+          "type": "path",
+          "id": "pole",
+          "path": [
+            {
+              "y": 28
+            },
+            {
+              "y": -22
+            }
+          ],
+          "stroke": 4,
+          "color": "#3b4450"
+        },
+        {
+          "type": "cylinder",
+          "id": "collar",
+          "diameter": 8,
+          "length": 3,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": -23.5
+          },
+          "color": "#2c333c"
+        },
+        {
+          "type": "box",
+          "id": "glass",
+          "width": 12,
+          "height": 13,
+          "depth": 12,
+          "translate": {
+            "y": -31.5
+          },
+          "color": "#ffd866",
+          "stroke": 1.5,
+          "topFace": "#2c333c",
+          "bottomFace": "#2c333c"
+        },
+        {
+          "type": "pyramid",
+          "id": "roof",
+          "width": 19,
+          "depth": 19,
+          "height": 8,
+          "translate": {
+            "y": -38
+          },
+          "color": "#2c333c",
+          "stroke": 1
+        },
+        {
+          "type": "dot",
+          "id": "finial",
+          "translate": {
+            "y": -48
+          },
+          "stroke": 4,
+          "color": "#2c333c"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+:root {
+  --bg: #fbf8f3;
+  --ink: #2b2723;
+  --soft: #6b6259;
+  --line: #e2d9cc;
+  --ground: #cfe3b4;
+  font:
+    16px / 1.5 system-ui,
+    sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1b19;
+    --ink: #ece6dd;
+    --soft: #a89e92;
+    --line: #3a352f;
+  }
+}
+body {
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  max-width: 720px;
+  background: var(--bg);
+  color: var(--ink);
+}
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 8px;
+}
+h2 {
+  font-size: 1.1rem;
+  margin: 32px 0 4px;
+}
+p {
+  margin: 0 0 12px;
+}
+a {
+  color: inherit;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ground);
+  cursor: pointer;
+  touch-action: none;
+}
+canvas:focus-visible {
+  outline: 2px solid #3f7fbf;
+  outline-offset: 2px;
+}
+.keys {
+  margin-top: 8px;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.sheet {
+  margin: 0 0 16px;
+}
+.sheet img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.sheet figcaption {
+  color: var(--soft);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+code {
+  font-size: 0.9em;
+}
