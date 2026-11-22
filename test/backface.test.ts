@@ -268,11 +268,7 @@ describe('backface validation', () => {
     );
     expect(
       messages({ type: 'cylinder', diameter: 1, length: 1, backface: false }),
-    ).toMatchInlineSnapshot(`
-        [
-          "scene.children[0].backface: expected a CSS color string such as "#e62", received false. On a cylinder, "backface" is the color of a face, and faces cannot be left out (only flat shapes take "backface": false). Leave the option out to shade this face from "color".",
-        ]
-      `);
+    ).toMatchInlineSnapshot(`[]`);
     expect(messages({ type: 'hemisphere', diameter: 1, backface: '#36c' })).toEqual([]);
   });
 

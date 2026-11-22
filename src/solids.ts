@@ -10,7 +10,7 @@
  * the rest, and its path commands are the same at every view angle; only the
  * points move.
  */
-import { shadeColor } from './color.ts';
+import { insideColor, shadeColor } from './color.ts';
 import { ellipseGeometry, type PathGeometry, type Segment, transformGeometry } from './geometry.ts';
 import {
   cross,
@@ -46,6 +46,13 @@ export interface NormalizedSolid {
   readonly shade: boolean;
   /** Colors given per face, by option name (`frontFace`, `backface`, ...). */
   readonly faces: Readonly<Record<string, string>>;
+  /**
+   * Faces left out, by option name. With any, the solid is open: its other
+   * faces are thin walls that show their inside where they face away.
+   */
+  readonly open: readonly string[];
+  /** The color of the inside of an open solid; a darker `color` when not given. */
+  readonly inside: string | undefined;
 }
 
 /** The face options each solid accepts. */
@@ -70,6 +77,11 @@ export interface Surface {
   readonly tipRadius: number;
   /** Screen space to local space. */
   readonly inverse: Matrix;
+  /**
+   * The far side of the solid in place of its front: the inside of an open
+   * solid, seen through the opening.
+   */
+  readonly back?: boolean;
 }
 
 /**
@@ -92,6 +104,10 @@ export interface SolidFace {
   /**
    * Paint order within the solid: round surfaces (0) before flat faces (1).
    * A visible flat end always lies on top of the round surface next to it.
+   * The inside of an open solid goes before both, its flat walls (-2, set
+   * where the pieces are made) before its round one (-1): they share an edge,
+   * and one fixed order keeps that edge from changing as the view turns. An
+   * outside none of which can be seen (-3) goes first.
    */
   readonly layer: number;
   /** Faces turned away from the viewer; always hidden by the solid's other faces. */
@@ -102,6 +118,13 @@ export interface SolidFace {
   readonly viewDependent: boolean;
   /** For a round surface: how soft shading paints it. */
   readonly soft: SoftKind | undefined;
+  /**
+   * For a flat face of an open solid, which is seen from both sides: its
+   * outward normal in screen space (any length) and the color of its inner
+   * side. It shows the inner side, and is painted before the faces that show
+   * their outer side, while the normal points away from the viewer.
+   */
+  readonly wall: { readonly normal: Vec3; readonly inside: string } | undefined;
 }
 
 const X: Vec3 = { x: 1, y: 0, z: 0 };
@@ -117,21 +140,69 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
   const view = localView(world);
   const inverse = invert(world);
   const body = solidBody(s, world);
-  const flat = (name: string, geometry: PathGeometry, normal: Vec3): SolidFace => ({
-    body,
-    geometry: transformGeometry(world, geometry),
-    color: faceColor(s, name, sceneNormal(model, normal)),
-    layer: 1,
-    backfacing: dot(normal, view) <= 0,
-    surface: undefined,
-    viewDependent: false,
-    soft: undefined,
-  });
+  const open = s.open.length > 0;
+  const insideBase = s.inside ?? insideColor(s.color);
+  const flat = (name: string, geometry: PathGeometry, normal: Vec3): SolidFace[] => {
+    if (s.open.includes(name)) return [];
+    const scene = sceneNormal(model, normal);
+    return [
+      {
+        body,
+        geometry: transformGeometry(world, geometry),
+        color: faceColor(s, name, scene),
+        layer: 1,
+        // A wall of an open solid is never covered by the rest of the solid.
+        backfacing: !open && dot(normal, view) <= 0,
+        surface: undefined,
+        viewDependent: false,
+        soft: undefined,
+        wall: open
+          ? {
+              normal: transformNormal(world, normal),
+              // The inner side faces the other way.
+              inside: s.shade
+                ? shadeColor(insideBase, { x: -scene.x, y: -scene.y, z: -scene.z })
+                : insideBase,
+            }
+          : undefined,
+      },
+    ];
+  };
+  /**
+   * The inside of an open round solid: what the lines of sight that enter
+   * through the opening end on. Painted first, so the outside covers all of
+   * it that cannot be seen. Nothing for a closed solid.
+   */
+  const inner = (geometry: PathGeometry, axis: Vec3, viewDependent: boolean): SolidFace[] => {
+    if (!open || !inverse || s.kind === 'box' || s.kind === 'pyramid') return [];
+    return [
+      {
+        body,
+        geometry: transformGeometry(world, geometry),
+        color: s.shade ? shadeColor(insideBase, roundNormal(model, axis)) : insideBase,
+        layer: -1,
+        backfacing: false,
+        surface: {
+          kind: s.kind,
+          radius: s.diameter / 2,
+          length: s.length,
+          tipRadius: s.tipDiameter / 2,
+          inverse,
+          back: true,
+        },
+        viewDependent,
+        soft: undefined,
+        wall: undefined,
+      },
+    ];
+  };
   const round = (geometry: PathGeometry, axis: Vec3): SolidFace => ({
     body,
     geometry: transformGeometry(world, geometry),
     color: faceColor(s, '', roundNormal(model, axis)),
-    layer: 0,
+    // An outside drawn as a point is all turned away: it goes behind the
+    // inside, whose edge covers it.
+    layer: isPoint(geometry) ? -3 : 0,
     backfacing: false,
     surface:
       inverse && s.kind !== 'box' && s.kind !== 'pyramid'
@@ -146,6 +217,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
     viewDependent: true,
     // The local z axis on screen: the axis of a cylinder or cone.
     soft: s.kind === 'hemisphere' ? 'ball' : sideKind({ x: world[2], y: world[5], z: world[8] }),
+    wall: undefined,
   });
   const r = s.diameter / 2;
   const Z: Vec3 = { x: 0, y: 0, z: 1 };
@@ -164,7 +236,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
         };
       };
       return [
-        flat(
+        ...flat(
           'rearFace',
           quad([
             [-x, -y, -z],
@@ -174,7 +246,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
           ]),
           minusZ,
         ),
-        flat(
+        ...flat(
           'topFace',
           quad([
             [-x, -y, -z],
@@ -184,7 +256,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
           ]),
           { x: 0, y: -1, z: 0 },
         ),
-        flat(
+        ...flat(
           'leftFace',
           quad([
             [-x, -y, -z],
@@ -194,7 +266,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
           ]),
           { x: -1, y: 0, z: 0 },
         ),
-        flat(
+        ...flat(
           'rightFace',
           quad([
             [x, -y, -z],
@@ -204,7 +276,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
           ]),
           X,
         ),
-        flat(
+        ...flat(
           'bottomFace',
           quad([
             [-x, y, -z],
@@ -214,7 +286,7 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
           ]),
           Y,
         ),
-        flat(
+        ...flat(
           'frontFace',
           quad([
             [-x, -y, z],
@@ -242,34 +314,46 @@ export function solidFaces(s: NormalizedSolid, world: Matrix, model: Matrix): So
       const [a, b, c, d] = p.base;
       const [l, t] = p.top;
       return [
-        flat('bottomFace', face([a, b, c, d]), Y),
-        flat('rearFace', face([a, b, t, l]), p.normals.rear),
-        flat('rightFace', face([b, c, t]), p.normals.right),
-        flat('frontFace', face([d, c, t, l]), p.normals.front),
-        flat('leftFace', face([a, d, l]), p.normals.left),
+        ...flat('bottomFace', face([a, b, c, d]), Y),
+        ...flat('rearFace', face([a, b, t, l]), p.normals.rear),
+        ...flat('rightFace', face([b, c, t]), p.normals.right),
+        ...flat('frontFace', face([d, c, t, l]), p.normals.front),
+        ...flat('leftFace', face([a, d, l]), p.normals.left),
       ];
     }
     case 'cylinder': {
       const h = s.length / 2;
       return [
-        round(cylinderSide(r, h, view), Z),
-        flat('backface', disc(r, -h), minusZ),
-        flat('frontFace', disc(r, h), Z),
+        ...inner(cylinderSide(r, h, view, true), Z, true),
+        round(cylinderSide(r, h, view, false), Z),
+        ...flat('backface', disc(r, -h), minusZ),
+        ...flat('frontFace', disc(r, h), Z),
       ];
     }
     case 'cone': {
       if (s.tipDiameter === 0) {
-        return [round(coneSide(r, s.length, view), Z), flat('backface', disc(r, 0), minusZ)];
+        // The base is the only opening, so its outline is all of the inside
+        // that can be seen.
+        return [
+          ...inner(disc(r, 0), Z, false),
+          round(coneSide(r, s.length, view, open), Z),
+          ...flat('backface', disc(r, 0), minusZ),
+        ];
       }
       const tip = s.tipDiameter / 2;
       return [
-        round(cutConeSide(r, tip, s.length, view), Z),
-        flat('backface', disc(r, 0), minusZ),
-        flat('frontFace', disc(tip, s.length), Z),
+        ...inner(cutConeSide(r, tip, s.length, view, true, false), Z, true),
+        round(cutConeSide(r, tip, s.length, view, false, open), Z),
+        ...flat('backface', disc(r, 0), minusZ),
+        ...flat('frontFace', disc(tip, s.length), Z),
       ];
     }
     case 'hemisphere':
-      return [round(dome(r, view), Z), flat('backface', disc(r, 0), minusZ)];
+      return [
+        ...inner(disc(r, 0), Z, false),
+        round(dome(r, view, open), Z),
+        ...flat('backface', disc(r, 0), minusZ),
+      ];
   }
 }
 
@@ -502,6 +586,26 @@ function rim(r: number, z: number, t: number): Vec3 {
   return { x: r * Math.cos(t), y: r * Math.sin(t), z };
 }
 
+/**
+ * A path of the given commands (`L` and `C`) with every point at `at`: a
+ * round surface none of which can be seen, kept so that the piece has the
+ * same commands at every view angle.
+ */
+function pointGeometry(at: Vec3, commands: string): PathGeometry {
+  return {
+    start: at,
+    segments: [...commands].map((c) =>
+      c === 'L' ? { kind: 'line', to: at } : { kind: 'bezier', c1: at, c2: at, to: at },
+    ),
+    closed: true,
+  };
+}
+
+/** Whether the path was made by {@link pointGeometry}. */
+function isPoint(g: PathGeometry): boolean {
+  return g.segments.length > 0 && g.segments.every((segment) => segment.to === g.start);
+}
+
 /** Ends the path exactly at its start, so that it closes without a sliver. */
 function closeAt(start: Vec3, segments: Segment[]): PathGeometry {
   const last = segments[segments.length - 1];
@@ -533,14 +637,17 @@ function disc(r: number, z: number): PathGeometry {
  *
  * Commands: M L C C L C C Z.
  */
-function cylinderSide(r: number, h: number, view: Vec3): PathGeometry {
+function cylinderSide(r: number, h: number, view: Vec3, far: boolean): PathGeometry {
   const t1 = viewAngle(view) + HALF_PI;
   const start = rim(r, -h, t1);
+  // The far half of each rim in place of the near one gives the half of the
+  // side that faces away: the inside of an open cylinder.
+  const turn = far ? Math.PI : -Math.PI;
   return closeAt(start, [
     { kind: 'line', to: rim(r, h, t1) },
-    ...arc({ x: 0, y: 0, z: h }, X, Y, r, t1, -Math.PI, 2),
+    ...arc({ x: 0, y: 0, z: h }, X, Y, r, t1, turn, 2),
     { kind: 'line', to: rim(r, -h, t1 - Math.PI) },
-    ...arc({ x: 0, y: 0, z: -h }, X, Y, r, t1 - Math.PI, Math.PI, 2),
+    ...arc({ x: 0, y: 0, z: -h }, X, Y, r, t1 + turn, -turn, 2),
   ]);
 }
 
@@ -553,7 +660,7 @@ function cylinderSide(r: number, h: number, view: Vec3): PathGeometry {
  *
  * Commands: M L L C C C C Z.
  */
-function coneSide(r: number, l: number, view: Vec3): PathGeometry {
+function coneSide(r: number, l: number, view: Vec3, open: boolean): PathGeometry {
   const psi = viewAngle(view);
   const rho = Math.hypot(view.x, view.y);
   let beta: number;
@@ -564,9 +671,15 @@ function coneSide(r: number, l: number, view: Vec3): PathGeometry {
   }
   // Generators within beta of psi face the viewer. Their rim is the far side
   // when the base is hidden, and the near side when the base is visible.
-  const sigma = view.z >= 0 ? 2 * beta : -(2 * Math.PI - 2 * beta);
+  // With the base in place, the outline takes in the base when it is visible,
+  // since the base is painted on top. An open cone shows its inside there, so
+  // its side is only the generators that face the viewer.
+  const sigma = view.z >= 0 || open ? 2 * beta : -(2 * Math.PI - 2 * beta);
   const from = psi - beta;
   const start = rim(r, 0, psi + beta);
+  // Looking into an open cone with the tip inside the base on screen, none of
+  // the outside can be seen, and the line to the tip would cross the opening.
+  if (open && beta === 0) return pointGeometry(start, 'LLCCCC');
   return closeAt(start, [
     { kind: 'line', to: { x: 0, y: 0, z: l } },
     { kind: 'line', to: rim(r, 0, from) },
@@ -586,7 +699,14 @@ function coneSide(r: number, l: number, view: Vec3): PathGeometry {
  *
  * Commands: M L C C C C L C C C C Z.
  */
-function cutConeSide(r: number, tip: number, l: number, view: Vec3): PathGeometry {
+function cutConeSide(
+  r: number,
+  tip: number,
+  l: number,
+  view: Vec3,
+  far: boolean,
+  open: boolean,
+): PathGeometry {
   const psi = viewAngle(view);
   const rho = Math.hypot(view.x, view.y);
   // The side leans in toward the axis by this much per unit of length; the
@@ -600,11 +720,21 @@ function cutConeSide(r: number, tip: number, l: number, view: Vec3): PathGeometr
     beta = toward > 0 ? Math.PI : toward < 0 ? 0 : HALF_PI;
   }
   const start = rim(r, 0, psi + beta);
+  // The other way round each rim gives the part of the side that faces away:
+  // the inside of an open cone.
+  const span = far ? 2 * Math.PI - 2 * beta : -2 * beta;
+  if (open && !far && beta === 0) {
+    // Looking into the wide end of an open cone, none of the outside can be
+    // seen, and the one generator left of it would cross the opening. It is
+    // drawn as a point on the rim of the end that faces the viewer, where it
+    // was when the last of the outside turned away.
+    return pointGeometry(view.z >= 0 ? rim(tip, l, psi) : start, 'LCCCCLCCCC');
+  }
   return closeAt(start, [
     { kind: 'line', to: rim(tip, l, psi + beta) },
-    ...arc({ x: 0, y: 0, z: l }, X, Y, tip, psi + beta, -2 * beta, 4),
+    ...arc({ x: 0, y: 0, z: l }, X, Y, tip, psi + beta, span, 4),
     { kind: 'line', to: rim(r, 0, psi - beta) },
-    ...arc({ x: 0, y: 0, z: 0 }, X, Y, r, psi - beta, 2 * beta, 4),
+    ...arc({ x: 0, y: 0, z: 0 }, X, Y, r, psi - beta, -span, 4),
   ]);
 }
 
@@ -615,7 +745,7 @@ function cutConeSide(r: number, tip: number, l: number, view: Vec3): PathGeometr
  *
  * Commands: M C C C C Z.
  */
-function dome(r: number, view: Vec3): PathGeometry {
+function dome(r: number, view: Vec3, open: boolean): PathGeometry {
   const psi = viewAngle(view);
   const rho = Math.hypot(view.x, view.y);
   const e1: Vec3 = { x: Math.sin(psi), y: -Math.cos(psi), z: 0 };
@@ -626,7 +756,10 @@ function dome(r: number, view: Vec3): PathGeometry {
     rho > 1e-9
       ? { x: (-view.z * view.x) / rho, y: (-view.z * view.y) / rho, z: rho }
       : { x: -sign * Math.cos(psi), y: -sign * Math.sin(psi), z: 0 };
-  const sigma = view.z >= 0 ? Math.PI : -Math.PI;
+  // With the base in place, the far half of the rim when the base is visible:
+  // the outline then takes in the base, which is painted on top. An open
+  // hemisphere shows its inside there, so its dome ends at the near half.
+  const sigma = view.z >= 0 || open ? Math.PI : -Math.PI;
   const origin: Vec3 = { x: 0, y: 0, z: 0 };
   const start = rim(r, 0, psi - HALF_PI);
   return closeAt(start, [
@@ -675,6 +808,15 @@ export function surfaceDepth(s: Surface, x: number, y: number): number | undefin
     slabbed = linear(pz, dz, 0, Number.POSITIVE_INFINITY);
   }
   if (!slabbed) return undefined;
+  if (s.back) {
+    let back: number | undefined;
+    for (let i = 0; i < count; i++) {
+      const a = Math.max(intervals[2 * i] as number, slab[0] as number);
+      const b = Math.min(intervals[2 * i + 1] as number, slab[1] as number);
+      if (a <= b && Number.isFinite(a) && (back === undefined || a < back)) back = a;
+    }
+    return back;
+  }
   let front: number | undefined;
   for (let i = 0; i < count; i++) {
     const a = Math.max(intervals[2 * i] as number, slab[0] as number);

@@ -100,7 +100,7 @@ const above = renderSvg({ ...scene, rotate: { x: -62, y: 24 } });
 - **Angles:** degrees. Positive `rotate.z` turns clockwise on screen.
 - **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
 - **Shapes:** `color` (hex, `rgb()` and other CSS functions, or one of the CSS color names; a misspelled name is an error), `stroke` (round-capped width; thick strokes give volume) and `fill`.
-- **Solids:** `box`, `pyramid`, `cylinder`, `cone` and `hemisphere`, always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up. A box and a pyramid stand upright as they are.
+- **Solids:** `box`, `pyramid`, `cylinder`, `cone` and `hemisphere`, always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color, or leave the face out with `false`. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up. A box and a pyramid stand upright as they are.
 - **Errors:** an invalid scene or option throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. Each issue has the path as a string (`path`) and as keys and indices (`pathSegments`), and the message with (`message`) and without (`detail`) the path in front. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians, shapes placed outside the image, or shapes of different colors that pass through each other.
 
 ### Solids
@@ -127,9 +127,19 @@ pyramid({ width: 68, depth: 52, height: 30, ridge: 30 }); // a hip roof
 pyramid({ width: 68, depth: 52, height: 30, ridge: 68 }); // a gable roof, or a wedge
 ```
 
-A `cone` takes `tipDiameter`, which cuts its tip off: a lamp shade, a plant pot, a cup. Solids are not hollow, so the open end is a face in a darker color ([scene](examples/pots.ts)):
+A `cone` takes `tipDiameter`, which cuts its tip off: a lamp shade, a plant pot, a cup. Here the far end is a face in a darker color, which reads as soil or coffee ([scene](examples/pots.ts)):
 
 ![A lamp, a plant pot and a cup, each a cone with its tip cut off](examples/pots.svg)
+
+A face option set to `false` leaves that face out, and the solid is open: you see its inside through the opening, and what stands in it is drawn there, in front of the far wall and behind the near one. `inside` sets the color of the inside; without it, a darker `color` is used. The walls have no thickness ([scene](examples/open.ts)):
+
+![A cup of pencils, an open crate with two balls in it and a bowl of fruit](examples/open.svg)
+
+```ts
+cylinder({ diameter: 44, length: 52, rotate: up, color: '#3f7fbf', frontFace: false }); // a cup
+box({ width: 84, height: 40, depth: 60, color: '#c8975a', topFace: false }); // a crate
+hemisphere({ diameter: 76, rotate: { x: -90 }, color: '#6fb1c4', backface: false }); // a bowl
+```
 
 Solids are depth-sorted like everything else, against each other and against flat shapes. Rest one solid on a flat face of another; solids that cut into each other cannot be drawn correctly.
 

@@ -106,6 +106,16 @@ export function facesViewer(normal: Vec3): boolean {
 /** Below this share of its length, a normal's depth component counts as zero. */
 export const FACING_EPSILON = 1e-9;
 
+/**
+ * Paint order of a face within its solid, lower first. A wall of an open
+ * solid that shows its inner side goes before every face that shows its
+ * outer side, and before the round inside (-1): the solid is convex, so
+ * along any line of sight the inside is the farther of the two.
+ */
+export function paintLayer(p: Piece): number {
+  return p.solid !== undefined && !p.front ? -2 : p.layer;
+}
+
 /** The color a piece is painted in: its back color when it shows its back. */
 export function paintedColor(p: Piece): string {
   return !p.front && typeof p.backface === 'string' ? p.backface : p.color;
@@ -209,9 +219,9 @@ export function compilePieces(s: NormalizedScene, rotate: Vec3 = s.rotate): Piec
           surface: face.surface,
           viewDependent: face.viewDependent,
           soft: face.soft,
-          backface: true,
-          normal: undefined,
-          front: true,
+          backface: face.wall ? face.wall.inside : true,
+          normal: face.wall?.normal,
+          front: face.wall ? facesViewer(face.wall.normal) : true,
           culled: false,
           plane: undefined,
         });
@@ -242,7 +252,7 @@ export function depthShapes(pieces: readonly Piece[]): DepthShape[] {
     fill: p.fill,
     radius: p.stroke / 2,
     ...(p.piece > 0 ? { follows: i - 1 } : {}),
-    ...(p.solid === undefined ? {} : { solid: p.solid, layer: p.layer }),
+    ...(p.solid === undefined ? {} : { solid: p.solid, layer: paintLayer(p) }),
     ...(p.body === undefined ? {} : { body: p.body }),
     ...(p.surface === undefined ? {} : { surface: p.surface }),
     ...(p.plane === undefined ? {} : { plane: p.plane }),
@@ -302,7 +312,7 @@ export function paintConstraints(pieces: readonly Piece[]): {
       const sameSolid = pa.solid !== undefined && pa.solid === pb.solid;
       if (pa.backfacing || pb.backfacing) {
         if (!sameSolid || (pa.backfacing && pb.backfacing)) continue;
-      } else if (sameSolid && pa.layer === pb.layer) {
+      } else if (sameSolid && paintLayer(pa) === paintLayer(pb)) {
         // Faces of one solid that both face the viewer only share edges.
         continue;
       }

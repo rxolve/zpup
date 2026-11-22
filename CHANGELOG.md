@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+Added
+
+- Open solids. A face option set to `false` (`"frontFace": false`, `"topFace": false`, `"backface": false`) leaves that face out, on every solid. The other faces are then thin walls seen from both sides: the inside shows through the opening, and shapes placed inside are drawn in front of the far wall and behind the near one. This gives a cup with pencils in it, an open box, a bowl and a tube you can see through. `inside` sets the color of the inside; without it, a darker `color` is used.
+
+Changed
+
+- `false` on a face option of a solid was an error ("faces cannot be left out") and is now accepted. `true` is still an error. Closed solids are drawn exactly as before.
+
 ## 0.4.1
 
 Fixed

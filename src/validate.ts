@@ -222,7 +222,7 @@ const TYPE_ALIASES: Readonly<Record<string, TypeAlias>> = {
 
 const NODE_KEYS = ['type', 'id', 'translate', 'rotate', 'scale', 'visible', 'children'] as const;
 const SHAPE_KEYS = ['color', 'stroke', 'fill'] as const;
-const SOLID_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'shade'];
+const SOLID_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'shade', 'inside'];
 // Flat shapes take `backface` as Zdog does. Solids are not flat: on the ones
 // that have it, `backface` is the color of a face (see FACE_KEYS).
 const FLAT_KEYS = [...NODE_KEYS, ...SHAPE_KEYS, 'backface'];
@@ -601,7 +601,7 @@ function keyHint(type: NodeType, key: string): string | undefined {
     return 'A hemisphere is as tall as its radius; set only "diameter".';
   }
   if (type === 'box' && key === 'backface') {
-    return 'A box\'s face toward -z is "rearFace". Faces of solids cannot be left out.';
+    return 'A box\'s face toward -z is "rearFace".';
   }
   if (type === 'box' && (key === 'size' || key === 'diameter' || key === 'length')) {
     return 'Use "width", "height" and "depth".';
@@ -613,7 +613,7 @@ function keyHint(type: NodeType, key: string): string | undefined {
     return 'A pyramid has no top face. Its faces are "frontFace", "rearFace", "leftFace", "rightFace" and "bottomFace".';
   }
   if (type === 'pyramid' && key === 'backface') {
-    return 'A pyramid\'s base is "bottomFace" and its face toward -z is "rearFace". Faces of solids cannot be left out.';
+    return 'A pyramid\'s base is "bottomFace" and its face toward -z is "rearFace".';
   }
   if (type === 'pyramid' && (key === 'apex' || key === 'tip' || key === 'top')) {
     return 'The top is straight above the middle of the base. Use "ridge" to make it an edge along x.';
@@ -901,26 +901,31 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
     } else if (shapeType !== undefined && isSolid(shapeType)) {
       const shade = readBoolean(c, input, 'shade', path, nodeId, true);
       const faces: Record<string, string> = {};
+      // Faces left out with `false`, as in Zdog. The solid is then open and
+      // shows its inside.
+      const open: string[] = [];
       for (const key of FACE_KEYS[shapeType]) {
         const value = input[key];
         if (value === undefined) continue;
-        if (typeof value === 'boolean') {
+        if (value === false) {
+          open.push(key);
+          continue;
+        }
+        if (value === true) {
           c.report(
             [...path, key],
             nodeId,
-            'a CSS color string such as "#e62"',
+            'a CSS color string such as "#e62", or false to leave the face out',
             value,
-            value
-              ? 'Leave the option out to shade this face from "color".'
-              : key === 'backface'
-                ? `On ${article(shapeType)} ${shapeType}, "backface" is the color of a face, and faces cannot be left out (only flat shapes take "backface": false). Leave the option out to shade this face from "color".`
-                : 'Faces cannot be left out. Leave the option out to shade this face from "color".',
+            'Leave the option out to shade this face from "color".',
           );
           continue;
         }
         const face = readColor(c, input, key, path, nodeId);
         if (face !== undefined) faces[key] = face;
       }
+      const inside =
+        input.inside === undefined ? undefined : readColor(c, input, 'inside', path, nodeId);
       const dims = {
         width: 0,
         height: 0,
@@ -961,17 +966,18 @@ function readNode(c: Checker, input: unknown, path: Path): NormalizedNode | unde
         if (tip === undefined) ok = false;
         else dims.tipDiameter = tip;
       }
-      if (shapeType === 'cone' && faces.frontFace !== undefined && dims.tipDiameter === 0 && ok) {
+      const pointed = shapeType === 'cone' && dims.tipDiameter === 0 && ok;
+      if (pointed && (faces.frontFace !== undefined || open.includes('frontFace'))) {
         c.report(
           [...path, 'frontFace'],
           nodeId,
           'no "frontFace" on a cone that ends in a point',
-          faces.frontFace,
-          'A cone has a far end to color only when "tipDiameter" cuts its tip off. Set "tipDiameter", or use "backface" for the base.',
+          input.frontFace,
+          'A cone has a far end only when "tipDiameter" cuts its tip off. Set "tipDiameter", or use "backface" for the base.',
         );
         ok = false;
       }
-      if (ok) solid = { kind: shapeType, ...dims, color, stroke, shade, faces };
+      if (ok) solid = { kind: shapeType, ...dims, color, stroke, shade, faces, open, inside };
     }
     if (geometry) shape = { geometry, color, stroke, fill, backface };
   }

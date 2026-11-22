@@ -194,6 +194,24 @@ export function shadeColor(color: string, n: Vec3): string {
   return c.a < 1 ? `${out}${hex(Math.round(c.a * 255))}` : out;
 }
 
+/**
+ * The color of the inside of an open solid whose outside is `color`, when
+ * none is given: a quarter of the way to black, or to white when the color is
+ * too dark to get darker. Returns `color` unchanged when it cannot be parsed.
+ */
+export function insideColor(color: string): string {
+  const c = parseColor(color);
+  if (!c) return color;
+  const luminance = (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255;
+  const mix = (v: number) =>
+    Math.round(luminance < 0.12 ? v + (255 - v) * INSIDE_SHADE : v * (1 - INSIDE_SHADE));
+  const hex = (v: number) => v.toString(16).padStart(2, '0');
+  const out = `#${hex(mix(c.r))}${hex(mix(c.g))}${hex(mix(c.b))}`;
+  return c.a < 1 ? `${out}${hex(Math.round(c.a * 255))}` : out;
+}
+
+const INSIDE_SHADE = 0.25;
+
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
   return t * t * (3 - 2 * t);

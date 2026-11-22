@@ -158,6 +158,10 @@ export interface PolygonNode extends ShapeBase {
  * scene (not by the view), so the solid reads as 3D without lighting. The
  * face pointing toward the viewer of an unrotated scene, and the round
  * surface of an upright cylinder or cone, keep `color` exactly.
+ *
+ * A face option (`frontFace`, `backface`, `topFace` and so on) takes a color
+ * for that face, or `false` to leave the face out, which opens the solid
+ * (see `inside`).
  */
 export interface SolidBase extends NodeBase {
   /** Base color of every face. Any CSS color. Default `"#333"`. */
@@ -175,6 +179,14 @@ export interface SolidBase extends NodeBase {
    * never shaded. Default true.
    */
   shade?: boolean;
+  /**
+   * Color of the inside of an open solid, shaded like `color`. A solid is
+   * open when a face option is `false`, which leaves that face out: a cup is
+   * a cylinder with `frontFace: false`. Its other faces are then thin walls,
+   * seen from both sides, and what stands inside it shows through the
+   * opening. Default: a darker `color`.
+   */
+  inside?: string;
 }
 
 /**
@@ -188,17 +200,17 @@ export interface BoxNode extends SolidBase {
   height: number;
   depth: number;
   /** Color of the face toward +z. */
-  frontFace?: string;
+  frontFace?: string | false;
   /** Color of the face toward -z. */
-  rearFace?: string;
+  rearFace?: string | false;
   /** Color of the face toward -x. */
-  leftFace?: string;
+  leftFace?: string | false;
   /** Color of the face toward +x. */
-  rightFace?: string;
+  rightFace?: string | false;
   /** Color of the face toward -y (up). */
-  topFace?: string;
+  topFace?: string | false;
   /** Color of the face toward +y (down). */
-  bottomFace?: string;
+  bottomFace?: string | false;
 }
 
 /**
@@ -221,15 +233,15 @@ export interface PyramidNode extends SolidBase {
   /** Length of the edge along the top, from 0 to `width`. Default 0, a point. */
   ridge?: number;
   /** Color of the sloping face toward +z. */
-  frontFace?: string;
+  frontFace?: string | false;
   /** Color of the sloping face toward -z. */
-  rearFace?: string;
+  rearFace?: string | false;
   /** Color of the face toward -x. */
-  leftFace?: string;
+  leftFace?: string | false;
   /** Color of the face toward +x. */
-  rightFace?: string;
+  rightFace?: string | false;
   /** Color of the base. */
-  bottomFace?: string;
+  bottomFace?: string | false;
 }
 
 /**
@@ -243,9 +255,9 @@ export interface CylinderNode extends SolidBase {
   /** Distance between the ends, along z. */
   length: number;
   /** Color of the end at z = +length / 2. */
-  frontFace?: string;
+  frontFace?: string | false;
   /** Color of the end at z = -length / 2. */
-  backface?: string;
+  backface?: string | false;
 }
 
 /**
@@ -265,9 +277,9 @@ export interface ConeNode extends SolidBase {
    */
   tipDiameter?: number;
   /** Color of the far end. Only with a `tipDiameter` above 0. */
-  frontFace?: string;
+  frontFace?: string | false;
   /** Color of the flat base. */
-  backface?: string;
+  backface?: string | false;
 }
 
 /**
@@ -279,7 +291,7 @@ export interface HemisphereNode extends SolidBase {
   /** Diameter of the sphere. */
   diameter: number;
   /** Color of the flat side. */
-  backface?: string;
+  backface?: string | false;
 }
 
 /** Any node that can appear in a scene tree. */
