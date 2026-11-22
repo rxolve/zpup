@@ -29,13 +29,14 @@ It needs Node 20 or later and runs offline, over standard input and output.
 
 ## Tools
 
-| Tool            | What it does                                                                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `get_reference` | Returns how to write a scene: the format, every shape and its options, and the conventions for axes and angles.                                   |
-| `check_scene`   | Checks a scene without drawing it. Returns every error with its path and a fix, and warnings for things that are valid but probably not intended. |
-| `render_scene`  | Draws the scene. Returns a PNG to look at, the SVG text, and any warnings. `views` draws the same scene from up to six angles in one call.        |
-| `render_spin`   | Makes an SVG that turns the scene forever, with no JavaScript in the file. Returns PNG stills at even steps of the turn.                          |
-| `get_scene`     | Returns the scene the server remembers, as JSON.                                                                                                  |
+| Tool             | What it does                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_reference`  | Returns how to write a scene: the format, every shape and its options, and the conventions for axes and angles.                                   |
+| `check_scene`    | Checks a scene without drawing it. Returns every error with its path and a fix, and warnings for things that are valid but probably not intended. |
+| `render_scene`   | Draws the scene. Returns a PNG to look at, the SVG text, and any warnings. `views` draws the same scene from up to six angles in one call.        |
+| `render_spin`    | Makes an SVG that turns the scene forever, with no JavaScript in the file. Returns PNG stills at even steps of the turn.                          |
+| `render_sprites` | Draws the scene from every side as one transparent PNG sprite sheet, for a game, and writes the frame list engines read.                          |
+| `get_scene`      | Returns the scene the server remembers, as JSON.                                                                                                  |
 
 The reference is also available as the resource `zpup://reference`.
 
@@ -132,9 +133,42 @@ A model cannot play the animation, so the stills show it what the turn looks lik
 
 Turning files are large, 43 KB for a small pup and 129 KB for a lighthouse, so the text comes back only when it is under 30 KB. Pass `save_to` to get the file.
 
+### `render_sprites`
+
+| Argument     |                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------- |
+| `scene`      | The scene, as an object or as JSON text, or left out as in `render_scene`.                                  |
+| `changes`    | Edits to the remembered scene, as in `render_scene`.                                                        |
+| `directions` | How many directions to draw, at even steps of a full turn about the vertical axis, 2 to 32. Default 8.      |
+| `cell_size`  | Longer side of each cell in pixels, 16 to 1024. Default 128.                                                |
+| `columns`    | Cells per row. Default: all directions in one row, up to 8.                                                 |
+| `save_to`    | Absolute path ending in `.png`. The frame list is written next to it, with the same name ending in `.json`. |
+
+The first cell is the scene as written; each next one is turned `360 / directions` degrees further. Every direction comes from the same scene, so the sprites agree with each other, which pictures drawn one by one do not. The tilt is the scene's own `rotate.x`: about -30 for a view from above.
+
+The sheet is transparent; a `background` in the scene is left out. Every cell has the scene's frame, so that the object does not jump between directions, and the answer says when it is cut off in some of them.
+
+The frame list is the JSON TexturePacker writes as "JSON (Hash)", which Phaser and PixiJS load as they are. Each frame also has `turn`, its angle in degrees:
+
+```json
+{
+  "frames": {
+    "crate-0.png": {
+      "frame": { "x": 0, "y": 0, "w": 128, "h": 128 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 128, "h": 128 },
+      "sourceSize": { "w": 128, "h": 128 },
+      "turn": 0
+    }
+  },
+  "meta": { "image": "crate.png", "size": { "w": 1024, "h": 128 }, "scale": "1" }
+}
+```
+
 ## What it writes
 
-The server reads no files of yours and makes no network requests. The remembered scene is held in memory only. It writes a file only when a call passes `save_to`, at exactly that path, creating the folders above it if they are missing.
+The server reads no files of yours and makes no network requests. The remembered scene is held in memory only. It writes a file only when a call passes `save_to`, at exactly that path, creating the folders above it if they are missing; `render_sprites` writes a second file next to it, with the same name ending in `.json`.
 
 ## Limits
 

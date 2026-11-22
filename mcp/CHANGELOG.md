@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- New tool `render_sprites`: one scene drawn from 2 to 32 directions, turned in equal steps about its vertical axis, as one transparent PNG sprite sheet. With `save_to` it writes the frame list next to the PNG as JSON, in TexturePacker's hash form. The answer says when the object is cut off in some directions.
+- Uses the next `@zpup/core`, so `get_reference` describes open solids (a face option set to `false`).
+
 ## 0.3.1
 
 - Uses `@zpup/core` 0.4.1, so a file from `render_spin` with many shapes no longer stops in Firefox.

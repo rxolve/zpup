@@ -25,3 +25,8 @@ export function svgToPng(svg: string, options: PngOptions): Buffer {
   });
   return drawn.render().asPng();
 }
+
+/** Draws an SVG as a PNG at the size it gives, with nothing painted behind it. */
+export function svgToExactPng(svg: string): Buffer {
+  return new Resvg(svg, NO_FONTS).render().asPng();
+}

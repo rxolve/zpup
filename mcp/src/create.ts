@@ -8,6 +8,7 @@ import {
   type Memory,
   renderScene,
   renderSpin,
+  renderSprites,
 } from './tools.ts';
 
 export const REFERENCE_URI = 'zpup://reference';
@@ -175,6 +176,46 @@ export function createServer(): McpServer {
       annotations: { idempotentHint: false, openWorldHint: false },
     },
     (args) => renderSpin(args, memory),
+  );
+
+  server.registerTool(
+    'render_sprites',
+    {
+      title: 'Make a sprite sheet of a Zpup scene',
+      description: `Draws one scene from every side, turned in equal steps about its vertical axis, and lays the pictures out as one transparent PNG sprite sheet for a game: the same object in 4, 8 or 16 directions, all from one scene, so they agree with each other. With save_to it also writes the frame list next to the PNG as JSON, in the form TexturePacker writes (JSON hash) and Phaser, PixiJS and other engines read. Returns the sheet to look at. Every cell has the scene's own frame, so check that nothing is cut off as the object turns. Keep the scene's own view angle for the tilt: rotate x around -30 for a view from above. ${FORMAT_NOTE}`,
+      inputSchema: {
+        scene,
+        changes,
+        directions: z
+          .number()
+          .int()
+          .min(2)
+          .max(32)
+          .optional()
+          .describe('How many directions to draw, at even steps of a full turn. Default 8.'),
+        cell_size: z
+          .number()
+          .min(16)
+          .max(1024)
+          .optional()
+          .describe('Longer side of each cell in pixels. Default 128.'),
+        columns: z
+          .number()
+          .int()
+          .min(1)
+          .max(32)
+          .optional()
+          .describe('Cells per row. Default: all directions in one row, up to 8.'),
+        save_to: z
+          .string()
+          .optional()
+          .describe(
+            'Absolute path ending in .png to write the sheet to. The frame list is written next to it with the same name ending in .json.',
+          ),
+      },
+      annotations: { idempotentHint: false, openWorldHint: false },
+    },
+    (args) => renderSprites(args, memory),
   );
 
   server.registerResource(

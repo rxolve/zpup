@@ -16,6 +16,7 @@ import {
   type Memory,
   renderScene,
   renderSpin,
+  renderSprites,
 } from '../src/tools.ts';
 
 const planet = {
@@ -605,6 +606,86 @@ describe('mcp: scene memory', () => {
   });
 });
 
+describe('mcp: sprite sheets', () => {
+  const scene = { width: 80, height: 60, rotate: { x: -30 }, children: [box] };
+
+  it('draws eight directions in one row and writes the frame list', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const path = join(dir, 'out', 'crate.png');
+    const result = await renderSprites({ scene, cell_size: 40, save_to: path });
+    expect(result.isError).toBeUndefined();
+    expect(texts(result.content)[0]).toContain(
+      'Drew 8 directions of a 80x60 scene, each turned 45 degrees further about the vertical axis, as a sheet of 8 by 1 cells of 40x30 pixels (320x30 in all).',
+    );
+    expect(images(result.content)).toHaveLength(1);
+    const png = readFileSync(path);
+    // The size is in the PNG header, at bytes 16 to 23.
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([320, 30]);
+    const list = JSON.parse(readFileSync(join(dir, 'out', 'crate.json'), 'utf8'));
+    expect(Object.keys(list.frames)).toEqual([0, 1, 2, 3, 4, 5, 6, 7].map((i) => `crate-${i}.png`));
+    expect(list.frames['crate-3.png']).toEqual({
+      frame: { x: 120, y: 0, w: 40, h: 30 },
+      rotated: false,
+      trimmed: false,
+      spriteSourceSize: { x: 0, y: 0, w: 40, h: 30 },
+      sourceSize: { w: 40, h: 30 },
+      turn: 135,
+    });
+    expect(list.meta).toMatchObject({ image: 'crate.png', size: { w: 320, h: 30 } });
+  });
+
+  it('wraps into rows and pads the names', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const path = join(dir, 'tree.png');
+    const result = await renderSprites({ scene, directions: 12, columns: 5, save_to: path });
+    expect(texts(result.content)[0]).toContain('a sheet of 5 by 3 cells of 128x96 pixels');
+    const list = JSON.parse(readFileSync(join(dir, 'tree.json'), 'utf8'));
+    expect(list.frames['tree-11.png'].frame).toEqual({ x: 128, y: 192, w: 128, h: 96 });
+    expect(list.frames['tree-07.png'].turn).toBe(210);
+  });
+
+  it('turns from the view the scene has, and leaves the scene as it was', async () => {
+    const memory: Memory = {};
+    await renderSprites({ scene: { ...scene, rotate: { x: -30, y: 15 } }, directions: 4 }, memory);
+    expect(memory.scene?.rotate).toEqual({ x: -30, y: 15 });
+    const again = await renderSprites({ directions: 4 }, memory);
+    expect(texts(again.content)[0]).toContain('Used the remembered scene.');
+  });
+
+  it('leaves a background out and says so', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const path = join(dir, 'b.png');
+    const result = await renderSprites({
+      scene: { ...scene, background: '#123456' },
+      directions: 2,
+      cell_size: 16,
+      save_to: path,
+    });
+    expect(texts(result.content)[0]).toContain('which is left out of the sheet');
+    // The first pixel of the sheet has to be see-through: a 32x12 RGBA image.
+    const png = readFileSync(path);
+    expect(png[25]).toBe(6);
+  });
+
+  it('says when the object leaves the frame as it turns', async () => {
+    const wide = {
+      width: 60,
+      height: 60,
+      children: [{ type: 'box', width: 20, height: 20, depth: 90, color: '#e62' }],
+    };
+    const result = await renderSprites({ scene: wide, directions: 4 });
+    expect(texts(result.content)[0]).toContain('Cut off in 2 of 4 cells');
+  });
+
+  it('refuses a path that is not a .png, and an invalid scene', async () => {
+    const svg = await renderSprites({ scene, save_to: '/tmp/x.svg' });
+    expect(svg.isError).toBe(true);
+    expect(texts(svg.content)[0]).toContain('expected a path ending in .png');
+    const bad = await renderSprites({ scene: { width: 10 } });
+    expect(bad.isError).toBe(true);
+  });
+});
+
 describe('mcp: reference', () => {
   it('is the llms.txt that ships with the library', () => {
     const [reference] = texts(getReference().content);
@@ -621,7 +702,7 @@ describe('mcp: over the protocol', () => {
     return client;
   }
 
-  it('lists the five tools and the reference', async () => {
+  it('lists the six tools and the reference', async () => {
     const client = await connect();
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
@@ -630,6 +711,7 @@ describe('mcp: over the protocol', () => {
       'get_scene',
       'render_scene',
       'render_spin',
+      'render_sprites',
     ]);
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri)).toEqual([REFERENCE_URI]);

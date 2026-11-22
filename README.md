@@ -226,7 +226,7 @@ There is no perspective and no light to place, by design; soft shading is a fixe
 
 ## With an AI model
 
-[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call. It remembers the scene, so after the first picture the model sends only what changes.
+[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call. It remembers the scene, so after the first picture the model sends only what changes. For a game it can also draw the scene from 8 or 16 directions as one sprite sheet, with the frame list engines read.
 
 ```json
 {
