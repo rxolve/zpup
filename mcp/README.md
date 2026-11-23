@@ -142,6 +142,7 @@ Turning files are large, 43 KB for a small pup and 129 KB for a lighthouse, so t
 | `directions` | How many directions to draw, at even steps of a full turn about the vertical axis, 2 to 32. Default 8.      |
 | `cell_size`  | Longer side of each cell in pixels, 16 to 1024. Default 128.                                                |
 | `columns`    | Cells per row. Default: all directions in one row, up to 8.                                                 |
+| `poses`      | Poses of the scene, each a list of changes. The sheet then has a row per direction and a column per pose.   |
 | `save_to`    | Absolute path ending in `.png`. The frame list is written next to it, with the same name ending in `.json`. |
 
 The first cell is the scene as written; each next one is turned `360 / directions` degrees further. Every direction comes from the same scene, so the sprites agree with each other, which pictures drawn one by one do not. The tilt is the scene's own `rotate.x`: about -30 for a view from above.
@@ -165,6 +166,37 @@ The frame list is the JSON TexturePacker writes as "JSON (Hash)", which Phaser a
   "meta": { "image": "crate.png", "size": { "w": 1024, "h": 128 }, "scale": "1" }
 }
 ```
+
+#### Poses
+
+A walk is the same object in a few poses. `poses` is a list of them, each written as `changes` to the scene; an empty list is the scene as it is. Every pose is drawn in every direction, one row per direction and one column per pose:
+
+```json
+{
+  "poses": [
+    [],
+    [
+      { "op": "set", "path": "#leg-front.rotate", "value": { "z": 25 } },
+      { "op": "set", "path": "#leg-back.rotate", "value": { "z": -25 } }
+    ],
+    [],
+    [
+      { "op": "set", "path": "#leg-front.rotate", "value": { "z": -25 } },
+      { "op": "set", "path": "#leg-back.rotate", "value": { "z": 25 } }
+    ]
+  ]
+}
+```
+
+A part swings about its own origin, so a leg goes in a group placed at the hip, with the leg drawn downward from there; the pose then only sets the group's `rotate`. Poses do not build on each other, and they are not remembered: after the call the remembered scene is the scene without them. A sheet takes up to 16 poses and 128 cells.
+
+Frames are named `<name>-<direction>-<pose>.png` and carry `pose` next to `turn`. The list also has `animations`, the frames of each direction in order, which PixiJS reads as it is:
+
+```json
+{ "animations": { "dog-0": ["dog-0-0.png", "dog-0-1.png", "dog-0-2.png", "dog-0-3.png"] } }
+```
+
+The sheet holds pictures, not motion: the game plays the frames of a row in turn.
 
 ## What it writes
 

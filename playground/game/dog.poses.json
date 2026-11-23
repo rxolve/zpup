@@ -1,0 +1,92 @@
+[
+  [],
+  [
+    {
+      "op": "set",
+      "path": "#leg-fl.rotate",
+      "value": {
+        "x": 28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-br.rotate",
+      "value": {
+        "x": 28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-fr.rotate",
+      "value": {
+        "x": -28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-bl.rotate",
+      "value": {
+        "x": -28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#dog.translate",
+      "value": {
+        "y": 4
+      }
+    },
+    {
+      "op": "set",
+      "path": "#tail.rotate",
+      "value": {
+        "z": 20
+      }
+    }
+  ],
+  [],
+  [
+    {
+      "op": "set",
+      "path": "#leg-fl.rotate",
+      "value": {
+        "x": -28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-br.rotate",
+      "value": {
+        "x": -28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-fr.rotate",
+      "value": {
+        "x": 28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-bl.rotate",
+      "value": {
+        "x": 28
+      }
+    },
+    {
+      "op": "set",
+      "path": "#dog.translate",
+      "value": {
+        "y": 4
+      }
+    },
+    {
+      "op": "set",
+      "path": "#tail.rotate",
+      "value": {
+        "z": -20
+      }
+    }
+  ]
+]

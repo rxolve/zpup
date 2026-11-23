@@ -72,6 +72,7 @@ export interface RenderSpritesArgs {
   directions?: number | undefined;
   cell_size?: number | undefined;
   columns?: number | undefined;
+  poses?: Change[][] | undefined;
   save_to?: string | undefined;
 }
 
@@ -341,41 +342,92 @@ const DEFAULT_CELL = 128;
 /** The longer side of the sheet as sent back to look at. */
 const SHEET_PREVIEW = 1024;
 
+/** The most poses one sheet takes, and the most cells in all. */
+export const MAX_POSES = 16;
+export const MAX_SPRITE_CELLS = 128;
+
 /** One sprite's place in the sheet, in pixels. */
 interface Cell {
   name: string;
   turn: number;
+  /** Which pose, counted from 0. Always 0 when the call has no poses. */
+  pose: number;
+  /** Which direction, counted from 0. */
+  direction: number;
   x: number;
   y: number;
 }
 
+function turned(scene: Scene, turn: number): Scene {
+  const rotate = scene.rotate ?? {};
+  return { ...scene, rotate: { ...rotate, y: (rotate.y ?? 0) + turn } };
+}
+
 /**
- * One scene drawn from `directions` angles, turned in equal steps about the
- * vertical axis, laid out in a grid of cells of `w` by `h` pixels.
+ * Every cell's scene drawn at its angle, laid out in a grid of cells of `w`
+ * by `h` pixels. `scenes` has one scene per pose.
  */
 function sheetSvg(
-  base: Scene,
+  scenes: readonly Scene[],
   cells: readonly Cell[],
   w: number,
   h: number,
-  columns: number,
+  width: number,
+  height: number,
 ): string {
-  const { title: _title, background: _background, ...plain } = base;
-  const rotate = base.rotate ?? {};
+  const plain = scenes.map(({ title: _title, background: _background, ...rest }) => rest as Scene);
   const panels = cells.map((cell) =>
-    renderSvg({ ...plain, rotate: { ...rotate, y: (rotate.y ?? 0) + cell.turn } }).replace(
+    renderSvg(turned(plain[cell.pose] as Scene, cell.turn)).replace(
       /^<svg ([^>]*?)width="[^"]*" height="[^"]*"/,
       `<svg x="${cell.x}" y="${cell.y}" $1width="${w}" height="${h}"`,
     ),
   );
-  const width = w * columns;
-  const height = h * Math.ceil(cells.length / columns);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n${panels.join('\n')}\n</svg>\n`;
 }
 
 /**
+ * The scene in each pose: the scene with that pose's changes applied. Poses
+ * do not build on each other and are not remembered.
+ */
+function posed(
+  base: Scene,
+  poses: readonly Change[][],
+): { scenes: Scene[] } | { error: ToolResult } {
+  const scenes: Scene[] = [];
+  for (const [i, changes] of poses.entries()) {
+    if (changes.length === 0) {
+      scenes.push(base);
+      continue;
+    }
+    let scene: unknown;
+    try {
+      scene = applyChanges(base, changes);
+    } catch (e) {
+      if (!(e instanceof ChangeError)) throw e;
+      return {
+        error: failure(
+          `poses[${i}]: ${e.message}\nNothing was drawn. The remembered scene is the scene without poses.`,
+        ),
+      };
+    }
+    const issues = checkScene(scene);
+    if (issues.length > 0) {
+      const n = issues.length === 1 ? '1 problem' : `${issues.length} problems`;
+      return {
+        error: failure(
+          `poses[${i}]: with this pose's changes the scene has ${n}. Nothing was drawn. The remembered scene is the scene without poses.\n\n${list(issues)}`,
+        ),
+      };
+    }
+    scenes.push(scene as Scene);
+  }
+  return { scenes };
+}
+
+/**
  * `render_sprites`: one scene as a sprite sheet, the same thing seen from
- * every side, with the frame list game engines read.
+ * every side, and in every pose when the call has poses, with the frame list
+ * game engines read.
  */
 export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Promise<ToolResult> {
   return guarded(async () => {
@@ -383,32 +435,63 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
       const wrong = badPath(args.save_to, ['.png']);
       if (wrong) return failure(wrong);
     }
+    const count = Math.round(args.directions ?? DEFAULT_DIRECTIONS);
+    const poses = args.poses ?? [];
+    const hasPoses = poses.length > 0;
+    const poseCount = hasPoses ? poses.length : 1;
+    if (poseCount > MAX_POSES) {
+      return failure(`poses: at most ${MAX_POSES} poses, received ${poseCount}.`);
+    }
+    if (count * poseCount > MAX_SPRITE_CELLS) {
+      return failure(
+        `poses: ${count} directions of ${poseCount} poses is ${count * poseCount} cells, and a sheet takes at most ${MAX_SPRITE_CELLS}. Use fewer directions or fewer poses.`,
+      );
+    }
     const found = resolve(args, memory);
     if ('error' in found) return found.error;
     const base = found.scene;
+    const inPose = hasPoses ? posed(base, poses) : { scenes: [base] };
+    if ('error' in inPose) return inPose.error;
+    const scenes = inPose.scenes;
 
-    const count = Math.round(args.directions ?? DEFAULT_DIRECTIONS);
-    const columns = Math.min(count, Math.round(args.columns ?? Math.min(count, 8)));
+    // With poses, a row is one direction and a column is one pose, the layout
+    // a walk cycle is read in. Without, the directions fill the rows in turn.
+    const columns = hasPoses
+      ? poseCount
+      : Math.min(count, Math.round(args.columns ?? Math.min(count, 8)));
+    const rows = hasPoses ? count : Math.ceil(count / columns);
     const scale = Math.round(args.cell_size ?? DEFAULT_CELL) / Math.max(base.width, base.height);
     const w = Math.max(1, Math.round(base.width * scale));
     const h = Math.max(1, Math.round(base.height * scale));
     const stem = args.save_to === undefined ? 'sprite' : basename(args.save_to, '.png');
     const digits = String(count - 1).length;
-    const cells: Cell[] = Array.from({ length: count }, (_, i) => ({
-      name: `${stem}-${String(i).padStart(digits, '0')}`,
-      turn: (360 * i) / count,
-      x: (i % columns) * w,
-      y: Math.floor(i / columns) * h,
-    }));
-    const svg = sheetSvg(base, cells, w, h, columns);
+    const poseDigits = String(poseCount - 1).length;
+    const cells: Cell[] = [];
+    for (let d = 0; d < count; d++) {
+      const row = `${stem}-${String(d).padStart(digits, '0')}`;
+      for (let p = 0; p < poseCount; p++) {
+        const i = hasPoses ? d * poseCount + p : d;
+        cells.push({
+          name: hasPoses ? `${row}-${String(p).padStart(poseDigits, '0')}` : row,
+          turn: (360 * d) / count,
+          pose: p,
+          direction: d,
+          x: (i % columns) * w,
+          y: Math.floor(i / columns) * h,
+        });
+      }
+    }
     const width = w * columns;
-    const height = h * Math.ceil(count / columns);
+    const height = h * rows;
+    const svg = sheetSvg(scenes, cells, w, h, width, height);
 
     const saved: string[] = [];
     if (args.save_to !== undefined) {
       const image = basename(args.save_to);
       // The frame list TexturePacker writes as "JSON (Hash)", which Phaser,
       // PixiJS and most importers read. "turn" is extra: the angle in degrees.
+      // With poses each frame also has "pose", and "animations" lists the
+      // frames of each direction in order, which is where PixiJS looks.
       const frames = Object.fromEntries(
         cells.map((cell) => [
           `${cell.name}.png`,
@@ -419,9 +502,18 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
             spriteSourceSize: { x: 0, y: 0, w, h },
             sourceSize: { w, h },
             turn: cell.turn,
+            ...(hasPoses ? { pose: cell.pose } : {}),
           },
         ]),
       );
+      const animations = hasPoses
+        ? Object.fromEntries(
+            Array.from({ length: count }, (_, d) => [
+              `${stem}-${String(d).padStart(digits, '0')}`,
+              cells.filter((cell) => cell.direction === d).map((cell) => `${cell.name}.png`),
+            ]),
+          )
+        : undefined;
       const meta = {
         app: 'https://github.com/rxolve/zpup',
         image,
@@ -431,32 +523,35 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
       };
       const json = `${args.save_to.slice(0, -4)}.json`;
       await save(args.save_to, svgToExactPng(svg));
-      await save(json, `${JSON.stringify({ frames, meta }, null, 2)}\n`);
+      await save(
+        json,
+        `${JSON.stringify(animations ? { frames, animations, meta } : { frames, meta }, null, 2)}\n`,
+      );
       saved.push(args.save_to, json);
     }
 
-    const rows = Math.ceil(count / columns);
-    let summary = `${found.note}Drew ${count} directions of a ${base.width}x${base.height} scene, each turned ${formatTurn(360 / count)} degrees further about the vertical axis, as a sheet of ${columns} by ${rows} cells of ${w}x${h} pixels (${width}x${height} in all). Cells run left to right, top to bottom, starting with the scene as written.`;
+    const each = `each turned ${formatTurn(360 / count)} degrees further about the vertical axis`;
+    let summary = hasPoses
+      ? `${found.note}Drew ${count} directions of a ${base.width}x${base.height} scene in ${poseCount} poses, ${each}, as a sheet of ${columns} by ${rows} cells of ${w}x${h} pixels (${width}x${height} in all). Each row is one direction, starting with the scene as written, and each column is one pose, in the order of poses. The poses were not remembered: the remembered scene is the scene without them.`
+      : `${found.note}Drew ${count} directions of a ${base.width}x${base.height} scene, ${each}, as a sheet of ${columns} by ${rows} cells of ${w}x${h} pixels (${width}x${height} in all). Cells run left to right, top to bottom, starting with the scene as written.`;
     if (saved.length > 0) summary += `\nSaved: ${saved.join(', ')}`;
     else summary += '\nNothing was saved. Pass save_to to write the sheet and its frame list.';
     if (base.background !== undefined) {
       summary +=
         '\nThe scene has a background, which is left out of the sheet so that the sprites are transparent.';
     }
-    const rotate = base.rotate ?? {};
+    const where = (cell: Cell): string =>
+      hasPoses ? `Direction ${cell.direction}, pose ${cell.pose}` : `Cell ${cell.direction}`;
     const cut = cells
-      .map((cell, i) => ({
-        i,
-        note: framing({ ...base, rotate: { ...rotate, y: (rotate.y ?? 0) + cell.turn } }),
-      }))
+      .map((cell) => ({ cell, note: framing(turned(scenes[cell.pose] as Scene, cell.turn)) }))
       .filter((c) => c.note.includes('cut off'));
     if (cut.length > 0) {
-      summary += `\nCut off in ${cut.length} of ${count} cells, which share one frame so that the sprite does not jump between directions. Make the scene larger (width and height) or the drawing smaller (zoom). ${cut
+      summary += `\nCut off in ${cut.length} of ${cells.length} cells, which share one frame so that the sprite does not jump between ${hasPoses ? 'directions or poses' : 'directions'}. Make the scene larger (width and height) or the drawing smaller (zoom). ${cut
         .slice(0, 3)
-        .map((c) => `Cell ${c.i}: ${c.note}`)
+        .map((c) => `${where(c.cell)}: ${c.note}`)
         .join(' ')}`;
     }
-    summary += warningText(warningsOf([base]));
+    summary += warningText(warningsOf(scenes));
 
     const preview = svgToPng(svg, {
       size: Math.min(SHEET_PREVIEW, Math.max(width, height)),

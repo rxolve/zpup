@@ -1,11 +1,25 @@
 {
-  "width": 96,
-  "height": 96,
-  "shading": "soft",
+  "width": 110,
+  "height": 110,
   "rotate": {
     "x": -30
   },
   "children": [
+    {
+      "type": "ellipse",
+      "id": "shadow",
+      "width": 40,
+      "height": 62,
+      "fill": true,
+      "stroke": 0,
+      "color": "rgba(0,0,0,0.18)",
+      "rotate": {
+        "x": 90
+      },
+      "translate": {
+        "y": 32
+      }
+    },
     {
       "type": "group",
       "id": "dog",
@@ -18,190 +32,258 @@
           "id": "body",
           "path": [
             {
-              "z": -8
+              "z": -12
             },
             {
-              "z": 7
+              "z": 12
             }
           ],
-          "stroke": 18,
+          "stroke": 26,
           "color": "#d9a066"
         },
         {
-          "type": "path",
-          "id": "legFL",
-          "path": [
+          "type": "group",
+          "id": "leg-fl",
+          "translate": {
+            "x": -8,
+            "y": 6,
+            "z": 11
+          },
+          "children": [
             {
-              "x": -5,
-              "y": 4,
-              "z": 6
+              "type": "path",
+              "path": [
+                {},
+                {
+                  "y": 20
+                }
+              ],
+              "stroke": 8,
+              "color": "#d9a066"
             },
             {
-              "x": -5,
-              "y": 14,
-              "z": 6
+              "type": "dot",
+              "translate": {
+                "y": 22,
+                "z": 1
+              },
+              "stroke": 9,
+              "color": "#f3e3c8"
             }
-          ],
-          "stroke": 6,
-          "color": "#d9a066"
+          ]
         },
         {
-          "type": "path",
-          "id": "legFR",
-          "path": [
+          "type": "group",
+          "id": "leg-fr",
+          "translate": {
+            "x": 8,
+            "y": 6,
+            "z": 11
+          },
+          "children": [
             {
-              "x": 5,
-              "y": 4,
-              "z": 6
+              "type": "path",
+              "path": [
+                {},
+                {
+                  "y": 20
+                }
+              ],
+              "stroke": 8,
+              "color": "#d9a066"
             },
             {
-              "x": 5,
-              "y": 14,
-              "z": 6
+              "type": "dot",
+              "translate": {
+                "y": 22,
+                "z": 1
+              },
+              "stroke": 9,
+              "color": "#f3e3c8"
             }
-          ],
-          "stroke": 6,
-          "color": "#d9a066"
+          ]
         },
         {
-          "type": "path",
-          "id": "legBL",
-          "path": [
+          "type": "group",
+          "id": "leg-bl",
+          "translate": {
+            "x": -8,
+            "y": 6,
+            "z": -11
+          },
+          "children": [
             {
-              "x": -5,
-              "y": 4,
-              "z": -7
+              "type": "path",
+              "path": [
+                {},
+                {
+                  "y": 20
+                }
+              ],
+              "stroke": 8,
+              "color": "#d9a066"
             },
             {
-              "x": -5,
-              "y": 14,
-              "z": -7
+              "type": "dot",
+              "translate": {
+                "y": 22,
+                "z": 1
+              },
+              "stroke": 9,
+              "color": "#f3e3c8"
             }
-          ],
-          "stroke": 6,
-          "color": "#d9a066"
+          ]
         },
         {
-          "type": "path",
-          "id": "legBR",
-          "path": [
+          "type": "group",
+          "id": "leg-br",
+          "translate": {
+            "x": 8,
+            "y": 6,
+            "z": -11
+          },
+          "children": [
             {
-              "x": 5,
-              "y": 4,
-              "z": -7
+              "type": "path",
+              "path": [
+                {},
+                {
+                  "y": 20
+                }
+              ],
+              "stroke": 8,
+              "color": "#d9a066"
             },
             {
-              "x": 5,
-              "y": 14,
-              "z": -7
+              "type": "dot",
+              "translate": {
+                "y": 22,
+                "z": 1
+              },
+              "stroke": 9,
+              "color": "#f3e3c8"
             }
-          ],
-          "stroke": 6,
-          "color": "#d9a066"
+          ]
         },
         {
-          "type": "path",
+          "type": "group",
           "id": "tail",
-          "path": [
+          "translate": {
+            "y": -6,
+            "z": -22
+          },
+          "children": [
             {
-              "y": -4,
-              "z": -14
+              "type": "path",
+              "path": [
+                {},
+                {
+                  "y": -10,
+                  "z": -6
+                }
+              ],
+              "stroke": 6,
+              "color": "#d9a066"
             },
             {
-              "y": -8,
-              "z": -20
+              "type": "dot",
+              "translate": {
+                "y": -11,
+                "z": -7
+              },
+              "stroke": 7,
+              "color": "#f3e3c8"
             }
-          ],
-          "stroke": 5,
-          "color": "#d9a066"
+          ]
         },
         {
-          "type": "dot",
+          "type": "group",
           "id": "head",
           "translate": {
-            "y": -11,
-            "z": 12
+            "y": -12,
+            "z": 22
           },
-          "stroke": 18,
-          "color": "#d9a066"
-        },
-        {
-          "type": "dot",
-          "id": "snout",
-          "translate": {
-            "y": -8,
-            "z": 20
-          },
-          "stroke": 9,
-          "color": "#f2d0a4"
-        },
-        {
-          "type": "dot",
-          "id": "nose",
-          "translate": {
-            "y": -9,
-            "z": 24.5
-          },
-          "stroke": 4,
-          "color": "#2b1d14"
-        },
-        {
-          "type": "dot",
-          "id": "eyeL",
-          "translate": {
-            "x": -4,
-            "y": -14,
-            "z": 19.5
-          },
-          "stroke": 3,
-          "color": "#2b1d14"
-        },
-        {
-          "type": "dot",
-          "id": "eyeR",
-          "translate": {
-            "x": 4,
-            "y": -14,
-            "z": 19.5
-          },
-          "stroke": 3,
-          "color": "#2b1d14"
-        },
-        {
-          "type": "path",
-          "id": "earL",
-          "path": [
+          "children": [
             {
-              "x": -8,
-              "y": -17,
-              "z": 8
+              "type": "dot",
+              "stroke": 28,
+              "color": "#d9a066"
             },
             {
-              "x": -10,
-              "y": -9,
-              "z": 8
-            }
-          ],
-          "stroke": 5,
-          "color": "#8a5a32"
-        },
-        {
-          "type": "path",
-          "id": "earR",
-          "path": [
-            {
-              "x": 8,
-              "y": -17,
-              "z": 8
+              "type": "dot",
+              "translate": {
+                "y": 4,
+                "z": 12
+              },
+              "stroke": 14,
+              "color": "#d9a066"
             },
             {
-              "x": 10,
-              "y": -9,
-              "z": 8
+              "type": "dot",
+              "translate": {
+                "y": 2,
+                "z": 19
+              },
+              "stroke": 6,
+              "color": "#2b1d16"
+            },
+            {
+              "type": "dot",
+              "translate": {
+                "x": -6,
+                "y": -5,
+                "z": 11.5
+              },
+              "stroke": 4,
+              "color": "#2b1d16"
+            },
+            {
+              "type": "dot",
+              "translate": {
+                "x": 6,
+                "y": -5,
+                "z": 11.5
+              },
+              "stroke": 4,
+              "color": "#2b1d16"
+            },
+            {
+              "type": "path",
+              "id": "ear-l",
+              "path": [
+                {
+                  "x": -12,
+                  "y": -8,
+                  "z": 0
+                },
+                {
+                  "x": -16,
+                  "y": 4,
+                  "z": -1
+                }
+              ],
+              "stroke": 8,
+              "color": "#8a5a2b"
+            },
+            {
+              "type": "path",
+              "id": "ear-r",
+              "path": [
+                {
+                  "x": 12,
+                  "y": -8,
+                  "z": 0
+                },
+                {
+                  "x": 16,
+                  "y": 4,
+                  "z": -1
+                }
+              ],
+              "stroke": 8,
+              "color": "#8a5a2b"
             }
-          ],
-          "stroke": 5,
-          "color": "#8a5a32"
+          ]
         }
       ]
     }

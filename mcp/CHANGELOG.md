@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `render_sprites` takes `poses`: lists of changes, each a pose of the scene. The sheet then has one row per direction and one column per pose, for a walk cycle or any other motion in steps. Frames are named `<name>-<direction>-<pose>.png` and carry `pose`, and the frame list has `animations` with the frames of each direction in order. Poses are applied to the scene one at a time and are not remembered. Up to 16 poses and 128 cells.
+
 ## 0.4.0
 
 - New tool `render_sprites`: one scene drawn from 2 to 32 directions, turned in equal steps about its vertical axis, as one transparent PNG sprite sheet. With `save_to` it writes the frame list next to the PNG as JSON, in TexturePacker's hash form. The answer says when the object is cut off in some directions.

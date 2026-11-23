@@ -1,13 +1,16 @@
 // A dog you can walk around three props. Every sprite comes from a sheet
-// that Zpup's render_sprites wrote: one PNG and its frame list.
+// that Zpup's render_sprites wrote: one PNG and its frame list. The dog's
+// sheet has a row per direction and a column per pose of its walk.
 
 const W = 480;
 const H = 320;
 /** Sprites are drawn at this size, in canvas units; the sheets have twice as many pixels. */
 const SIZE = 96;
 /** Where an object touches the ground, as a share of the cell's height. */
-const FOOT = { dog: 0.69, crate: 0.75, plant: 0.79, lamp: 0.9 };
+const FOOT = { dog: 0.75, crate: 0.75, plant: 0.79, lamp: 0.9 };
 const SPEED = 110;
+/** Poses of the walk shown per second. */
+const STEPS = 9;
 
 const canvas = document.getElementById('stage');
 canvas.width = W * 2;
@@ -24,15 +27,23 @@ function loadImage(src) {
   });
 }
 
-/** Reads a sheet as render_sprites writes it: frames in the order they turn. */
+/**
+ * Reads a sheet as render_sprites writes it: for each direction, in the
+ * order they turn, its poses in order. A sheet without poses has one each.
+ */
 async function loadSheet(name) {
   const [list, image] = await Promise.all([
     fetch(`${name}.json`).then((r) => r.json()),
     loadImage(`${name}.png`),
   ]);
-  const frames = Object.values(list.frames)
-    .sort((a, b) => a.turn - b.turn)
-    .map((f) => f.frame);
+  const byTurn = new Map();
+  for (const f of Object.values(list.frames)) {
+    if (!byTurn.has(f.turn)) byTurn.set(f.turn, []);
+    byTurn.get(f.turn).push(f);
+  }
+  const frames = [...byTurn.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, poses]) => poses.sort((a, b) => (a.pose ?? 0) - (b.pose ?? 0)).map((f) => f.frame));
   return { name, image, frames };
 }
 
@@ -41,7 +52,7 @@ const sheets = Object.fromEntries(
   (await Promise.all(names.map(loadSheet))).map((s) => [s.name, s]),
 );
 
-const dog = { sheet: sheets.dog, x: 240, y: 250, frame: 0, moving: false };
+const dog = { sheet: sheets.dog, x: 240, y: 250, frame: 0, moving: false, walked: 0 };
 const props = [
   { sheet: sheets.crate, x: 130, y: 150, frame: 1, radius: 20 },
   { sheet: sheets.plant, x: 330, y: 120, frame: 0, radius: 12 },
@@ -114,7 +125,11 @@ function step(dt) {
   }
   const length = Math.hypot(dx, dy);
   dog.moving = length > 0;
-  if (!dog.moving) return;
+  if (!dog.moving) {
+    dog.walked = 0;
+    return;
+  }
+  dog.walked += dt;
   dog.frame = facing(dx, dy);
   let x = dog.x + (dx / length) * SPEED * dt;
   let y = dog.y + (dy / length) * SPEED * dt;
@@ -129,13 +144,13 @@ function step(dt) {
       blocked = true;
     }
   }
-  dog.x = Math.min(W - 20, Math.max(20, x));
+  dog.x = Math.min(W - 34, Math.max(34, x));
   dog.y = Math.min(H - 8, Math.max(40, y));
   // A click behind a prop cannot be reached; give up when hardly moving.
   if (target && blocked && Math.hypot(target.x - dog.x, target.y - dog.y) < 40) target = null;
 }
 
-function draw(time) {
+function draw() {
   ctx.clearRect(0, 0, W, H);
   if (target) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
@@ -146,20 +161,17 @@ function draw(time) {
   // Painted from the back of the ground to the front, by where each stands.
   for (const item of [...props, dog].sort((a, b) => a.y - b.y)) {
     const { image, frames, name } = item.sheet;
-    const f = frames[item.frame];
-    const hop = item === dog && dog.moving ? Math.abs(Math.sin(time / 70)) * 3 : 0;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
-    ctx.beginPath();
-    ctx.ellipse(
-      item.x,
-      item.y,
-      (item.radius ?? 14) + 6,
-      ((item.radius ?? 14) + 6) / 2.4,
-      0,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fill();
+    const poses = frames[item.frame];
+    // Standing still is the first pose; walking plays them in turn.
+    const pose = item === dog && dog.moving ? Math.floor(dog.walked * STEPS) % poses.length : 0;
+    const f = poses[pose];
+    // The dog's scene has its own shadow; the props get one here.
+    if (item !== dog) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+      ctx.beginPath();
+      ctx.ellipse(item.x, item.y, item.radius + 6, (item.radius + 6) / 2.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.drawImage(
       image,
       f.x,
@@ -167,7 +179,7 @@ function draw(time) {
       f.w,
       f.h,
       item.x - SIZE / 2,
-      item.y - SIZE * FOOT[name] - hop,
+      item.y - SIZE * FOOT[name],
       SIZE,
       SIZE,
     );
@@ -178,7 +190,7 @@ let last = performance.now();
 function tick(now) {
   step(Math.min(0.05, (now - last) / 1000));
   last = now;
-  draw(now);
+  draw();
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
@@ -190,10 +202,15 @@ for (const name of names) {
   figure.className = 'sheet';
   const image = document.createElement('img');
   image.src = `${name}.png`;
-  image.alt = `The ${name} from eight directions`;
+  image.alt =
+    name === 'dog'
+      ? 'The dog from eight directions, one in each row, in the four poses of its walk'
+      : `The ${name} from eight directions`;
   image.loading = 'lazy';
   const caption = document.createElement('figcaption');
-  caption.innerHTML = `<code>${name}.png</code>, its <a href="${name}.json">frame list</a> and the <a href="${name}.scene.json">scene</a> it was drawn from.`;
+  const poses =
+    name === 'dog' ? ' and the <a href="dog.poses.json">four poses</a> of its walk' : '';
+  caption.innerHTML = `<code>${name}.png</code>, its <a href="${name}.json">frame list</a> and the <a href="${name}.scene.json">scene</a>${poses} it was drawn from.`;
   figure.append(image, caption);
   list.append(figure);
 }

@@ -20,32 +20,41 @@ const scene = z
     'The scene: an object with width, height and children (JSON text of the same is accepted). Call get_reference for the full format. Leave it out to use the scene from the last valid call.',
   );
 
+const change = z
+  .object({
+    op: z
+      .enum(['set', 'remove', 'insert', 'append', 'copy'])
+      .describe(
+        'set: put value at path, replacing what is there. remove: delete what is at path. insert: put value into a list before the item at path. append: add value to the end of the list at path. copy: add a copy of the shape at path to the end of the list it is in, with the keys of value (an object, such as a new id, translate, scale or color) put over the copy; the copy and the shapes inside it lose their ids.',
+      ),
+    path: z
+      .string()
+      .describe(
+        'Where, in the form the errors use: "children[2].color", "children[0].translate.y", "rotate". A shape that has an id can be named by it in place of counting: "#roof.color", "#tree.children[0].length", or "#tree" alone for the shape itself. For append, the list itself: "children" or "#tree.children".',
+      ),
+    value: z
+      .unknown()
+      .optional()
+      .describe('The new value. Not used by remove. For copy, what differs in the copy.'),
+  })
+  .strict();
+
 const changes = z
-  .array(
-    z
-      .object({
-        op: z
-          .enum(['set', 'remove', 'insert', 'append', 'copy'])
-          .describe(
-            'set: put value at path, replacing what is there. remove: delete what is at path. insert: put value into a list before the item at path. append: add value to the end of the list at path. copy: add a copy of the shape at path to the end of the list it is in, with the keys of value (an object, such as a new id, translate, scale or color) put over the copy; the copy and the shapes inside it lose their ids.',
-          ),
-        path: z
-          .string()
-          .describe(
-            'Where, in the form the errors use: "children[2].color", "children[0].translate.y", "rotate". A shape that has an id can be named by it in place of counting: "#roof.color", "#tree.children[0].length", or "#tree" alone for the shape itself. For append, the list itself: "children" or "#tree.children".',
-          ),
-        value: z
-          .unknown()
-          .optional()
-          .describe('The new value. Not used by remove. For copy, what differs in the copy.'),
-      })
-      .strict(),
-  )
+  .array(change)
   .min(1)
   .max(100)
   .optional()
   .describe(
     'Edits to the remembered scene (or to scene, when both are passed), applied in order, so that a small fix does not need the whole scene again. Example: [{ "op": "set", "path": "children[2].translate.y", "value": -30 }, { "op": "append", "path": "children", "value": { "type": "dot", "stroke": 8, "color": "#333" } }, { "op": "copy", "path": "#tree", "value": { "id": "tree2", "translate": { "x": 60 }, "scale": 0.7 } }]. After a remove or insert, later items in that list have a different index, so give shapes an id and use "#id" paths. If the result is not valid, nothing is changed.',
+  );
+
+const poses = z
+  .array(z.array(change).max(100))
+  .min(1)
+  .max(16)
+  .optional()
+  .describe(
+    'Poses of the scene, for a walk or any other motion: each pose is a list of changes, in the form of changes, applied to the scene on its own, and an empty list is the scene as it is. The sheet then has one row per direction and one column per pose. Give each part that moves an id and put it in a group at its joint, so that a pose only sets rotate: [[], [{ "op": "set", "path": "#leg-front.rotate", "value": { "x": 25 } }, { "op": "set", "path": "#leg-back.rotate", "value": { "x": -25 } }], [], [{ "op": "set", "path": "#leg-front.rotate", "value": { "x": -25 } }, { "op": "set", "path": "#leg-back.rotate", "value": { "x": 25 } }]]. Poses do not build on each other and are not remembered. At most 16, and at most 128 cells in all.',
   );
 
 const angle = z
@@ -182,7 +191,7 @@ export function createServer(): McpServer {
     'render_sprites',
     {
       title: 'Make a sprite sheet of a Zpup scene',
-      description: `Draws one scene from every side, turned in equal steps about its vertical axis, and lays the pictures out as one transparent PNG sprite sheet for a game: the same object in 4, 8 or 16 directions, all from one scene, so they agree with each other. With save_to it also writes the frame list next to the PNG as JSON, in the form TexturePacker writes (JSON hash) and Phaser, PixiJS and other engines read. Returns the sheet to look at. Every cell has the scene's own frame, so check that nothing is cut off as the object turns. Keep the scene's own view angle for the tilt: rotate x around -30 for a view from above. ${FORMAT_NOTE}`,
+      description: `Draws one scene from every side, turned in equal steps about its vertical axis, and lays the pictures out as one transparent PNG sprite sheet for a game: the same object in 4, 8 or 16 directions, all from one scene, so they agree with each other. With poses it draws every direction in every pose, for a walk cycle: one row per direction, one column per pose. With save_to it also writes the frame list next to the PNG as JSON, in the form TexturePacker writes (JSON hash) and Phaser, PixiJS and other engines read. Returns the sheet to look at. Every cell has the scene's own frame, so check that nothing is cut off as the object turns. Keep the scene's own view angle for the tilt: rotate x around -30 for a view from above. ${FORMAT_NOTE}`,
       inputSchema: {
         scene,
         changes,
@@ -205,7 +214,10 @@ export function createServer(): McpServer {
           .min(1)
           .max(32)
           .optional()
-          .describe('Cells per row. Default: all directions in one row, up to 8.'),
+          .describe(
+            'Cells per row. Default: all directions in one row, up to 8. Not used with poses, where a row is one direction.',
+          ),
+        poses,
         save_to: z
           .string()
           .optional()

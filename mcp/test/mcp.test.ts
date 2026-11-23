@@ -686,6 +686,111 @@ describe('mcp: sprite sheets', () => {
   });
 });
 
+describe('mcp: sprite sheets with poses', () => {
+  const leg = (id: string, x: number) => ({
+    type: 'group',
+    id,
+    translate: { x, y: 8 },
+    children: [{ type: 'path', path: [{}, { y: 14 }], stroke: 6, color: '#853' }],
+  });
+  const scene = {
+    width: 80,
+    height: 80,
+    rotate: { x: -30 },
+    children: [{ ...box, id: 'body' }, leg('front', 10), leg('back', -10)],
+  };
+  const swing = (angle: number) => [
+    { op: 'set' as const, path: '#front.rotate', value: { z: angle } },
+    { op: 'set' as const, path: '#back.rotate', value: { z: -angle } },
+  ];
+  const poses = [[], swing(25), swing(-25)];
+
+  it('draws a row per direction and a column per pose', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const path = join(dir, 'dog.png');
+    const result = await renderSprites({
+      scene,
+      poses,
+      directions: 4,
+      cell_size: 40,
+      save_to: path,
+    });
+    expect(result.isError).toBeUndefined();
+    expect(texts(result.content)[0]).toContain(
+      'Drew 4 directions of a 80x80 scene in 3 poses, each turned 90 degrees further about the vertical axis, as a sheet of 3 by 4 cells of 40x40 pixels (120x160 in all).',
+    );
+    const png = readFileSync(path);
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([120, 160]);
+    const list = JSON.parse(readFileSync(join(dir, 'dog.json'), 'utf8'));
+    expect(Object.keys(list.frames)).toHaveLength(12);
+    expect(list.frames['dog-2-1.png']).toMatchObject({
+      frame: { x: 40, y: 80, w: 40, h: 40 },
+      turn: 180,
+      pose: 1,
+    });
+    expect(list.animations['dog-3']).toEqual(['dog-3-0.png', 'dog-3-1.png', 'dog-3-2.png']);
+    expect(Object.keys(list.animations)).toHaveLength(4);
+  });
+
+  it('draws each pose from the scene, not from the pose before it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const cell = async (name: string, list: typeof poses) => {
+      const path = join(dir, `${name}.png`);
+      await renderSprites({ scene, poses: list, directions: 2, cell_size: 32, save_to: path });
+      return readFileSync(path);
+    };
+    // An empty pose after a changed one is the scene as written again, so
+    // the sheet is the same picture three times over in each row.
+    const still = await cell('still', [[], [], []]);
+    const mixed = await cell('mixed', [[], swing(25), []]);
+    expect(mixed.equals(still)).toBe(false);
+    const twice = await cell('twice', [[], swing(25), []]);
+    expect(twice.equals(mixed)).toBe(true);
+  });
+
+  it('does not remember a pose', async () => {
+    const memory: Memory = {};
+    await renderSprites({ scene, poses, directions: 2 }, memory);
+    expect(memory.scene).toEqual(scene);
+  });
+
+  it('names the pose whose change cannot be applied, and draws nothing', async () => {
+    const result = await renderSprites({
+      scene,
+      poses: [[], [{ op: 'set', path: '#tail.rotate', value: { z: 10 } }]],
+    });
+    expect(result.isError).toBe(true);
+    expect(texts(result.content)[0]).toMatch(/^poses\[1\]: .*no shape has the id "tail"/);
+    expect(images(result.content)).toHaveLength(0);
+  });
+
+  it('names the pose that makes the scene invalid', async () => {
+    const result = await renderSprites({
+      scene,
+      poses: [[{ op: 'set', path: '#front.rotate', value: { z: 'far' } }]],
+    });
+    expect(result.isError).toBe(true);
+    expect(texts(result.content)[0]).toContain(
+      "poses[0]: with this pose's changes the scene has 1 problem.",
+    );
+  });
+
+  it('says in which direction and pose the drawing is cut off', async () => {
+    const result = await renderSprites({
+      scene,
+      directions: 2,
+      poses: [[], [{ op: 'set', path: '#front.translate', value: { x: 60, y: 8 } }]],
+    });
+    expect(texts(result.content)[0]).toMatch(/Cut off in \d of 4 cells.*Direction \d, pose 1:/s);
+  });
+
+  it('refuses more cells than a sheet takes', async () => {
+    const result = await renderSprites({ scene, directions: 32, poses: [[], [], [], [], []] });
+    expect(result.isError).toBe(true);
+    expect(texts(result.content)[0]).toContain('is 160 cells');
+  });
+});
+
 describe('mcp: reference', () => {
   it('is the llms.txt that ships with the library', () => {
     const [reference] = texts(getReference().content);
