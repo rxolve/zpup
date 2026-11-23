@@ -1,23 +1,37 @@
 # Design decisions
 
-Short notes on the choices where there was a real fork in the road. Each has a status: **settled** (follows from the project goals) or **open** (a default was picked; easy to revisit before 1.0).
+Short notes on the choices where there was a real fork in the road. Each has a status:
+
+- **settled**: part of what 1.0 promises. It does not change within 1.x.
+- **may improve**: how a picture is worked out, not what a scene means. A later version may do it better, and the picture a scene produces can change with it.
+
+## What 1.0 promises
+
+Within 1.x:
+
+- A scene that is valid stays valid, and every option keeps its meaning and its default. Shapes and options may be added; none is renamed or removed.
+- The exported functions keep their names, arguments and options. An issue keeps its fields (`path`, `pathSegments`, `expected`, `received`, `detail`, `message`, `hint`).
+- The picture is not promised to the byte. A fix to depth sorting, shading or the turning animation can change the SVG a scene produces, in a minor version, and the changelog says so. Within one version the output is deterministic.
+- The wording of errors and warnings may change, and new warnings may be added. A scene never becomes invalid because of a new warning.
+
+Not planned for 1.x: perspective, lighting, textures, a text shape, clipping, and animation inside the SVG other than the constant turn. Motion in steps, such as a walk, is a set of still pictures: the MCP server draws a scene in several poses onto one sprite sheet, and the game plays them.
 
 ## Scene format
 
 **The scene is a plain JSON tree; helpers are optional sugar.** (settled)
 `group()`, `ellipse()` and friends only add a `type` field, as the first key, so their output serialized as JSON reads like a hand-written scene. Nothing is a class instance, so scenes can be generated, diffed, stored and sent over the wire. This is what "AI-friendly" means in practice.
 
-**Vectors are objects with optional keys, not arrays.** (open)
-`{ x: 10 }` is self-describing and partial; `[10, 0, 0]` is shorter but easy to get wrong. Accepting only one form keeps validation and error messages simple.
+**Vectors are objects with optional keys, not arrays.** (settled)
+`{ x: 10 }` is self-describing and partial; `[10, 0, 0]` is shorter but easy to get wrong. Accepting only one form keeps validation and error messages simple. An array is rejected with a message that shows the object form.
 
 **Unknown options are errors.** (settled)
 A typo such as `colour` fails with a "did you mean" hint instead of being silently ignored. All problems in a scene are reported at once.
 
-**Any node may have children.** (open)
+**Any node may have children.** (settled)
 A shape can carry children (eyes on a head) without a wrapping group. `group` is a node that draws nothing.
 
-**`path` is open by default; `rect`, `ellipse` and `polygon` are closed.** (open)
-Zdog closes paths by default. Open reads more naturally for "a line from A to B".
+**`path` is open by default; `rect`, `ellipse` and `polygon` are closed.** (settled)
+Zdog closes paths by default. Open reads more naturally for "a line from A to B". In the 76 scenes the benchmark has on record, 30 of 416 paths set `closed: true` and none set it to `false`, so the default is the common case.
 
 **Colors are validated CSS color strings.** (settled)
 Hex, functional notation, and named colors pass; anything else is rejected, and all text is escaped on output, so a scene from an untrusted source cannot inject markup. A bare word must be one of the 148 CSS color names, `transparent` or `currentColor` (in any case); `"blu"` is an error with "Did you mean "blue"?", where it used to pass and draw in the browser's default color. The names are the table the solid shading already needed, so checking them added about 1 KB (0.35 KB gzipped) of code.
@@ -28,10 +42,10 @@ Hex, functional notation, and named colors pass; anything else is rejected, and 
 **Option errors are validation errors.** (settled)
 `renderSvg`, `frameToSvg` and `renderSpinSvg` all report bad or unknown options as `ZpupValidationError` issues with paths such as `options.precision`, together with any scene problems, rather than as `RangeError`. One error type means one `catch` for everything a caller passed in.
 
-**A node with the wrong type is still checked.** (open)
+**A node with the wrong type is still checked.** (may improve)
 When the intended type is clear (`circle`, a typo such as `cilinder`, `cube`), the other options are checked as that type, but options it requires are not demanded, since they may have been meant under other names. When the node has to be written differently (`sphere`, `line`, `triangle`), only the options every node shares are checked, and the hint shows what to write. Either way one round of fixes should be enough, which matters for a language model repairing its own output.
 
-**Warnings are a separate function.** (open)
+**Warnings are a separate function.** (settled)
 `checkSceneWarnings` reports what is valid but probably unintended: angles that look like radians, shapes entirely outside the image (the usual sign of top-left coordinates), a scene that draws nothing, solids whose color cannot be shaded, and shapes of different colors that pass through each other. A severity field on `checkScene`'s issues would have broken every caller that reads "no issues" as "valid", including the benchmark's checker. The warnings use the same issue fields and message form. They are conservative: whole numbers never count as radians (`90`, `5`, `0`), one small angle on its own only counts when it is close to a common radian value such as π/4, and a shape only counts as off-screen when no part of it, stroke included, is inside the image.
 
 ## Coordinates and rotation
@@ -39,30 +53,32 @@ When the intended type is clear (`circle`, a typo such as `cilinder`, `cube`), t
 **x right, y down, z toward the viewer.** (settled)
 x and y match SVG, CSS and Zdog, so numbers mean the same thing as in the tools designers already use, and "larger z is closer" is easy to remember. The system is left-handed as a result.
 
-**Angles are in degrees.** (open)
+**Angles are in degrees.** (settled)
 `90` is exact and readable in JSON; `1.5707963` is neither. Zdog uses radians. Multiples of 90 degrees produce exact results.
 
-**Rotation order: z, then y, then x.** (open)
+**Rotation order: z, then y, then x.** (settled)
 The same order Zdog uses, so a view rotation of `{ x: -20, y: 30 }` spins the scene about its vertical axis and then tilts it, which is the turntable behavior people expect. Positive `z` is clockwise on screen, like CSS `rotate()`.
 
 **Node transform order: scale, rotate, translate.** (settled)
 The conventional order; children inherit the composed transform.
 
-**Stroke width scales with the node.** (open)
+**Stroke width scales with the node.** (settled)
 The factor is the cube root of the transform's determinant: exactly `s` for a uniform scale `s`, and a sensible average for non-uniform scale. Scene `zoom` scales strokes too.
 
 ## Solids
 
-**`box`, `cylinder`, `cone` and `hemisphere`, with Zdog's conventions.** (open)
+**`box`, `cylinder`, `cone` and `hemisphere`, with Zdog's conventions.** (settled)
 Option names follow the flat shapes (`diameter`, `width`, `height`, `color`, `stroke`) and Zdog (`length`, `frontFace`, `backface`, `rearFace`, `topFace` and so on), since language models write Zdog habits. Round solids point along local z, as in Zdog: a cylinder is centered with its `frontFace` at +z, a cone and a hemisphere have their flat side at z = 0 and point toward +z. `rotate: { x: 90 }` stands any of them up. Solids are always filled, so `fill: false` is rejected. A face option set to `false` leaves the face out, as in Zdog (see "A face can be left out" below).
 
-**`pyramid` stands up on its own, and `ridge` covers the roofs.** (open)
+The rear end of a round solid is `backface`, the word that on a flat shape says what it shows from behind, and a box calls the same side `rearFace`. This is Zdog's naming and it is kept: models that were given only the reference wrote `backface` on round solids and never `rearFace` (4 against 0 in the 76 scenes the benchmark has on record, too few to prove a habit, but nothing points the other way), and a `backface` on a box is answered with the name to use. The two meanings do not collide. On a flat shape `backface: false` hides the shape from behind; on a cylinder it leaves the rear end out, so from the front the cylinder looks as it did and from behind one looks into it. `true` is not accepted on a solid.
+
+**`pyramid` stands up on its own, and `ridge` covers the roofs.** (settled)
 Zdog has no pyramid, so there is no habit to follow. A pyramid is used almost only as a roof or a spire on top of a box, so it follows the box and not the cone: the base is in the x/z plane at y = 0 and the top is at y = -height, with no rotation needed. A model that drew a hut without it said the missing shape was "a pyramid or a wedge", which are one shape with a different top edge. `ridge` is the length of that edge along x: 0 is a point, the width is a gable roof or a wedge, and anything between is a hip roof. All of them are convex and have only flat faces, so they sort like a box.
 
-**A cone's tip can be cut off.** (open)
+**A cone's tip can be cut off.** (settled)
 `tipDiameter` on a `cone` is the diameter of its far end, 0 by default. It covers the lamp shade, pot, cup and bucket, and it may be larger than `diameter`, so the wide end can be either one. The cut cone is a convex solid: its side is the contour lines joined by the part of each rim whose side faces the viewer, as for a cylinder, and its depth is the same line-of-sight test as the cone's with a second radius.
 
-**A face can be left out, which opens the solid.** (open)
+**A face can be left out, which opens the solid.** (settled)
 Until 0.4.1 solids were always closed, and the reference told models to paint the far end of a cup darker. That reads as an opening only while the cup is empty: a pencil standing in it has to be in front of that dark face and behind the cup's side, and the side is painted before the face, so the three have no order. Models asked for a hollow shape in most sessions.
 
 A face option set to `false` leaves the face out. The solid stays convex, so along any line of sight its surface is crossed at most twice, and the farther crossing is always the inside. That gives one rule: **faces that turn away from the viewer are painted, in the inside color, before the faces that turn toward it.** A closed solid drops those faces because its other faces cover them; an open one keeps them, and they show wherever the opening lets them. Nothing has to be clipped: the part of a far wall that is not behind the opening is behind a near wall, which is painted later.
@@ -76,7 +92,7 @@ A face option set to `false` leaves the face out. The solid stays convex, so alo
 
 `inside` is the color of the inner side, shaded by direction like `color` (the floor of a box is lighter than its walls). Without it, `color` is taken a quarter of the way to black. The walls have no thickness, as in Zdog. Closed solids produce the same pieces as before; every example file is unchanged to the byte.
 
-**One color, fixed shades per face.** (open)
+**One color, fixed shades per face.** (may improve)
 With no lighting, a box in one color is a flat hexagon. So each face gets a lighter or darker version of `color` chosen by the direction the face points in the scene (after the node's own transforms, before the view): up is 25% toward white, down 30% toward black, and left and right are lighter and darker in proportion to how far they face sideways (up to 12%), so the two sides a box shows at any turn always differ. A round surface uses the direction perpendicular to its axis that faces most toward the front and slightly up, so an upright cylinder's side keeps `color` exactly and a cylinder pointing at the viewer gets a lighter side than its front end. This does not conflict with "no lighting": nothing depends on the view, a face keeps its color as the scene turns, and the result is the same as painting each face by hand. Near-white colors cannot get lighter and near-black ones cannot get darker, so for them the scale is moved and narrowed (the top of a white box stays white, the other faces get darker in half steps). Face options give a face an exact color, unshaded; `shade: false` paints every face in `color`. Colors that Zpup cannot parse (`currentColor`, `oklch()`) are drawn unshaded, with a warning.
 
 **Faces turned away are left out of the still picture but kept in the animation.** (settled)
@@ -87,7 +103,7 @@ A cylinder's side, a cone's side and a hemisphere's dome are not fixed outlines:
 
 When a cone's tip is inside its base on screen, there are no contour lines; the path runs to the tip and back along one line, which is covered by the same color. When the axis points straight at the viewer, the contour direction is undefined and a fixed fallback is used.
 
-**Round outlines get extra keyframes where they need them.** (open)
+**Round outlines get extra keyframes where they need them.** (may improve)
 The animation interpolates every coordinate in a straight line between keyframes. That is close for fixed 3D points (at most 0.38 pixels in the lighthouse with 36 keyframes) but not for an outline that is rebuilt from the view. So a round outline is checked at a quarter, half and three quarters of each interval, and the interval is split until the interpolated outline is within 0.5 pixels of the exact one (measured as the larger distance from any point of one outline to the other). Such a piece then gets its own `keyTimes`. Measured, with 36 keyframes and a full turn about y:
 
 | Scene                                       | Before splitting | After | Extra keyframes |
@@ -113,7 +129,7 @@ The side used to cover the whole silhouette, the end that faces the viewer inclu
 **A solid is in front of or behind whatever lies wholly outside one of its flat faces.** (settled)
 Two cylinders of one width stacked end to end have sides that share half a rim. Depth samples along that shared edge differ by rounding and by the half-pixel rounded edges, and the answer flipped at dozens of angles per turn. A solid lies on the inner side of each of its flat faces, so when the other shape (a whole solid, by its exact extent along the face's normal, or a flat shape or line, by its points and stroke) lies on the outer side of one, that plane separates them and the side the viewer is on decides, for every face of the solid at once. This also settles a detail that rests on a face.
 
-**Against a round surface, the larger share of the overlap wins.** (open)
+**Against a round surface, the larger share of the overlap wins.** (may improve)
 A flat detail on a round wall (a door on a tower) can be partly in front of the wall and partly behind it as it passes the wall's edge, where the wall's depth changes steeply; both parts are inside the overlap, so no single order is right. The order that is right for more of the area both cover (strokes included) wins, estimated on a 12 by 12 grid over the common bounds. Counting sample points instead flipped the door four times in the lighthouse, because most samples sat on the thin stroke at the edge.
 
 **Measured.** Over a full turn in half-degree steps, no overlapping pair flips back within 2 degrees in the lighthouse (34 pieces, 111 overlapping pairs), a mug with a handle touching its side and a saucer, a robot of seven boxes touching face to face, or (checked once, not kept as a test) a rocket with fins. The first three are regression tests.
@@ -132,7 +148,7 @@ These are what would turn Zpup into a weaker three.js. Orthographic projection i
 
 ## Depth sorting
 
-**Compare overlapping shapes where they overlap, then sort topologically.** (settled in approach, open in details)
+**Compare overlapping shapes where they overlap, then sort topologically.** (settled in approach; details may improve)
 Zdog sorts by one center point per shape, which flips the order of shapes that overlap away from their centers. Zpup instead:
 
 1. Flattens each shape to line segments in screen space.
@@ -141,16 +157,16 @@ Zdog sorts by one center point per shape, which flips the order of shapes that o
 
 Depth model: a round stroke is a tube and a single point is a sphere, so their surfaces bulge toward the viewer by the stroke radius; a filled area is a flat sheet at its plane. This lets a line or dot sit on a coplanar filled shape and still win.
 
-**A cycle is broken at the shape that loses the least area.** (open)
+**A cycle is broken at the shape that loses the least area.** (may improve)
 Shapes that pass through each other can each be in front of the next, all the way round, and then no order is right. Breaking the cycle at the shape with the lowest mean depth, as before, sometimes picked the worst place: a red band around a white tower (a wider, shorter cylinder on the same axis) came out with the tower painted over the band's whole front, 1,498 wrong pixels of a 400 by 400 picture. Now, for each shape in the cycle, the area where it is in front of the shapes that should go before it is measured on a grid, and the shape that would lose the least goes first. Only shapes in a cycle that waits for nothing outside itself are candidates (found with Tarjan's algorithm), so a shape that merely waits for the cycle is never painted early. The measuring only runs when a cycle exists.
 
-**Warn about shapes that pass through each other.** (open)
+**Warn about shapes that pass through each other.** (may improve)
 `checkSceneWarnings` looks at the scene from its own view and seven more turns about the vertical axis, and for each pair of pieces of different colors measures the area where one is in front and the area where the other is. The smaller of the two is wrong whichever is painted last. A pair of nodes is reported when that area reaches a thousandth of the image, with the area and the turn at which it shows most. Same colors are left alone: the wrong order cannot be seen there, and joints such as a leg entering a body are built that way on purpose. On the 48 scenes a small model wrote for the benchmark, the warning fires on 19, including 9 of the 10 whose turn error is above 1%. It is not sent back to the model in the benchmark: the other formats have nothing like it, so it would not be a fair comparison.
 
 **Sample points must lie inside the overlap, not on an edge.** (settled)
 A point on a filled area's outline is inside or outside it depending on rounding. A dot whose center sat just outside a filled area was once compared only at such points, so as the view turned the answer alternated between "dot in front" and "unclear", and "unclear" fell back to mean depth. In the turning pup this flipped the shadow over the paws 330 times per turn, mostly for half a degree at a time. The extra sample inside the area fixed it: over a full turn in half-degree steps, flips between overlapping pieces went from 370 to 40, every one of them a real change of sides, and a dense grid of depth samples agrees with every answer.
 
-**Unfilled outlines are sorted per segment.** (open)
+**Unfilled outlines are sorted per segment.** (may improve)
 Each line segment (and each half of a Bezier segment) is sorted on its own, and consecutive pieces that end up adjacent are joined back into one path. This lets a ring pass behind and in front of a sphere. The cost is that an outline can be emitted as several paths, which shows as darker joints if the color is translucent.
 
 **Known limits.** Filled shapes are never split, so shapes that intersect or weave through each other cannot be drawn correctly. The pairwise step is O(n²) in the number of pieces; fine for illustrations, not for thousands of shapes.
@@ -210,12 +226,12 @@ Zero-length stroked paths render inconsistently across SVG renderers.
 **A soft ball's gradient is centered toward the light.** (settled)
 The radial gradient's circle sits up and to the left of the ball's middle and reaches past it (`cx 0.4, cy 0.36, r 0.7`), so the edge facing the light stays near the ball's own color and only the far edge goes dark. Centered on the ball, it darkened the whole rim by the same amount; that read as roundness on a large ball, but a ball of 4 to 12 pixels showed as a dark ring around its color, and about 70% of every ball was darker than the color asked for. The cost is a weaker outline on the lit side against a background of a similar color.
 
-**Node ids are not emitted into the SVG.** (open)
-Ids would collide when several images share a page. A `data-` attribute or class hook can be added when animation needs it.
+**Node ids are not emitted into the SVG.** (settled)
+Ids would collide when several images share a page. A `data-` attribute or class hook can be added later, as an option that is off by default, without changing any existing output.
 
 ## Turning animation
 
-**`renderSpinSvg` animates geometry with SMIL and switches paint order in epochs.** (open in details)
+**`renderSpinSvg` animates geometry with SMIL and switches paint order in epochs.** (settled in approach; details may improve)
 The goal is a 3D illustration that moves inside a GitHub README, where scripts and CSS in SVG files are stripped or ignored but SMIL plays. How it works:
 
 1. Every piece (a filled shape, a face of a solid, a dot, or one segment of an outline) is defined once in `<defs>`. Its `d` (or `cx` and `cy` for a dot) is animated through keyframes at evenly spaced angles, 36 by default. Orthographic projection is affine, so a piece has the same path commands at every angle and only the numbers change; the browser interpolates linearly between keyframes. Round surfaces of solids keep their commands too but not their points, so they may get extra keyframes (see Solids).
