@@ -56,8 +56,19 @@ canvas:focus-visible {
   color: var(--soft);
   font-size: 0.9rem;
 }
+#sheets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 .sheet {
-  margin: 0 0 16px;
+  flex: 1 1 100%;
+  margin: 0;
+}
+/* A character's sheet is tall, a row for each direction, so they go side by side. */
+.sheet.posed {
+  flex: 1 1 150px;
+  max-width: 220px;
 }
 .sheet img {
   display: block;

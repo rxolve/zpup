@@ -1,0 +1,258 @@
+[
+  [
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -45
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 30
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 30
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -45
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 30
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": -24
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 30
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    }
+  ]
+]

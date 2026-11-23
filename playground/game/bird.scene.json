@@ -1,0 +1,187 @@
+{
+  "width": 120,
+  "height": 120,
+  "rotate": {
+    "x": -30
+  },
+  "shading": "soft",
+  "children": [
+    {
+      "type": "group",
+      "id": "bird",
+      "children": [
+        {
+          "type": "path",
+          "id": "body",
+          "path": [
+            {
+              "x": -8
+            },
+            {
+              "x": 8
+            }
+          ],
+          "stroke": 24,
+          "color": "#3f7fc9"
+        },
+        {
+          "type": "dot",
+          "id": "head",
+          "translate": {
+            "x": 15,
+            "y": -5
+          },
+          "stroke": 18,
+          "color": "#3f7fc9"
+        },
+        {
+          "type": "cone",
+          "id": "beak",
+          "translate": {
+            "x": 23,
+            "y": -4
+          },
+          "rotate": {
+            "y": 90
+          },
+          "diameter": 7,
+          "length": 8,
+          "color": "#f2a33a"
+        },
+        {
+          "type": "dot",
+          "id": "eyeL",
+          "translate": {
+            "x": 18,
+            "y": -8,
+            "z": 7.5
+          },
+          "stroke": 4,
+          "color": "#1b1b1b"
+        },
+        {
+          "type": "dot",
+          "id": "eyeR",
+          "translate": {
+            "x": 18,
+            "y": -8,
+            "z": -7.5
+          },
+          "stroke": 4,
+          "color": "#1b1b1b"
+        },
+        {
+          "type": "path",
+          "id": "tail",
+          "path": [
+            {
+              "x": -19,
+              "y": -1,
+              "z": 0
+            },
+            {
+              "x": -30,
+              "y": -3,
+              "z": -8
+            },
+            {
+              "x": -32,
+              "y": -3,
+              "z": 0
+            },
+            {
+              "x": -30,
+              "y": -3,
+              "z": 8
+            }
+          ],
+          "closed": true,
+          "fill": true,
+          "stroke": 3,
+          "color": "#1f4a85"
+        },
+        {
+          "type": "group",
+          "id": "wingL",
+          "translate": {
+            "x": 2,
+            "y": -4,
+            "z": 12
+          },
+          "children": [
+            {
+              "type": "path",
+              "path": [
+                {
+                  "x": 7,
+                  "z": 0
+                },
+                {
+                  "x": 4,
+                  "z": 18
+                },
+                {
+                  "x": -4,
+                  "z": 32
+                },
+                {
+                  "x": -10,
+                  "z": 22
+                },
+                {
+                  "x": -10,
+                  "z": 0
+                }
+              ],
+              "closed": true,
+              "fill": true,
+              "stroke": 2,
+              "color": "#1f4a85"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "wingR",
+          "translate": {
+            "x": 2,
+            "y": -4,
+            "z": -12
+          },
+          "children": [
+            {
+              "type": "path",
+              "path": [
+                {
+                  "x": 7,
+                  "z": 0
+                },
+                {
+                  "x": 4,
+                  "z": -18
+                },
+                {
+                  "x": -4,
+                  "z": -32
+                },
+                {
+                  "x": -10,
+                  "z": -22
+                },
+                {
+                  "x": -10,
+                  "z": 0
+                }
+              ],
+              "closed": true,
+              "fill": true,
+              "stroke": 2,
+              "color": "#1f4a85"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "zoom": 1.2
+}

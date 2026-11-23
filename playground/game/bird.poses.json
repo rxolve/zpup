@@ -1,0 +1,51 @@
+[
+  [
+    {
+      "op": "set",
+      "path": "#wingL.rotate",
+      "value": {
+        "x": 55
+      }
+    },
+    {
+      "op": "set",
+      "path": "#wingR.rotate",
+      "value": {
+        "x": -55
+      }
+    }
+  ],
+  [],
+  [
+    {
+      "op": "set",
+      "path": "#wingL.rotate",
+      "value": {
+        "x": -45
+      }
+    },
+    {
+      "op": "set",
+      "path": "#wingR.rotate",
+      "value": {
+        "x": 45
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#wingL.rotate",
+      "value": {
+        "x": 15
+      }
+    },
+    {
+      "op": "set",
+      "path": "#wingR.rotate",
+      "value": {
+        "x": -15
+      }
+    }
+  ]
+]

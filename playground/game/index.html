@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zpup: one scene, eight directions</title>
-<meta name="description" content="A dog and three props, each drawn by an AI model as one small 3D scene and turned into an 8-direction sprite sheet by Zpup.">
+<meta name="description" content="Five characters and three props, each written once by an AI model as a small 3D scene, and drawn by Zpup from eight directions and in every pose.">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="game.css">
 <script type="module" src="game.js"></script>
@@ -16,29 +16,37 @@
     Everything here was drawn by an AI model with
     <a href="https://github.com/rxolve/zpup">Zpup</a>: it wrote each object once, as a small 3D
     scene in JSON, and Zpup drew that scene from eight sides. The eight pictures cannot disagree,
-    because they are one object. The dog also walks: its four poses are changes to that one scene,
-    a few leg angles each, drawn from the same eight sides.
+    because they are one object.
+  </p>
+  <p>
+    The characters also move. A pose is a short list of changes to the scene, a few joint angles,
+    and every pose is drawn from the same eight sides: a dog and a robot that walk, a person
+    whose knees and elbows bend, a bird that flaps, and a cat that sits, crouches and jumps.
   </p>
 </header>
 
 <main>
-  <canvas id="stage" width="480" height="320" tabindex="0" aria-label="A dog you can walk around three props"></canvas>
+  <canvas id="stage" width="640" height="400" tabindex="0" aria-label="A dog you can walk among a person, a robot, a cat, a bird and three props"></canvas>
   <p class="keys">
     <b>Move:</b> arrow keys or WASD, or click where the dog should go.
     <b>Turn a prop:</b> click it.
+    <b>Make the cat jump:</b> click it, or walk up to it.
   </p>
 
   <h2>The sheets</h2>
   <p>
     Each is one PNG with a frame list beside it, as <code>render_sprites</code> writes them. The
-    same two files load in Phaser and PixiJS as they are. The scene is the JSON the model wrote.
+    same two files load in Phaser and PixiJS as they are. The scene and the poses are the JSON the
+    model wrote, each character in one session. A character's sheet has a row for each direction
+    and a column for each pose.
   </p>
   <div id="sheets"></div>
 
   <h2>What this is not</h2>
   <p>
-    The dog turns, it does not walk: there are no animation frames, only directions. Zpup is for
-    small props and things that turn, in one flat style.
+    The motion is in steps: each pose is a still picture, and this page plays them in turn. Nothing
+    is drawn between two poses. There are no textures and no perspective, and the look is one flat
+    style. The game around the sprites, the paths and the timing, was written by hand.
   </p>
 </main>
 </body>

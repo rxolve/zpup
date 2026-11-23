@@ -1,0 +1,364 @@
+{
+  "width": 110,
+  "height": 110,
+  "rotate": {
+    "x": -30
+  },
+  "children": [
+    {
+      "type": "group",
+      "id": "world",
+      "translate": {
+        "y": 8
+      },
+      "children": [
+        {
+          "type": "ellipse",
+          "id": "shadow",
+          "width": 44,
+          "height": 22,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": 24
+          },
+          "fill": true,
+          "stroke": 0,
+          "color": "rgba(0,0,0,0.25)"
+        },
+        {
+          "type": "group",
+          "id": "cat",
+          "translate": {
+            "x": -10
+          },
+          "children": [
+            {
+              "type": "group",
+              "id": "hip",
+              "children": [
+                {
+                  "type": "group",
+                  "id": "thighL",
+                  "translate": {
+                    "z": 5
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "path": [
+                        {},
+                        {
+                          "y": 11
+                        }
+                      ],
+                      "stroke": 7,
+                      "color": "#e8923a"
+                    },
+                    {
+                      "type": "group",
+                      "id": "shinL",
+                      "translate": {
+                        "y": 11
+                      },
+                      "children": [
+                        {
+                          "type": "path",
+                          "path": [
+                            {},
+                            {
+                              "y": 10
+                            }
+                          ],
+                          "stroke": 6,
+                          "color": "#e8923a"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "group",
+                  "id": "thighR",
+                  "translate": {
+                    "z": -5
+                  },
+                  "children": [
+                    {
+                      "type": "path",
+                      "path": [
+                        {},
+                        {
+                          "y": 11
+                        }
+                      ],
+                      "stroke": 7,
+                      "color": "#e8923a"
+                    },
+                    {
+                      "type": "group",
+                      "id": "shinR",
+                      "translate": {
+                        "y": 11
+                      },
+                      "children": [
+                        {
+                          "type": "path",
+                          "path": [
+                            {},
+                            {
+                              "y": 10
+                            }
+                          ],
+                          "stroke": 6,
+                          "color": "#e8923a"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "group",
+                  "id": "torso",
+                  "children": [
+                    {
+                      "type": "path",
+                      "id": "body",
+                      "path": [
+                        {},
+                        {
+                          "x": 22
+                        }
+                      ],
+                      "stroke": 16,
+                      "color": "#e8923a"
+                    },
+                    {
+                      "type": "group",
+                      "id": "tail",
+                      "translate": {
+                        "x": -4,
+                        "y": -3
+                      },
+                      "children": [
+                        {
+                          "type": "path",
+                          "path": [
+                            {},
+                            {
+                              "bezier": [
+                                {
+                                  "x": -10
+                                },
+                                {
+                                  "x": -16,
+                                  "y": -6
+                                },
+                                {
+                                  "x": -16,
+                                  "y": -18
+                                }
+                              ]
+                            }
+                          ],
+                          "stroke": 4,
+                          "color": "#e8923a"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "group",
+                      "id": "legFL",
+                      "translate": {
+                        "x": 22,
+                        "z": 5
+                      },
+                      "children": [
+                        {
+                          "type": "path",
+                          "path": [
+                            {},
+                            {
+                              "y": 10
+                            }
+                          ],
+                          "stroke": 6,
+                          "color": "#e8923a"
+                        },
+                        {
+                          "type": "group",
+                          "id": "foreFL",
+                          "translate": {
+                            "y": 10
+                          },
+                          "children": [
+                            {
+                              "type": "path",
+                              "path": [
+                                {},
+                                {
+                                  "y": 11
+                                }
+                              ],
+                              "stroke": 6,
+                              "color": "#e8923a"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "group",
+                      "id": "legFR",
+                      "translate": {
+                        "x": 22,
+                        "z": -5
+                      },
+                      "children": [
+                        {
+                          "type": "path",
+                          "path": [
+                            {},
+                            {
+                              "y": 10
+                            }
+                          ],
+                          "stroke": 6,
+                          "color": "#e8923a"
+                        },
+                        {
+                          "type": "group",
+                          "id": "foreFR",
+                          "translate": {
+                            "y": 10
+                          },
+                          "children": [
+                            {
+                              "type": "path",
+                              "path": [
+                                {},
+                                {
+                                  "y": 11
+                                }
+                              ],
+                              "stroke": 6,
+                              "color": "#e8923a"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "group",
+                      "id": "head",
+                      "translate": {
+                        "x": 28,
+                        "y": -9
+                      },
+                      "children": [
+                        {
+                          "type": "dot",
+                          "stroke": 17,
+                          "color": "#e8923a"
+                        },
+                        {
+                          "type": "dot",
+                          "translate": {
+                            "x": 5,
+                            "y": 2.5
+                          },
+                          "stroke": 9,
+                          "color": "#e8923a"
+                        },
+                        {
+                          "type": "cone",
+                          "diameter": 6,
+                          "length": 7,
+                          "rotate": {
+                            "x": 75
+                          },
+                          "translate": {
+                            "x": -1,
+                            "y": -6,
+                            "z": 4.5
+                          },
+                          "color": "#e8923a"
+                        },
+                        {
+                          "type": "cone",
+                          "diameter": 6,
+                          "length": 7,
+                          "rotate": {
+                            "x": 105
+                          },
+                          "translate": {
+                            "x": -1,
+                            "y": -6,
+                            "z": -4.5
+                          },
+                          "color": "#e8923a"
+                        },
+                        {
+                          "type": "group",
+                          "rotate": {
+                            "x": -15,
+                            "y": 62
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "translate": {
+                                "z": 8.6
+                              },
+                              "width": 2.6,
+                              "height": 3.6,
+                              "fill": true,
+                              "stroke": 0,
+                              "color": "#222",
+                              "backface": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "group",
+                          "rotate": {
+                            "x": -15,
+                            "y": 118
+                          },
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "translate": {
+                                "z": 8.6
+                              },
+                              "width": 2.6,
+                              "height": 3.6,
+                              "fill": true,
+                              "stroke": 0,
+                              "color": "#222",
+                              "backface": false
+                            }
+                          ]
+                        },
+                        {
+                          "type": "dot",
+                          "translate": {
+                            "x": 9.6,
+                            "y": 1.6
+                          },
+                          "stroke": 2.6,
+                          "color": "#e57"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
