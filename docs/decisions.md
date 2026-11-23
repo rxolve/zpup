@@ -10,7 +10,7 @@ Short notes on the choices where there was a real fork in the road. Each has a s
 Within 1.x:
 
 - A scene that is valid stays valid, and every option keeps its meaning and its default. Shapes and options may be added; none is renamed or removed.
-- The exported functions keep their names, arguments and options. An issue keeps its fields (`path`, `pathSegments`, `expected`, `received`, `detail`, `message`, `hint`).
+- The exported functions keep their names, arguments and options. A `Frame` from `compileScene` keeps its fields; which items it holds for a scene, and in what order, is part of how the picture is worked out. An issue keeps its fields (`path`, `pathSegments`, `expected`, `received`, `detail`, `message`, `hint`).
 - The picture is not promised to the byte. A fix to depth sorting, shading or the turning animation can change the SVG a scene produces, in a minor version, and the changelog says so. Within one version the output is deterministic.
 - The wording of errors and warnings may change, and new warnings may be added. A scene never becomes invalid because of a new warning.
 
@@ -260,7 +260,7 @@ A flipbook also jumps from frame to frame, while the keyframed version moves smo
 
 **One level of `<use>` only.** Each piece is defined once and placed with `<use>` in every paint order. A piece that soft shading paints as several shapes (a tube's layered strokes, or a tilted round side drawn once per gradient) repeats its moving outline in each of them. Sharing one outline through a second `<use>` would be smaller, and Chrome and Firefox draw it, but WebKit does not redraw a moving shape reached through two levels of `<use>`: in Safari the tubes stood still while the rest turned. The cost is size: the soft pup's turning picture is 87 KB instead of 48 KB.
 
-**Browsers.** The example pictures were compared in Chromium 141, WebKit 26 (Safari's engine) and Firefox 142, still and turning; they draw the same. The soft pup turning ran at about 22 frames a second in headless Firefox, where every other picture kept the full rate: many gradients moving at once are slow there.
+**Browsers.** The example pictures were compared in Chromium 141, WebKit 26 (Safari's engine) and Firefox 142, still and turning; they draw the same. The one place a turning file switches single paths with `visibility` (a tilted round side under soft shading, drawn once per gradient) was checked on its own in the three engines: paused at 12 moments of a turn, each such group showed exactly one of its outlines, and Firefox differed from Chromium in no pixel, WebKit in 2 of 40,000. The soft pup turning ran at about 22 frames a second in headless Firefox, where every other picture kept the full rate: many gradients moving at once are slow there.
 
 **Possible size reduction, not done.** The `<use>` lists are about a quarter of the file (722 references for the pup). Adjacent epochs usually differ by one swapped pair, so one sequence of references that contains every epoch's order as a subsequence (a common supersequence) would need only about 75 references for the pup. Each reference that is not always visible would then need its own visibility animation, roughly 100 bytes each, so the raw saving would be around 6 KB and the gzipped saving smaller, since the repeated lists compress well. Not worth the extra complexity yet.
 

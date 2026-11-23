@@ -21,6 +21,7 @@ export {
   type PathItem,
 } from './compile.ts';
 export { type IssuePathSegment, type ValidationIssue, ZpupValidationError } from './errors.ts';
+export type { SoftKind } from './shading.ts';
 export { renderSpinSvg, type SpinOptions } from './spin.ts';
 export { frameToSvg, renderSvg, type SvgOptions } from './svg.ts';
 export type {

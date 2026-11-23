@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased (1.0.0)
+
+The scene format and the exported functions are now stable. Nothing in the format changed since 0.5.0: a scene that was valid there is valid here and draws the same.
+
+- [docs/decisions.md](docs/decisions.md) says what 1.x keeps (the format, every option's meaning and default, the exported functions, the fields of an issue and of a `Frame`) and what may still get better (depth sorting, shading, the turning animation, the wording of messages), and no decision in it is left open.
+- The type `SoftKind`, which `DotItem` and `PathItem` already used, is exported.
+- Checked: a turning SVG with soft shading switches the outlines of a tilted round side one at a time in Chromium, WebKit and Firefox.
+
 ## 0.5.0
 
 Added
