@@ -48,6 +48,7 @@ export interface Memory {
 export interface RenderSceneArgs {
   scene?: unknown;
   changes?: Change[] | undefined;
+  pose?: Change[] | undefined;
   views?: View[] | undefined;
   svg?: boolean | undefined;
   preview_size?: number | undefined;
@@ -73,6 +74,8 @@ export interface RenderSpritesArgs {
   cell_size?: number | undefined;
   columns?: number | undefined;
   poses?: Change[][] | undefined;
+  fit?: boolean | undefined;
+  preview_direction?: number | undefined;
   save_to?: string | undefined;
 }
 
@@ -182,6 +185,33 @@ function kb(chars: number): string {
  * by their control points, which is at most a little generous.
  */
 export function framing(scene: Scene): string {
+  const box = bounds(scene);
+  if (!box) return 'Nothing is drawn.';
+  const { minX, maxX, minY, maxY } = box;
+  const sides = [
+    ['left', minX],
+    ['right', scene.width - maxX],
+    ['top', minY],
+    ['bottom', scene.height - maxY],
+  ] as const;
+  const margins = sides.map(([name, space]) => `${name} ${Math.round(space)}`).join(', ');
+  const cut = sides.filter(([, space]) => space < -0.5);
+  const cutText =
+    cut.length === 0
+      ? ''
+      : ` It is cut off at the ${cut.map(([name, space]) => `${name} by ${Math.round(-space)}`).join(' and the ')}.`;
+  return `Space around the drawing, in pixels: ${margins}.${cutText}`;
+}
+
+interface Box {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+/** The part of the image a scene draws on, strokes included, or nothing when it draws nothing. */
+function bounds(scene: Scene): Box | undefined {
   const frame = compileScene(scene);
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
@@ -208,20 +238,7 @@ export function framing(scene: Scene): string {
       reach(c.x, c.y, r);
     }
   }
-  if (minX > maxX) return 'Nothing is drawn.';
-  const sides = [
-    ['left', minX],
-    ['right', frame.width - maxX],
-    ['top', minY],
-    ['bottom', frame.height - maxY],
-  ] as const;
-  const margins = sides.map(([name, space]) => `${name} ${Math.round(space)}`).join(', ');
-  const cut = sides.filter(([, space]) => space < -0.5);
-  const cutText =
-    cut.length === 0
-      ? ''
-      : ` It is cut off at the ${cut.map(([name, space]) => `${name} by ${Math.round(-space)}`).join(' and the ')}.`;
-  return `Space around the drawing, in pixels: ${margins}.${cutText}`;
+  return minX > maxX ? undefined : { minX, maxX, minY, maxY };
 }
 
 function viewLabel(v: View): string {
@@ -289,7 +306,11 @@ export function renderScene(args: RenderSceneArgs, memory: Memory = {}): Promise
     const found = resolve(args, memory);
     if ('error' in found) return found.error;
 
-    const base = found.scene;
+    const pose = args.pose ?? [];
+    const inPose =
+      pose.length > 0 ? posed(found.scene, [pose], () => 'pose') : { scenes: [found.scene] };
+    if ('error' in inPose) return inPose.error;
+    const base = inPose.scenes[0] as Scene;
     const views = args.views;
     const scenes: Scene[] = views
       ? views.map((v) => ({ ...base, rotate: { x: v.x ?? 0, y: v.y ?? 0, z: v.z ?? 0 } }))
@@ -316,6 +337,9 @@ export function renderScene(args: RenderSceneArgs, memory: Memory = {}): Promise
 
     const count = svgs.length === 1 ? '1 view' : `${svgs.length} views`;
     let summary = `${found.note}Drew ${count} of a ${base.width}x${base.height} scene. SVG: ${kb(total)} in all.`;
+    if (pose.length > 0) {
+      summary += `\nDrawn in a pose of ${pose.length === 1 ? '1 change' : `${pose.length} changes`}, which was not remembered: the remembered scene is the scene without it.`;
+    }
     if (saved.length > 0) summary += `\nSaved: ${saved.join(', ')}`;
     if (wantSvg && !inline) {
       summary += `\nThe SVG is too long to send back here (over ${kb(INLINE_SVG_LIMIT)}). Pass save_to to write it to a file.`;
@@ -363,6 +387,60 @@ function turned(scene: Scene, turn: number): Scene {
   return { ...scene, rotate: { ...rotate, y: (rotate.y ?? 0) + turn } };
 }
 
+/** A scene's SVG as a panel of a larger one: placed, sized, and showing `viewBox` of it when given. */
+function panel(svg: string, x: number, y: number, w: number, h: number, viewBox?: string): string {
+  const placed = svg.replace(
+    /^<svg ([^>]*?)width="[^"]*" height="[^"]*"/,
+    `<svg x="${x}" y="${y}" $1width="${w}" height="${h}"`,
+  );
+  return viewBox === undefined
+    ? placed
+    : placed.replace(/ viewBox="[^"]*"/, ` viewBox="${viewBox}"`);
+}
+
+/** How much of the cell a fitted drawing is given: the rest is a margin on each side. */
+const FIT_FILL = 0.94;
+
+/**
+ * The part of the scene that holds the drawing in every cell, with the
+ * proportions of the scene, so that one frame fits all of them.
+ */
+function fitBox(scenes: readonly Scene[], cells: readonly Cell[], base: Scene): Box | undefined {
+  let all: Box | undefined;
+  for (const cell of cells) {
+    const box = bounds(turned(scenes[cell.pose] as Scene, cell.turn));
+    if (!box) continue;
+    all = all
+      ? {
+          minX: Math.min(all.minX, box.minX),
+          maxX: Math.max(all.maxX, box.maxX),
+          minY: Math.min(all.minY, box.minY),
+          maxY: Math.max(all.maxY, box.maxY),
+        }
+      : box;
+  }
+  if (!all) return undefined;
+  const aspect = base.width / base.height;
+  const wide = (all.maxX - all.minX) / FIT_FILL;
+  const tall = (all.maxY - all.minY) / FIT_FILL;
+  const width = Math.max(wide, tall * aspect, 1e-6);
+  const height = width / aspect;
+  const cx = (all.minX + all.maxX) / 2;
+  const cy = (all.minY + all.maxY) / 2;
+  return {
+    minX: cx - width / 2,
+    maxX: cx + width / 2,
+    minY: cy - height / 2,
+    maxY: cy + height / 2,
+  };
+}
+
+const two = (v: number): number => Math.round(v * 100) / 100;
+
+/** The longer side of one cell of the strip a preview_direction asks for, and of the strip. */
+const STRIP_CELL = 384;
+const STRIP_MAX = 1536;
+
 /**
  * Every cell's scene drawn at its angle, laid out in a grid of cells of `w`
  * by `h` pixels. `scenes` has one scene per pose.
@@ -374,13 +452,11 @@ function sheetSvg(
   h: number,
   width: number,
   height: number,
+  viewBox?: string,
 ): string {
   const plain = scenes.map(({ title: _title, background: _background, ...rest }) => rest as Scene);
   const panels = cells.map((cell) =>
-    renderSvg(turned(plain[cell.pose] as Scene, cell.turn)).replace(
-      /^<svg ([^>]*?)width="[^"]*" height="[^"]*"/,
-      `<svg x="${cell.x}" y="${cell.y}" $1width="${w}" height="${h}"`,
-    ),
+    panel(renderSvg(turned(plain[cell.pose] as Scene, cell.turn)), cell.x, cell.y, w, h, viewBox),
   );
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n${panels.join('\n')}\n</svg>\n`;
 }
@@ -392,6 +468,7 @@ function sheetSvg(
 function posed(
   base: Scene,
   poses: readonly Change[][],
+  label: (i: number) => string = (i) => `poses[${i}]`,
 ): { scenes: Scene[] } | { error: ToolResult } {
   const scenes: Scene[] = [];
   for (const [i, changes] of poses.entries()) {
@@ -406,7 +483,7 @@ function posed(
       if (!(e instanceof ChangeError)) throw e;
       return {
         error: failure(
-          `poses[${i}]: ${e.message}\nNothing was drawn. The remembered scene is the scene without poses.`,
+          `${label(i)}: ${e.message}\nNothing was drawn. The remembered scene is as it was, without the pose.`,
         ),
       };
     }
@@ -415,7 +492,7 @@ function posed(
       const n = issues.length === 1 ? '1 problem' : `${issues.length} problems`;
       return {
         error: failure(
-          `poses[${i}]: with this pose's changes the scene has ${n}. Nothing was drawn. The remembered scene is the scene without poses.\n\n${list(issues)}`,
+          `${label(i)}: with this pose's changes the scene has ${n}. Nothing was drawn. The remembered scene is as it was, without the pose.\n\n${list(issues)}`,
         ),
       };
     }
@@ -483,7 +560,28 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
     }
     const width = w * columns;
     const height = h * rows;
-    const svg = sheetSvg(scenes, cells, w, h, width, height);
+    const look =
+      args.preview_direction === undefined ? undefined : Math.round(args.preview_direction);
+    if (look !== undefined && (look < 0 || look >= count)) {
+      return failure(
+        `preview_direction: expected a direction from 0 to ${count - 1}, received ${args.preview_direction}.`,
+      );
+    }
+    const fitted = args.fit === true ? fitBox(scenes, cells, base) : undefined;
+    const viewBox = fitted
+      ? [fitted.minX, fitted.minY, fitted.maxX - fitted.minX, fitted.maxY - fitted.minY]
+          .map(two)
+          .join(' ')
+      : undefined;
+    // Where the middle of the scene, its origin, is in a cell, in pixels.
+    const zoomed = fitted ? base.width / (fitted.maxX - fitted.minX) : 1;
+    const origin = fitted
+      ? {
+          x: two((base.width / 2 - fitted.minX) * zoomed * (w / base.width)),
+          y: two((base.height / 2 - fitted.minY) * zoomed * (h / base.height)),
+        }
+      : { x: w / 2, y: h / 2 };
+    const svg = sheetSvg(scenes, cells, w, h, width, height, viewBox);
 
     const saved: string[] = [];
     if (args.save_to !== undefined) {
@@ -520,6 +618,7 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
         format: 'RGBA8888',
         size: { w: width, h: height },
         scale: '1',
+        origin,
       };
       const json = `${args.save_to.slice(0, -4)}.json`;
       await save(args.save_to, svgToExactPng(svg));
@@ -540,13 +639,18 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
       summary +=
         '\nThe scene has a background, which is left out of the sheet so that the sprites are transparent.';
     }
+    if (fitted) {
+      summary += `\nFitted: every cell shows the same part of the scene, ${formatTurn(zoomed)} times its size, so that the drawing fills the cell where it reaches furthest. The middle of the scene is at ${origin.x}, ${origin.y} in each cell (meta.origin in the frame list).`;
+    }
     const where = (cell: Cell): string =>
       hasPoses ? `Direction ${cell.direction}, pose ${cell.pose}` : `Cell ${cell.direction}`;
-    const cut = cells
-      .map((cell) => ({ cell, note: framing(turned(scenes[cell.pose] as Scene, cell.turn)) }))
-      .filter((c) => c.note.includes('cut off'));
+    const cut = fitted
+      ? []
+      : cells
+          .map((cell) => ({ cell, note: framing(turned(scenes[cell.pose] as Scene, cell.turn)) }))
+          .filter((c) => c.note.includes('cut off'));
     if (cut.length > 0) {
-      summary += `\nCut off in ${cut.length} of ${cells.length} cells, which share one frame so that the sprite does not jump between ${hasPoses ? 'directions or poses' : 'directions'}. Make the scene larger (width and height) or the drawing smaller (zoom). ${cut
+      summary += `\nCut off in ${cut.length} of ${cells.length} cells, which share one frame so that the sprite does not jump between ${hasPoses ? 'directions or poses' : 'directions'}. Pass fit: true to have the frame set for you, or make the scene larger (width and height) or the drawing smaller (zoom). ${cut
         .slice(0, 3)
         .map((c) => `${where(c.cell)}: ${c.note}`)
         .join(' ')}`;
@@ -557,12 +661,40 @@ export function renderSprites(args: RenderSpritesArgs, memory: Memory = {}): Pro
       size: Math.min(SHEET_PREVIEW, Math.max(width, height)),
       backdrop: true,
     });
-    return {
-      content: [
-        text(summary),
-        { type: 'image', data: preview.toString('base64'), mimeType: 'image/png' },
-      ],
-    };
+    const content: Content[] = [
+      text(summary),
+      { type: 'image', data: preview.toString('base64'), mimeType: 'image/png' },
+    ];
+    if (look !== undefined) {
+      // One direction on its own, larger, to judge the motion from pose to pose.
+      const row = cells.filter((cell) => cell.direction === look);
+      const side = Math.min(STRIP_CELL, Math.floor(STRIP_MAX / row.length));
+      const ratio = side / Math.max(base.width, base.height);
+      const sw = Math.max(1, Math.round(base.width * ratio));
+      const sh = Math.max(1, Math.round(base.height * ratio));
+      const strip = sheetSvg(
+        scenes,
+        row.map((cell, i) => ({ ...cell, x: i * sw, y: 0 })),
+        sw,
+        sh,
+        sw * row.length,
+        sh,
+        viewBox,
+      );
+      content.push(
+        text(
+          `Direction ${look}, turned ${formatTurn((360 * look) / count)} degrees, ${hasPoses ? `its ${row.length} poses from left to right` : 'on its own'}, at ${sw}x${sh} pixels each:`,
+        ),
+        {
+          type: 'image',
+          data: svgToPng(strip, { size: Math.max(sw * row.length, sh), backdrop: true }).toString(
+            'base64',
+          ),
+          mimeType: 'image/png',
+        },
+      );
+    }
+    return { content };
   });
 }
 

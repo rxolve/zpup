@@ -791,6 +791,125 @@ describe('mcp: sprite sheets with poses', () => {
   });
 });
 
+describe('mcp: sprite sheets that fit, and a closer look', () => {
+  const ball = {
+    width: 100,
+    height: 100,
+    children: [{ type: 'dot', id: 'ball', stroke: 20, color: '#e62' }],
+  };
+
+  it('enlarges a small drawing to fill the cell and says where the middle is', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const path = join(dir, 'ball.png');
+    const result = await renderSprites({ scene: ball, directions: 4, fit: true, save_to: path });
+    // The ball is 20 across and is given 94% of the cell: 100 / (20 / 0.94).
+    expect(texts(result.content)[0]).toContain(
+      'Fitted: every cell shows the same part of the scene, 4.7 times its size',
+    );
+    const list = JSON.parse(readFileSync(join(dir, 'ball.json'), 'utf8'));
+    expect(list.meta.origin).toEqual({ x: 64, y: 64 });
+    const plain = join(dir, 'plain.png');
+    await renderSprites({ scene: ball, directions: 4, save_to: plain });
+    expect(readFileSync(path).equals(readFileSync(plain))).toBe(false);
+    expect(JSON.parse(readFileSync(join(dir, 'plain.json'), 'utf8')).meta.origin).toEqual({
+      x: 64,
+      y: 64,
+    });
+  });
+
+  it('fits a drawing that would be cut off, and one that is off the middle', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const wide = {
+      width: 60,
+      height: 60,
+      children: [{ type: 'box', width: 20, height: 20, depth: 90, color: '#e62' }],
+    };
+    const cut = await renderSprites({ scene: wide, directions: 4 });
+    expect(texts(cut.content)[0]).toContain('Pass fit: true to have the frame set for you');
+    const fitted = await renderSprites({ scene: wide, directions: 4, fit: true });
+    expect(texts(fitted.content)[0]).not.toContain('Cut off');
+    expect(texts(fitted.content)[0]).toMatch(/0\.\d+ times its size/);
+
+    // A ball 30 below the middle, from every side: the frame follows it, so
+    // the middle of the scene is above the cell, 30 times 4.7 from its middle.
+    const aside = { ...ball, children: [{ ...ball.children[0], translate: { y: 30 } }] };
+    const path = join(dir, 'aside.png');
+    await renderSprites({ scene: aside, directions: 2, fit: true, save_to: path });
+    const { origin } = JSON.parse(readFileSync(join(dir, 'aside.json'), 'utf8')).meta;
+    expect(origin.x).toBe(64);
+    expect(origin.y).toBeCloseTo(64 - 30 * 4.7 * 1.28, 1);
+  });
+
+  it('keeps one frame for every pose', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zpup-mcp-'));
+    const path = join(dir, 'hop.png');
+    const up = [{ op: 'set' as const, path: '#ball.translate', value: { y: -30 } }];
+    const result = await renderSprites({
+      scene: ball,
+      poses: [[], up],
+      directions: 2,
+      fit: true,
+      save_to: path,
+    });
+    // The two poses span 50 from top to bottom, so the ball is not enlarged
+    // to the 4.7 times it would get alone, and it sits low in the frame.
+    expect(texts(result.content)[0]).toContain('1.88 times its size');
+    const { origin } = JSON.parse(readFileSync(join(dir, 'hop.json'), 'utf8')).meta;
+    expect(origin.x).toBe(64);
+    expect(origin.y).toBeGreaterThan(64);
+  });
+
+  it('sends one direction back larger, pose by pose', async () => {
+    const up = [{ op: 'set' as const, path: '#ball.translate', value: { y: -30 } }];
+    const result = await renderSprites({
+      scene: ball,
+      poses: [[], up, []],
+      directions: 4,
+      preview_direction: 1,
+    });
+    expect(images(result.content)).toHaveLength(2);
+    expect(texts(result.content)[1]).toBe(
+      'Direction 1, turned 90 degrees, its 3 poses from left to right, at 384x384 pixels each:',
+    );
+    const strip = images(result.content)[1] as Buffer;
+    expect([strip.readUInt32BE(16), strip.readUInt32BE(20)]).toEqual([1152, 384]);
+    const none = await renderSprites({ scene: ball, directions: 4, preview_direction: 4 });
+    expect(none.isError).toBe(true);
+    expect(texts(none.content)[0]).toContain('expected a direction from 0 to 3');
+  });
+});
+
+describe('mcp: a pose in render_scene', () => {
+  const scene = {
+    width: 100,
+    height: 100,
+    children: [{ type: 'dot', id: 'ball', stroke: 20, color: '#e62' }],
+  };
+  const up = [{ op: 'set' as const, path: '#ball.translate', value: { y: -30 } }];
+
+  it('draws the pose and does not remember it', async () => {
+    const memory: Memory = {};
+    const still = await renderScene({ scene }, memory);
+    const posed = await renderScene({ pose: up }, memory);
+    expect(texts(posed.content)[0]).toContain(
+      'Drawn in a pose of 1 change, which was not remembered',
+    );
+    expect(images(posed.content)[0]?.equals(images(still.content)[0] as Buffer)).toBe(false);
+    expect(memory.scene).toEqual(scene);
+    const again = await renderScene({}, memory);
+    expect(images(again.content)[0]?.equals(images(still.content)[0] as Buffer)).toBe(true);
+  });
+
+  it('names the pose when its change cannot be applied', async () => {
+    const result = await renderScene({
+      scene,
+      pose: [{ op: 'set', path: '#tail.rotate', value: { z: 10 } }],
+    });
+    expect(result.isError).toBe(true);
+    expect(texts(result.content)[0]).toMatch(/^pose: .*no shape has the id "tail"/);
+  });
+});
+
 describe('mcp: reference', () => {
   it('is the llms.txt that ships with the library', () => {
     const [reference] = texts(getReference().content);

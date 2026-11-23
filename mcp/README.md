@@ -90,10 +90,13 @@ If a change cannot be applied, or the changed scene is not valid, nothing is cha
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `scene`        | The scene, as an object or as JSON text. Leave it out to use the remembered scene.                                                |
 | `changes`      | Edits to the remembered scene, or to `scene` when both are passed.                                                                |
+| `pose`         | Changes to draw with but not to keep: the picture shows the scene in this pose, and the remembered scene stays as it is.          |
 | `views`        | Up to six view angles in degrees, `{ x, y, z }`, each used in place of the scene's own `rotate`.                                  |
 | `svg`          | Whether to send the SVG text back. Default `true`.                                                                                |
 | `preview_size` | Longer side of the PNG in pixels, 64 to 1024. Default 512.                                                                        |
 | `save_to`      | Absolute path ending in `.svg` or `.png` to write the picture to. With several views, `-1`, `-2` and so on are added to the name. |
+
+`views` and `pose` change only the picture. An angle or a pose set with `changes` stays in the remembered scene, and would then be in every later picture and sprite sheet.
 
 An invalid scene draws nothing. The answer lists every problem:
 
@@ -135,19 +138,23 @@ Turning files are large, 43 KB for a small pup and 129 KB for a lighthouse, so t
 
 ### `render_sprites`
 
-| Argument     |                                                                                                             |
-| ------------ | ----------------------------------------------------------------------------------------------------------- |
-| `scene`      | The scene, as an object or as JSON text, or left out as in `render_scene`.                                  |
-| `changes`    | Edits to the remembered scene, as in `render_scene`.                                                        |
-| `directions` | How many directions to draw, at even steps of a full turn about the vertical axis, 2 to 32. Default 8.      |
-| `cell_size`  | Longer side of each cell in pixels, 16 to 1024. Default 128.                                                |
-| `columns`    | Cells per row. Default: all directions in one row, up to 8.                                                 |
-| `poses`      | Poses of the scene, each a list of changes. The sheet then has a row per direction and a column per pose.   |
-| `save_to`    | Absolute path ending in `.png`. The frame list is written next to it, with the same name ending in `.json`. |
+| Argument            |                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `scene`             | The scene, as an object or as JSON text, or left out as in `render_scene`.                                  |
+| `changes`           | Edits to the remembered scene, as in `render_scene`.                                                        |
+| `directions`        | How many directions to draw, at even steps of a full turn about the vertical axis, 2 to 32. Default 8.      |
+| `cell_size`         | Longer side of each cell in pixels, 16 to 1024. Default 128.                                                |
+| `columns`           | Cells per row. Default: all directions in one row, up to 8.                                                 |
+| `poses`             | Poses of the scene, each a list of changes. The sheet then has a row per direction and a column per pose.   |
+| `fit`               | `true` sets the frame for you: the drawing fills the cell where it reaches furthest. Default `false`.       |
+| `preview_direction` | A direction, counted from 0, to send back on its own as a second, larger picture, pose by pose.             |
+| `save_to`           | Absolute path ending in `.png`. The frame list is written next to it, with the same name ending in `.json`. |
 
 The first cell is the scene as written; each next one is turned `360 / directions` degrees further. Every direction comes from the same scene, so the sprites agree with each other, which pictures drawn one by one do not. The tilt is the scene's own `rotate.x`: about -30 for a view from above.
 
 The sheet is transparent; a `background` in the scene is left out. Every cell has the scene's frame, so that the object does not jump between directions, and the answer says when it is cut off in some of them.
+
+With `fit`, the frame is worked out from the drawing: the smallest part of the scene, in the scene's proportions, that holds it in every direction and pose, with a small margin. All cells show that same part, so the sprite still does not jump, nothing is cut off and no space is wasted. The scene itself is not changed. `meta.origin` in the frame list is where the middle of the scene is in a cell, in pixels, with or without `fit`: the point to anchor the sprite by.
 
 The frame list is the JSON TexturePacker writes as "JSON (Hash)", which Phaser and PixiJS load as they are. Each frame also has `turn`, its angle in degrees:
 
@@ -163,7 +170,11 @@ The frame list is the JSON TexturePacker writes as "JSON (Hash)", which Phaser a
       "turn": 0
     }
   },
-  "meta": { "image": "crate.png", "size": { "w": 1024, "h": 128 }, "scale": "1" }
+  "meta": {
+    "image": "crate.png",
+    "size": { "w": 1024, "h": 128 },
+    "scale": "1"
+  }
 }
 ```
 
@@ -193,10 +204,14 @@ A part swings about its own origin, so a leg goes in a group placed at the hip, 
 Frames are named `<name>-<direction>-<pose>.png` and carry `pose` next to `turn`. The list also has `animations`, the frames of each direction in order, which PixiJS reads as it is:
 
 ```json
-{ "animations": { "dog-0": ["dog-0-0.png", "dog-0-1.png", "dog-0-2.png", "dog-0-3.png"] } }
+{
+  "animations": {
+    "dog-0": ["dog-0-0.png", "dog-0-1.png", "dog-0-2.png", "dog-0-3.png"]
+  }
+}
 ```
 
-The sheet holds pictures, not motion: the game plays the frames of a row in turn.
+The sheet holds pictures, not motion: the game plays the frames of a row in turn. A model cannot play them either, so `preview_direction` sends one direction back larger, its poses side by side, and `pose` on `render_scene` shows a single pose from any angles before the sheet is made.
 
 ## What it writes
 

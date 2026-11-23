@@ -48,6 +48,14 @@ const changes = z
     'Edits to the remembered scene (or to scene, when both are passed), applied in order, so that a small fix does not need the whole scene again. Example: [{ "op": "set", "path": "children[2].translate.y", "value": -30 }, { "op": "append", "path": "children", "value": { "type": "dot", "stroke": 8, "color": "#333" } }, { "op": "copy", "path": "#tree", "value": { "id": "tree2", "translate": { "x": 60 }, "scale": 0.7 } }]. After a remove or insert, later items in that list have a different index, so give shapes an id and use "#id" paths. If the result is not valid, nothing is changed.',
   );
 
+const pose = z
+  .array(change)
+  .max(100)
+  .optional()
+  .describe(
+    'Changes to draw with but not to keep, in the form of changes: the picture shows the scene in this pose, and the remembered scene stays as it is. Use it with views to check one pose of a sprite sheet large and from several sides before making the sheet.',
+  );
+
 const poses = z
   .array(z.array(change).max(100))
   .min(1)
@@ -118,10 +126,11 @@ export function createServer(): McpServer {
     'render_scene',
     {
       title: 'Draw a Zpup scene',
-      description: `Draws a small 3D scene as a flat SVG picture and returns a PNG of it to look at, the SVG text, and any warnings. An invalid scene draws nothing and returns every error with its path and how to fix it. Pass views to see the same scene from several angles in one call, which is the quickest way to find a shape that is in the wrong place. ${FORMAT_NOTE}`,
+      description: `Draws a small 3D scene as a flat SVG picture and returns a PNG of it to look at, the SVG text, and any warnings. An invalid scene draws nothing and returns every error with its path and how to fix it. Pass views to see the same scene from several angles in one call, which is the quickest way to find a shape that is in the wrong place. views and pose change only this picture: an angle or a pose set with changes stays in the remembered scene. ${FORMAT_NOTE}`,
       inputSchema: {
         scene,
         changes,
+        pose,
         views: z
           .array(angle)
           .min(1)
@@ -191,7 +200,7 @@ export function createServer(): McpServer {
     'render_sprites',
     {
       title: 'Make a sprite sheet of a Zpup scene',
-      description: `Draws one scene from every side, turned in equal steps about its vertical axis, and lays the pictures out as one transparent PNG sprite sheet for a game: the same object in 4, 8 or 16 directions, all from one scene, so they agree with each other. With poses it draws every direction in every pose, for a walk cycle: one row per direction, one column per pose. With save_to it also writes the frame list next to the PNG as JSON, in the form TexturePacker writes (JSON hash) and Phaser, PixiJS and other engines read. Returns the sheet to look at. Every cell has the scene's own frame, so check that nothing is cut off as the object turns. Keep the scene's own view angle for the tilt: rotate x around -30 for a view from above. ${FORMAT_NOTE}`,
+      description: `Draws one scene from every side, turned in equal steps about its vertical axis, and lays the pictures out as one transparent PNG sprite sheet for a game: the same object in 4, 8 or 16 directions, all from one scene, so they agree with each other. With poses it draws every direction in every pose, for a walk cycle: one row per direction, one column per pose. With save_to it also writes the frame list next to the PNG as JSON, in the form TexturePacker writes (JSON hash) and Phaser, PixiJS and other engines read. Returns the sheet to look at. Every cell has the scene's own frame, so check that nothing is cut off as the object turns, or pass fit to have the frame set for you. Keep the scene's own view angle for the tilt: rotate x around -30 for a view from above. ${FORMAT_NOTE}`,
       inputSchema: {
         scene,
         changes,
@@ -218,6 +227,21 @@ export function createServer(): McpServer {
             'Cells per row. Default: all directions in one row, up to 8. Not used with poses, where a row is one direction.',
           ),
         poses,
+        fit: z
+          .boolean()
+          .optional()
+          .describe(
+            "Set to true to have the frame set for you: every cell shows the same part of the scene, enlarged so that the drawing fills the cell in the direction and pose where it reaches furthest. Nothing is cut off and no space is wasted, and the scene is not changed. Default false, which uses the scene's own frame.",
+          ),
+        preview_direction: z
+          .number()
+          .int()
+          .min(0)
+          .max(31)
+          .optional()
+          .describe(
+            'A direction, counted from 0, to send back on its own as a second, larger picture: its poses in a row, to judge the motion from one pose to the next. 2 is the side view when there are 8 directions.',
+          ),
         save_to: z
           .string()
           .optional()
