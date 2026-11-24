@@ -14,7 +14,9 @@ Within 1.x:
 - The picture is not promised to the byte. A fix to depth sorting, shading or the turning animation can change the SVG a scene produces, in a minor version, and the changelog says so. Within one version the output is deterministic.
 - The wording of errors and warnings may change, and new warnings may be added. A scene never becomes invalid because of a new warning.
 
-Not planned for 1.x: perspective, lighting, textures, a text shape, clipping, and animation inside the SVG other than the constant turn. Motion in steps, such as a walk, is a set of still pictures: the MCP server draws a scene in several poses onto one sprite sheet, and the game plays them.
+Not planned for 1.x: perspective, lighting, textures, a text shape and clipping.
+
+Motion is possible, and the caller plays it. A scene is plain data, so a walk or any other motion is the scene changed and drawn again: either as the program runs, or beforehand, as the MCP server does when it draws a scene in several poses onto one sprite sheet for a game to play. What is not planned is animation inside one SVG file other than the constant turn.
 
 ## Scene format
 

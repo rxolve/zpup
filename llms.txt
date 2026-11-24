@@ -133,7 +133,7 @@ Zpup paints whole shapes back to front, so a shape that crosses into another cha
 }
 ```
 
-Only a constant turn about one axis is possible; nothing else in the scene moves. Keep scenes small (tens of shapes): file size grows with the number of pieces and of overlapping pairs. Use opaque colors; translucent outlines show seams.
+Inside this one file only a constant turn about one axis is possible; nothing else in the scene moves. For any other motion (a walk, a wave, a drag to turn), change the scene and call `renderSvg` again for each frame, or draw the poses beforehand onto a sprite sheet with the MCP server's `render_sprites`. Keep scenes small (tens of shapes): file size grows with the number of pieces and of overlapping pairs. Use opaque colors; translucent outlines show seams.
 
 ## Examples
 
@@ -194,4 +194,4 @@ A longer example lives in `examples/pup.ts`.
 
 ## Not available yet
 
-Canvas rendering, animation other than `renderSpinSvg`'s constant turn, perspective, React or other framework bindings.
+Canvas rendering, animation inside one SVG file other than `renderSpinSvg`'s constant turn (motion is done by changing the scene and drawing again), perspective, React or other framework bindings.

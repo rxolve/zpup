@@ -40,7 +40,9 @@ It is not a 3D engine. There is no perspective, no textures and no light to plac
 
 1.0. The scene format and the exported functions are stable: within 1.x a scene that is valid stays valid and every option keeps its meaning. How a picture is worked out can still get better, so the exact SVG a scene produces may change between versions; [docs/decisions.md](docs/decisions.md#what-10-promises) says what is promised and what is not.
 
-Not planned: perspective, lighting, textures, a text shape, clipping, and animation inside the SVG other than a constant turn about one axis (see [Turning in place](#turning-in-place)). Motion in steps, such as a walk, is done as still pictures on a sprite sheet, by [the MCP server](mcp/README.md#poses).
+Not planned: perspective, lighting, textures, a text shape and clipping.
+
+Motion is possible, and it is the caller that plays it. A scene is plain data: change it (turn a joint, move a part, turn the view) and draw it again, and the new picture is the next frame. A game either does that as it runs, or draws the poses beforehand onto a sprite sheet, as [the MCP server](mcp/README.md#poses) does for a walk. The one thing a single SVG file does by itself is a constant turn about one axis (see [Turning in place](#turning-in-place)); other animation inside the file is not planned.
 
 Not built: a canvas renderer and framework bindings. `compileScene` returns the sorted list of things to paint, which is what either would start from.
 
