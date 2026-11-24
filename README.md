@@ -38,9 +38,11 @@ It is not a 3D engine. There is no perspective, no textures and no light to plac
 
 ## Status
 
-Early, and the API may still change before 1.0. The core (scene tree, transforms, orthographic projection, depth sorting) and the SVG string renderer work and are tested.
+1.0. The scene format and the exported functions are stable: within 1.x a scene that is valid stays valid and every option keeps its meaning. How a picture is worked out can still get better, so the exact SVG a scene produces may change between versions; [docs/decisions.md](docs/decisions.md#what-10-promises) says what is promised and what is not.
 
-Not built yet: a canvas renderer, general animation, and framework bindings. The one animation available is a constant turn about one axis (see [Turning in place](#turning-in-place)).
+Not planned: perspective, lighting, textures, a text shape, clipping, and animation inside the SVG other than a constant turn about one axis (see [Turning in place](#turning-in-place)). Motion in steps, such as a walk, is done as still pictures on a sprite sheet, by [the MCP server](mcp/README.md#poses).
+
+Not built: a canvas renderer and framework bindings. `compileScene` returns the sorted list of things to paint, which is what either would start from.
 
 ## Install
 

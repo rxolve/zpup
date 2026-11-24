@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - `render_sprites` takes `poses`: lists of changes, each a pose of the scene. The sheet then has one row per direction and one column per pose, for a walk cycle or any other motion in steps. Frames are named `<name>-<direction>-<pose>.png` and carry `pose`, and the frame list has `animations` with the frames of each direction in order. Poses are applied to the scene one at a time and are not remembered. Up to 16 poses and 128 cells.
 - `render_sprites` takes `fit`: the frame is set from the drawing, so that it fills the cell in the direction and pose where it reaches furthest, with nothing cut off. Every cell still shows the same part of the scene.

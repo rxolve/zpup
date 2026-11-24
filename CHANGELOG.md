@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (1.0.0)
+## 1.0.0
 
 The scene format and the exported functions are now stable. Nothing in the format changed since 0.5.0: a scene that was valid there is valid here and draws the same.
 
