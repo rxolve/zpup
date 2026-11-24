@@ -1,0 +1,644 @@
+{
+  "width": 300,
+  "height": 300,
+  "rotate": {
+    "x": -30
+  },
+  "title": "Log cabin",
+  "children": [
+    {
+      "type": "group",
+      "id": "cabin",
+      "translate": {
+        "y": 45
+      },
+      "children": [
+        {
+          "type": "group",
+          "id": "site",
+          "visible": false,
+          "children": [
+            {
+              "type": "rect",
+              "id": "plot",
+              "width": 100,
+              "height": 74,
+              "fill": true,
+              "stroke": 0,
+              "color": "#ddcfae",
+              "rotate": {
+                "x": 90
+              },
+              "translate": {
+                "y": -0.3
+              }
+            },
+            {
+              "type": "path",
+              "id": "mark",
+              "path": [
+                {
+                  "x": -50,
+                  "z": -37
+                },
+                {
+                  "x": 50,
+                  "z": -37
+                },
+                {
+                  "x": 50,
+                  "z": 37
+                },
+                {
+                  "x": -50,
+                  "z": 37
+                }
+              ],
+              "closed": true,
+              "stroke": 2.5,
+              "color": "#f1ece0",
+              "translate": {
+                "y": -0.6
+              }
+            },
+            {
+              "type": "box",
+              "width": 6,
+              "height": 22,
+              "depth": 6,
+              "color": "#8a6a4a",
+              "stroke": 0,
+              "translate": {
+                "x": -50,
+                "y": -11,
+                "z": -37
+              }
+            },
+            {
+              "type": "box",
+              "width": 6,
+              "height": 22,
+              "depth": 6,
+              "color": "#8a6a4a",
+              "stroke": 0,
+              "translate": {
+                "x": 50,
+                "y": -11,
+                "z": -37
+              }
+            },
+            {
+              "type": "box",
+              "width": 6,
+              "height": 22,
+              "depth": 6,
+              "color": "#8a6a4a",
+              "stroke": 0,
+              "translate": {
+                "x": -50,
+                "y": -11,
+                "z": 37
+              }
+            },
+            {
+              "type": "box",
+              "width": 6,
+              "height": 22,
+              "depth": 6,
+              "color": "#8a6a4a",
+              "stroke": 0,
+              "translate": {
+                "x": 50,
+                "y": -11,
+                "z": 37
+              }
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "id": "floor",
+          "width": 104,
+          "height": 4,
+          "depth": 78,
+          "color": "#a89279",
+          "stroke": 0,
+          "translate": {
+            "y": -2
+          }
+        },
+        {
+          "type": "group",
+          "id": "row0",
+          "translate": {
+            "y": -9.5
+          },
+          "children": [
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 100,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "z": -32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": -44.5
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": 44.5
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 20,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": -40,
+                "z": 32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 58,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": 21,
+                "z": 32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "row1",
+          "translate": {
+            "y": -20.5
+          },
+          "children": [
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 100,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "z": -32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": -44.5
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": 44.5
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 20,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": -40,
+                "z": 32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 58,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": 21,
+                "z": 32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "row2",
+          "translate": {
+            "y": -31.5
+          },
+          "children": [
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 100,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "z": -32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": -44.5
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": 44.5
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 20,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": -40,
+                "z": 32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 22,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": 3,
+                "z": 32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 14,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": 43,
+                "z": 32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "row3",
+          "translate": {
+            "y": -42.5
+          },
+          "children": [
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 100,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "z": -32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": -44.5
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": 44.5
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 20,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": -40,
+                "z": 32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 22,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": 3,
+                "z": 32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 14,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "x": 43,
+                "z": 32
+              },
+              "color": "#a5764f",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "row4",
+          "translate": {
+            "y": -53.5
+          },
+          "children": [
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 100,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "z": -32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": -44.5
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 54,
+              "translate": {
+                "x": 44.5
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            },
+            {
+              "type": "cylinder",
+              "diameter": 11,
+              "length": 100,
+              "rotate": {
+                "y": 90
+              },
+              "translate": {
+                "z": 32
+              },
+              "color": "#b98a5e",
+              "frontFace": "#dcc199",
+              "backface": "#dcc199",
+              "stroke": 0
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "id": "door",
+          "width": 22,
+          "height": 44,
+          "depth": 3,
+          "color": "#7a5338",
+          "stroke": 0,
+          "translate": {
+            "x": -19,
+            "y": -26,
+            "z": 32
+          }
+        },
+        {
+          "type": "group",
+          "id": "window",
+          "translate": {
+            "x": 25,
+            "y": -37,
+            "z": 32
+          },
+          "children": [
+            {
+              "type": "box",
+              "width": 22,
+              "height": 22,
+              "depth": 3,
+              "color": "#bcd6dc",
+              "stroke": 0
+            },
+            {
+              "type": "path",
+              "path": [
+                {
+                  "x": -11
+                },
+                {
+                  "x": 11
+                }
+              ],
+              "stroke": 2,
+              "color": "#7a5338",
+              "translate": {
+                "z": 2
+              }
+            },
+            {
+              "type": "path",
+              "path": [
+                {
+                  "y": -11
+                },
+                {
+                  "y": 11
+                }
+              ],
+              "stroke": 2,
+              "color": "#7a5338",
+              "translate": {
+                "z": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "pyramid",
+          "id": "roof",
+          "width": 110,
+          "depth": 84,
+          "height": 36,
+          "ridge": 110,
+          "color": "#b5675a",
+          "leftFace": "#9c7350",
+          "rightFace": "#a87e58",
+          "stroke": 0,
+          "translate": {
+            "y": -59
+          }
+        },
+        {
+          "type": "box",
+          "id": "chimney",
+          "width": 12,
+          "height": 24,
+          "depth": 12,
+          "color": "#a29c94",
+          "topFace": "#5f5a55",
+          "stroke": 0,
+          "translate": {
+            "x": 28,
+            "y": -91,
+            "z": -12
+          }
+        }
+      ]
+    }
+  ],
+  "shading": "flat"
+}

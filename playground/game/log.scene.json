@@ -1,0 +1,133 @@
+{
+  "width": 60,
+  "height": 40,
+  "rotate": {
+    "x": -30
+  },
+  "children": [
+    {
+      "type": "ellipse",
+      "id": "shadow",
+      "width": 34,
+      "height": 12,
+      "fill": true,
+      "stroke": 0,
+      "color": "#b4cc98",
+      "rotate": {
+        "x": 90
+      }
+    },
+    {
+      "type": "group",
+      "id": "log",
+      "translate": {
+        "y": -5
+      },
+      "children": [
+        {
+          "type": "cylinder",
+          "id": "trunk",
+          "diameter": 10,
+          "length": 30,
+          "rotate": {
+            "y": 90
+          },
+          "color": "#8f6747",
+          "stroke": 0.5,
+          "frontFace": "#e8d3a8",
+          "backface": "#e8d3a8"
+        },
+        {
+          "type": "group",
+          "id": "end-right",
+          "translate": {
+            "x": 15.4
+          },
+          "rotate": {
+            "y": 90
+          },
+          "children": [
+            {
+              "type": "ellipse",
+              "diameter": 5.5,
+              "stroke": 0.6,
+              "color": "#c4a57a",
+              "backface": false
+            },
+            {
+              "type": "ellipse",
+              "diameter": 1.6,
+              "fill": true,
+              "stroke": 0,
+              "color": "#c4a57a",
+              "backface": false
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "id": "end-left",
+          "translate": {
+            "x": -15.4
+          },
+          "rotate": {
+            "y": -90
+          },
+          "children": [
+            {
+              "type": "ellipse",
+              "diameter": 5.5,
+              "stroke": 0.6,
+              "color": "#c4a57a",
+              "backface": false
+            },
+            {
+              "type": "ellipse",
+              "diameter": 1.6,
+              "fill": true,
+              "stroke": 0,
+              "color": "#c4a57a",
+              "backface": false
+            }
+          ]
+        },
+        {
+          "type": "path",
+          "id": "bark-a",
+          "path": [
+            {
+              "x": -11,
+              "y": -4,
+              "z": 2.7
+            },
+            {
+              "x": -2,
+              "y": -4,
+              "z": 2.7
+            }
+          ],
+          "stroke": 0.7,
+          "color": "#6e4c35"
+        },
+        {
+          "type": "path",
+          "id": "bark-b",
+          "path": [
+            {
+              "x": 3,
+              "y": -4,
+              "z": -2.7
+            },
+            {
+              "x": 12,
+              "y": -4,
+              "z": -2.7
+            }
+          ],
+          "stroke": 0.7,
+          "color": "#6e4c35"
+        }
+      ]
+    }
+  ]
+}

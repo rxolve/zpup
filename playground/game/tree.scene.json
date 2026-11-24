@@ -1,0 +1,104 @@
+{
+  "width": 300,
+  "height": 300,
+  "rotate": {
+    "x": -30
+  },
+  "title": "Tree",
+  "children": [
+    {
+      "type": "group",
+      "id": "tree",
+      "children": [
+        {
+          "type": "cylinder",
+          "id": "stump",
+          "diameter": 12,
+          "length": 14,
+          "rotate": {
+            "x": 90
+          },
+          "translate": {
+            "y": 53
+          },
+          "color": "#85674d",
+          "stroke": 0.5
+        },
+        {
+          "type": "group",
+          "id": "top",
+          "translate": {
+            "x": 6,
+            "y": 46
+          },
+          "children": [
+            {
+              "type": "cylinder",
+              "id": "trunk",
+              "diameter": 12,
+              "length": 44,
+              "rotate": {
+                "x": 90
+              },
+              "translate": {
+                "x": -6,
+                "y": -22
+              },
+              "color": "#85674d",
+              "stroke": 0.5
+            },
+            {
+              "type": "pyramid",
+              "id": "crown-low",
+              "width": 52,
+              "depth": 52,
+              "height": 34,
+              "rotate": {
+                "y": 45
+              },
+              "translate": {
+                "x": -6,
+                "y": -44
+              },
+              "color": "#64925a",
+              "stroke": 1
+            },
+            {
+              "type": "pyramid",
+              "id": "crown-mid",
+              "width": 42,
+              "depth": 42,
+              "height": 30,
+              "rotate": {
+                "y": 45
+              },
+              "translate": {
+                "x": -6,
+                "y": -62
+              },
+              "color": "#64925a",
+              "stroke": 1
+            },
+            {
+              "type": "pyramid",
+              "id": "crown-top",
+              "width": 32,
+              "depth": 32,
+              "height": 26,
+              "rotate": {
+                "y": 45
+              },
+              "translate": {
+                "x": -6,
+                "y": -80
+              },
+              "color": "#64925a",
+              "stroke": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "shading": "flat"
+}

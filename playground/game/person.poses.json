@@ -254,5 +254,755 @@
       "path": "#body.translate.y",
       "value": 1
     }
+  ],
+  [],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": 5
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 7
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -8
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": -13
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 200,
+        "z": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 40
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 25
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 30
+      }
+    },
+    {
+      "op": "append",
+      "path": "#elbow-r.children",
+      "value": {
+        "type": "group",
+        "id": "axe",
+        "translate": {
+          "y": 10
+        },
+        "rotate": {
+          "x": -130
+        },
+        "children": [
+          {
+            "type": "path",
+            "path": [
+              {
+                "z": -4
+              },
+              {
+                "z": 16.8
+              }
+            ],
+            "stroke": 2.5,
+            "color": "#8a5a2b"
+          },
+          {
+            "type": "box",
+            "width": 2,
+            "height": 10,
+            "depth": 5,
+            "translate": {
+              "y": 2.5,
+              "z": 19.5
+            },
+            "color": "#9aa0a6",
+            "stroke": 0.8
+          }
+        ]
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -3
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 15
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": -5
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 130,
+        "z": 5
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 40
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 30
+      }
+    },
+    {
+      "op": "append",
+      "path": "#elbow-r.children",
+      "value": {
+        "type": "group",
+        "id": "axe",
+        "translate": {
+          "y": 10
+        },
+        "rotate": {
+          "x": -100
+        },
+        "children": [
+          {
+            "type": "path",
+            "path": [
+              {
+                "z": -4
+              },
+              {
+                "z": 16.8
+              }
+            ],
+            "stroke": 2.5,
+            "color": "#8a5a2b"
+          },
+          {
+            "type": "box",
+            "width": 2,
+            "height": 10,
+            "depth": 5,
+            "translate": {
+              "y": 2.5,
+              "z": 19.5
+            },
+            "color": "#9aa0a6",
+            "stroke": 0.8
+          }
+        ]
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 22
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -12
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 2
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -12
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 50,
+        "z": 15
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 35,
+        "z": 10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "append",
+      "path": "#elbow-r.children",
+      "value": {
+        "type": "group",
+        "id": "axe",
+        "translate": {
+          "y": 10
+        },
+        "rotate": {
+          "x": -55
+        },
+        "children": [
+          {
+            "type": "path",
+            "path": [
+              {
+                "z": -4
+              },
+              {
+                "z": 16.8
+              }
+            ],
+            "stroke": 2.5,
+            "color": "#8a5a2b"
+          },
+          {
+            "type": "box",
+            "width": 2,
+            "height": 10,
+            "depth": 5,
+            "translate": {
+              "y": 2.5,
+              "z": 19.5
+            },
+            "color": "#9aa0a6",
+            "stroke": 0.8
+          }
+        ]
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -45
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 110,
+        "z": -29
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 110,
+        "z": 29
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 34
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": -14
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 110,
+        "z": -29
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 110,
+        "z": 29
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 34
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": -14
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 110,
+        "z": -29
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 110,
+        "z": 29
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": 10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -45
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 110,
+        "z": -29
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 110,
+        "z": 29
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": -14
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 34
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 110,
+        "z": -29
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 110,
+        "z": 29
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#body.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-l.rotate",
+      "value": {
+        "x": -14
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-l.rotate",
+      "value": {
+        "x": -27
+      }
+    },
+    {
+      "op": "set",
+      "path": "#leg-r.rotate",
+      "value": {
+        "x": 34
+      }
+    },
+    {
+      "op": "set",
+      "path": "#knee-r.rotate",
+      "value": {
+        "x": -10
+      }
+    },
+    {
+      "op": "set",
+      "path": "#body.translate.y",
+      "value": 1
+    },
+    {
+      "op": "set",
+      "path": "#arm-l.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#arm-r.rotate",
+      "value": {
+        "x": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-l.rotate",
+      "value": {
+        "x": 110,
+        "z": -29
+      }
+    },
+    {
+      "op": "set",
+      "path": "#elbow-r.rotate",
+      "value": {
+        "x": 110,
+        "z": 29
+      }
+    }
   ]
 ]

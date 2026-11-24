@@ -1,0 +1,134 @@
+[
+  [
+    {
+      "op": "set",
+      "path": "#site.visible",
+      "value": true
+    },
+    {
+      "op": "remove",
+      "path": "#floor"
+    },
+    {
+      "op": "remove",
+      "path": "#row0"
+    },
+    {
+      "op": "remove",
+      "path": "#row1"
+    },
+    {
+      "op": "remove",
+      "path": "#row2"
+    },
+    {
+      "op": "remove",
+      "path": "#row3"
+    },
+    {
+      "op": "remove",
+      "path": "#row4"
+    },
+    {
+      "op": "remove",
+      "path": "#door"
+    },
+    {
+      "op": "remove",
+      "path": "#window"
+    },
+    {
+      "op": "remove",
+      "path": "#roof"
+    },
+    {
+      "op": "remove",
+      "path": "#chimney"
+    }
+  ],
+  [
+    {
+      "op": "remove",
+      "path": "#row1"
+    },
+    {
+      "op": "remove",
+      "path": "#row2"
+    },
+    {
+      "op": "remove",
+      "path": "#row3"
+    },
+    {
+      "op": "remove",
+      "path": "#row4"
+    },
+    {
+      "op": "remove",
+      "path": "#door"
+    },
+    {
+      "op": "remove",
+      "path": "#window"
+    },
+    {
+      "op": "remove",
+      "path": "#roof"
+    },
+    {
+      "op": "remove",
+      "path": "#chimney"
+    }
+  ],
+  [
+    {
+      "op": "remove",
+      "path": "#row3"
+    },
+    {
+      "op": "remove",
+      "path": "#row4"
+    },
+    {
+      "op": "remove",
+      "path": "#door"
+    },
+    {
+      "op": "remove",
+      "path": "#window"
+    },
+    {
+      "op": "remove",
+      "path": "#roof"
+    },
+    {
+      "op": "remove",
+      "path": "#chimney"
+    },
+    {
+      "op": "set",
+      "path": "#row2.children[4].length",
+      "value": 58
+    },
+    {
+      "op": "set",
+      "path": "#row2.children[4].translate.x",
+      "value": 21
+    },
+    {
+      "op": "remove",
+      "path": "#row2.children[5]"
+    }
+  ],
+  [
+    {
+      "op": "remove",
+      "path": "#roof"
+    },
+    {
+      "op": "remove",
+      "path": "#chimney"
+    }
+  ],
+  []
+]

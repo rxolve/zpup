@@ -1,0 +1,380 @@
+{
+  "frames": {
+    "log-0-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 0,
+      "pose": 0
+    },
+    "log-0-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 0,
+      "pose": 1
+    },
+    "log-1-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 64,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 45,
+      "pose": 0
+    },
+    "log-1-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 64,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 45,
+      "pose": 1
+    },
+    "log-2-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 128,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 90,
+      "pose": 0
+    },
+    "log-2-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 128,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 90,
+      "pose": 1
+    },
+    "log-3-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 192,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 135,
+      "pose": 0
+    },
+    "log-3-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 192,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 135,
+      "pose": 1
+    },
+    "log-4-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 256,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 180,
+      "pose": 0
+    },
+    "log-4-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 256,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 180,
+      "pose": 1
+    },
+    "log-5-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 225,
+      "pose": 0
+    },
+    "log-5-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 320,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 225,
+      "pose": 1
+    },
+    "log-6-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 384,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 270,
+      "pose": 0
+    },
+    "log-6-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 384,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 270,
+      "pose": 1
+    },
+    "log-7-0.png": {
+      "frame": {
+        "x": 0,
+        "y": 448,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 315,
+      "pose": 0
+    },
+    "log-7-1.png": {
+      "frame": {
+        "x": 96,
+        "y": 448,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "turn": 315,
+      "pose": 1
+    }
+  },
+  "animations": {
+    "log-0": ["log-0-0.png", "log-0-1.png"],
+    "log-1": ["log-1-0.png", "log-1-1.png"],
+    "log-2": ["log-2-0.png", "log-2-1.png"],
+    "log-3": ["log-3-0.png", "log-3-1.png"],
+    "log-4": ["log-4-0.png", "log-4-1.png"],
+    "log-5": ["log-5-0.png", "log-5-1.png"],
+    "log-6": ["log-6-0.png", "log-6-1.png"],
+    "log-7": ["log-7-0.png", "log-7-1.png"]
+  },
+  "meta": {
+    "app": "https://github.com/rxolve/zpup",
+    "image": "log.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 192,
+      "h": 512
+    },
+    "scale": "1",
+    "origin": {
+      "x": 48,
+      "y": 41.55
+    }
+  }
+}

@@ -1,0 +1,61 @@
+[
+  [],
+  [
+    {
+      "op": "set",
+      "path": "#top.rotate",
+      "value": {
+        "z": 4
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#top.rotate",
+      "value": {
+        "z": -4
+      }
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#top.rotate",
+      "value": {
+        "z": 20
+      }
+    },
+    {
+      "op": "set",
+      "path": "#stump.frontFace",
+      "value": "#e8d6ad"
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#top.rotate",
+      "value": {
+        "z": 45
+      }
+    },
+    {
+      "op": "set",
+      "path": "#stump.frontFace",
+      "value": "#e8d6ad"
+    }
+  ],
+  [
+    {
+      "op": "set",
+      "path": "#top.visible",
+      "value": false
+    },
+    {
+      "op": "set",
+      "path": "#stump.frontFace",
+      "value": "#e8d6ad"
+    }
+  ]
+]
