@@ -250,6 +250,8 @@ claude mcp add zpup -- npx -y @zpup/mcp
 
 A model that can run code needs only the library and [llms.txt](llms.txt).
 
+[![rxolve/zpup MCP server](https://glama.ai/mcp/servers/rxolve/zpup/badges/score.svg)](https://glama.ai/mcp/servers/rxolve/zpup)
+
 ## Goals
 
 - Round, flat, designer-friendly pseudo-3D illustrations, in the spirit of Zdog

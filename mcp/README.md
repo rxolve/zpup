@@ -4,6 +4,8 @@ An [MCP](https://modelcontextprotocol.io/) server for [Zpup](https://github.com/
 
 Zpup turns the scene into a flat SVG from any angle. The server adds a PNG of each picture so the model can look at its own work and correct it.
 
+[![rxolve/zpup MCP server](https://glama.ai/mcp/servers/rxolve/zpup/badges/score.svg)](https://glama.ai/mcp/servers/rxolve/zpup)
+
 ## Set up
 
 Add it to your MCP client's configuration:
