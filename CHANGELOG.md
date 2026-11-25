@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+Only the words changed; the library draws as in 1.0.0.
+
+- The README and `llms.txt` say that motion is possible: a scene is data, so a walk is the scene changed and drawn again, as the program runs or beforehand onto a sprite sheet. They used to list animation among the things not planned, which read as if nothing could move. What is not planned is animation inside one SVG file other than the constant turn.
+- The README links to [a small game](https://rxolve.github.io/zpup/game/) whose pictures are all sprite sheets drawn from scenes, and names game sprites among the uses.
+
 ## 1.0.0
 
 The scene format and the exported functions are now stable. Nothing in the format changed since 0.5.0: a scene that was valid there is valid here and draws the same.

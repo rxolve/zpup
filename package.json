@@ -1,6 +1,6 @@
 {
   "name": "@zpup/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Describe a small 3D scene as JSON and get a flat SVG picture of it from any angle. Inspired by Zdog.",
   "license": "MIT",
   "author": "rxolve",
