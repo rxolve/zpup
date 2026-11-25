@@ -10,6 +10,8 @@ These four pictures come from [one scene](examples/lighthouse.ts): eleven solids
 
 **[Try it in the playground](https://rxolve.github.io/zpup/)**: edit a scene as JSON, drag the picture to turn it, and export the SVG.
 
+**[Play a small game drawn with it](https://rxolve.github.io/zpup/game/)**: a person, a tree, a cabin and three animals, each written once as JSON by an AI model and drawn in every direction and pose as a sprite sheet.
+
 **[Use it from an AI model](#with-an-ai-model)**: an MCP server lets Claude and other models write a scene, look at the picture and correct it. In Claude Code, `claude mcp add zpup -- npx -y @zpup/mcp`.
 
 ## Compared with Zdog
@@ -22,7 +24,7 @@ Zdog orders shapes by one point each, so a large shape such as the ground covers
 
 ## What it is for
 
-Small illustrations with volume: icons, mascots, props, a little building. The scene is data, so a person, a script or an AI model can write it, and mistakes come back as errors that say where and how to fix them.
+Small illustrations with volume: icons, mascots, props, a little building. And sprites for a game: one scene gives the same character in every direction and every pose, so the frames agree with each other. The scene is data, so a person, a script or an AI model can write it, and mistakes come back as errors that say where and how to fix them.
 
 <p>
   <a href="examples/pup.ts"><img src="examples/pup.svg" alt="A sitting pup" width="130"></a>
@@ -102,7 +104,7 @@ const above = renderSvg({ ...scene, rotate: { x: -62, y: 24 } });
 
 - **Axes:** x right, y down, z toward the viewer. The origin is the center of the image.
 - **Angles:** degrees. Positive `rotate.z` turns clockwise on screen.
-- **Nodes:** `group`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
+- **Nodes:** `group`, `dot`, `path`, `ellipse`, `rect`, `polygon`, and the solids `box`, `cylinder`, `cone` and `hemisphere`. Every node takes `translate`, `rotate`, `scale`, `visible` and `children`; children inherit their parent's transform.
 - **Shapes:** `color` (hex, `rgb()` and other CSS functions, or one of the CSS color names; a misspelled name is an error), `stroke` (round-capped width; thick strokes give volume) and `fill`.
 - **Solids:** `box`, `pyramid`, `cylinder`, `cone` and `hemisphere`, always filled. One `color` is enough: each face gets a fixed lighter or darker version of it by the direction it faces in the scene, so a box does not collapse into a flat hexagon. Face options such as `topFace` or `frontFace` set a face's exact color, or leave the face out with `false`. As in Zdog, cylinders, cones and hemispheres point along z; `rotate: { x: 90 }` stands them up. A box and a pyramid stand upright as they are.
 - **Errors:** an invalid scene or option throws a `ZpupValidationError` that lists every problem with its path, what was expected and how to fix it. Each issue has the path as a string (`path`) and as keys and indices (`pathSegments`), and the message with (`message`) and without (`detail`) the path in front. `checkScene(scene)` returns the same list without throwing. `checkSceneWarnings(scene)` lists things that are valid but probably unintended, such as angles in radians, shapes placed outside the image, or shapes of different colors that pass through each other.
@@ -230,7 +232,7 @@ There is no perspective and no light to place, by design; soft shading is a fixe
 
 ## With an AI model
 
-[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call. It remembers the scene, so after the first picture the model sends only what changes. For a game it can also draw the scene from 8 or 16 directions as one sprite sheet, with the frame list engines read.
+[`@zpup/mcp`](mcp/README.md) is an MCP server that lets a model write a scene, get its mistakes back as errors that say where they are and how to fix them, and see a PNG of the picture from several angles in one call. It remembers the scene, so after the first picture the model sends only what changes. For a game it can also draw the scene from 8 or 16 directions as one sprite sheet, with the frame list engines read, and in several poses, such as the steps of a walk, with one row per direction and one column per pose. [The game](https://rxolve.github.io/zpup/game/) is drawn this way.
 
 ```json
 {
@@ -278,7 +280,7 @@ The MCP server is a second package in [`mcp/`](mcp), built with `pnpm --dir mcp 
 Raise the version in `package.json` (and, for the server, in `mcp/package.json` and both places in `mcp/server.json`), add the changes to the changelog, and push a tag:
 
 ```bash
-git tag v0.3.0 && git push origin v0.3.0
+git tag v1.0.1 && git push origin v1.0.1
 ```
 
 [The release workflow](.github/workflows/release.yml) then publishes whatever version is not out yet: `@zpup/core` and `@zpup/mcp` to npm, and the server's entry to the MCP Registry. It uses no tokens; npm trusts the workflow by name. A tag starting with `mcp-v` does the same, for a release of the server alone.
