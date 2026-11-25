@@ -664,6 +664,22 @@ function tick(now) {
 }
 requestAnimationFrame(tick);
 
+// The person standing, once for each direction: the same scene, turned.
+const turn = document.getElementById('turn');
+if (turn) {
+  const { image, frames } = sheets.person;
+  const pen = turn.getContext('2d');
+  const step = turn.width / frames.length;
+  frames.forEach((row, i) => {
+    const f = row[POSE.stand];
+    // A cell has room for the swing of the axe, so the standing person is drawn larger than the strip.
+    const height = turn.height * 1.45;
+    const width = (f.w / f.h) * height;
+    const left = i * step + (step - width) / 2;
+    pen.drawImage(image, f.x, f.y, f.w, f.h, left, -0.3 * turn.height, width, height);
+  });
+}
+
 // The sheets themselves, under the stage.
 const list = document.getElementById('sheets');
 for (const name of ['person', 'tree', 'house', 'log', 'dog', 'cat', 'bird', 'plant', 'lamp']) {

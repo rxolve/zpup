@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zpup: a game drawn as JSON</title>
-<meta name="description" content="A small game of chopping trees and building a cabin. Every sprite was written once by an AI model as a small 3D scene in JSON, and drawn by Zpup from every direction and in every pose.">
+<meta name="description" content="Image models can't draw the same thing twice. Here an AI model wrote each object once as a small 3D scene in JSON, and Zpup drew it from every side. A small game shows the result.">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="game.css">
 <script type="module" src="game.js"></script>
@@ -13,49 +13,57 @@
 <header>
   <h1>A game drawn as JSON</h1>
   <p>
-    Chop trees, carry the logs, build the cabin. Every picture here was drawn by an AI model with
-    <a href="https://github.com/rxolve/zpup">Zpup</a>: it wrote each object once, as a small 3D
-    scene in JSON, and Zpup drew that scene from every side. The pictures of one object cannot
-    disagree with each other, because they are one object.
+    Image models can't draw the same thing twice. Ask for a character from the front, then from
+    the side, and you get two different characters.
+  </p>
+  <p>
+    Here an AI model did not draw pictures. It wrote each object once, as a small 3D scene in
+    JSON. <a href="https://github.com/rxolve/zpup">Zpup</a> drew that scene from every side. So
+    the person below is the same person in all 8 directions and all 16 poses.
   </p>
 </header>
 
 <main>
   <canvas id="stage" width="640" height="440" tabindex="0" aria-label="A game: a person chops trees, carries the logs and builds a cabin"></canvas>
   <p class="keys">
+    Chop trees, carry the logs, build the cabin.
     <b>Move:</b> arrow keys or WASD, or click where to go.
     <b>Chop:</b> stand by a tree.
-    <b>Build:</b> walk up to the site with logs on your back.
+    <b>Build:</b> walk to the site with logs on your back.
+  </p>
+
+  <h2>One scene, eight directions</h2>
+  <canvas id="turn" width="640" height="124" aria-label="The same person standing, seen from eight directions"></canvas>
+  <p class="keys">
+    These are not eight drawings. They are one scene, turned eight times.
   </p>
 
   <h2>A new motion is a few lines</h2>
   <p>
-    The person was written once, with a walk of six poses. The axe and the load came later, in a
-    second session that was given the scene and asked for more poses, not for a new drawing. A
-    pose is a short list of changes to the scene, mostly joint angles, and each pose is drawn from
-    the same eight sides. This is the whole of the pose where the axe has struck:
+    The model wrote the person once, with six poses for walking. Later, a second session got the
+    same scene and added the axe and the load. It did not draw the person again. A pose is a short
+    list of changes, mostly joint angles. This is the whole pose for the moment the axe hits:
   </p>
   <pre id="pose"></pre>
   <p>
-    The tree falls and the cabin goes up in the same way: the stages of the cabin are five poses
-    of one scene.
+    The tree falls the same way. The cabin has five building stages, and they are five poses of
+    one scene.
   </p>
 
   <h2>The sheets</h2>
   <p>
-    Each is one PNG with a frame list beside it, as <code>render_sprites</code> writes them, with
-    a row for each direction and a column for each pose. The scene and the poses are the JSON the
-    model wrote.
+    Each sheet is one PNG with a frame list next to it. A row is a direction and a column is a
+    pose. The scene and the poses are the JSON the model wrote.
   </p>
   <div id="sheets"></div>
 
   <h2>What this is not</h2>
   <p>
-    It is not much of a game: one cabin, and a clock. It is here to show the pictures at work.
-    The motion is in steps: each pose is a still picture, and this page plays them in turn.
-    Nothing is drawn between two poses. There are no textures and no perspective, and the look is
-    one flat style. The rules, the paths and the timing were written by hand, and so was the
-    stacking of the logs on the person's back, which is the log's own sheet drawn several times.
+    It is not much of a game. There is one cabin and a clock. It is here to show the pictures at
+    work. The pictures are simple: flat colors, no textures and no perspective. Each pose is a
+    still picture, and the page shows them one after another. I wrote the rules, the paths and
+    the timing by hand. I also wrote how the logs stack on the person's back: it is the log's
+    own picture, drawn several times.
   </p>
 
   <h2>Make your own</h2>
