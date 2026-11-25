@@ -176,9 +176,23 @@ function reset() {
     from: [430, 380],
     state: 'sit',
     time: 0,
+    // Ready from the start, so that the bird's first pass is not wasted.
+    rested: 4,
+    lift: 0,
+    pouncing: false,
   };
   house = { sheet: sheets.house, x: SITE.x, y: SITE.y, row: 7, pose: 0, grew: 1 };
-  bird = { sheet: sheets.bird, x: 0, y: 0, row: 0, pose: 0, angle: 0, flapped: 0, lift: 110 };
+  bird = {
+    sheet: sheets.bird,
+    x: 0,
+    y: 0,
+    row: 0,
+    pose: 0,
+    angle: 0,
+    flapped: 0,
+    lift: 110,
+    scared: 0,
+  };
   game = { started: false, done: false, time: 0, delivered: 0, since: 0 };
   target = null;
 }
@@ -497,6 +511,7 @@ function jump() {
   cat.row = facing(cat.sheet, tx - cat.x, ty - cat.y);
   cat.state = 'crouch';
   cat.time = 0;
+  cat.pouncing = false;
 }
 
 /** How long the cat stays in each state, in seconds, and what comes next. */
@@ -508,29 +523,60 @@ const CAT_STEPS = {
   stand: [0.7, 'sit'],
 };
 
-/** Sits, and jumps to its next spot now and then, or when the dog comes close. */
+/** Leaps straight up at the bird, which is out of reach, and comes down where it sat. */
+function pounce() {
+  cat.from = [cat.x, cat.y];
+  cat.row = facing(cat.sheet, bird.x - cat.x, bird.y - cat.y);
+  cat.state = 'crouch';
+  cat.time = 0;
+  cat.pouncing = true;
+  cat.rested = 0;
+  bird.scared = 1;
+}
+
+/**
+ * Sits and watches the bird. It jumps to its next spot now and then, or when the dog comes
+ * close, and leaps at the bird when the bird passes overhead.
+ */
 function stepCat(dt) {
   cat.time += dt;
+  cat.rested += dt;
   const [length, next] = CAT_STEPS[cat.state];
   const near = Math.hypot(dog.x - cat.x, dog.y - cat.y) < 46;
-  if (cat.state === 'sit' && (cat.time >= length || near)) {
+  const overhead = Math.hypot(bird.x - cat.x, bird.y - cat.y) < 80;
+  if (cat.state === 'sit' && near) {
+    jump();
+  } else if (cat.state === 'sit' && overhead && cat.rested > 4) {
+    pounce();
+  } else if (cat.state === 'sit' && cat.time >= length) {
     jump();
   } else if (cat.time >= length) {
     cat.state = next;
     cat.time = 0;
+    if (next === 'stand') cat.pouncing = false;
   }
+  cat.lift = 0;
   if (cat.state === 'air') {
     const t = Math.min(1, cat.time / CAT_STEPS.air[0]);
-    const [tx, ty] = cat.spots[cat.spot];
-    cat.x = cat.from[0] + (tx - cat.from[0]) * t;
-    cat.y = cat.from[1] + (ty - cat.from[1]) * t;
+    if (cat.pouncing) {
+      cat.lift = Math.sin(t * Math.PI) * 44;
+    } else {
+      const [tx, ty] = cat.spots[cat.spot];
+      cat.x = cat.from[0] + (tx - cat.from[0]) * t;
+      cat.y = cat.from[1] + (ty - cat.from[1]) * t;
+    }
   }
+  // A sitting cat turns its head, which here is its whole body, after the bird.
+  if (cat.state === 'sit') cat.row = facing(cat.sheet, bird.x - cat.x, bird.y - cat.y);
   cat.pose = CAT[cat.state];
 }
 
 function stepBird(dt) {
-  bird.angle += dt * 0.42;
-  bird.flapped += dt;
+  // A cat that leaps at it sends it higher and faster for a moment.
+  bird.scared = Math.max(0, bird.scared - dt / 1.6);
+  bird.lift = 110 + 46 * Math.sin(bird.scared * Math.PI * 0.5);
+  bird.angle += dt * (0.42 + 0.5 * bird.scared);
+  bird.flapped += dt * (1 + 1.5 * bird.scared);
   bird.x = W / 2 + Math.cos(bird.angle) * 250;
   bird.y = H / 2 + 40 + Math.sin(bird.angle) * 130;
   // It faces along the circle: the way it moves.
@@ -625,7 +671,7 @@ function draw() {
     ...logs.map((l) => ({ y: l.y, paint: () => paint(l, l.lift) })),
     // The cabin stands on the middle of its site.
     { y: dog.y, paint: () => paint(dog) },
-    { y: cat.y, paint: () => paint(cat) },
+    { y: cat.y, paint: () => paint(cat, cat.lift) },
     { y: person.y, paint: paintPerson },
     { y: house.y, paint: paintHouse },
   ];
